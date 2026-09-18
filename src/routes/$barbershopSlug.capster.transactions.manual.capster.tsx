@@ -37,7 +37,7 @@ function ManualSelectCapsterPage() {
 
   useEffect(() => {
     let mounted = true;
-    getCapsters()
+    getCapsters({ data: { slug: barbershopSlug } })
       .then((data) => {
         if (!mounted) return;
         const mapped: Capster[] = data.map((c) => ({
@@ -56,7 +56,7 @@ function ManualSelectCapsterPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [barbershopSlug]);
 
   const available = capsters.filter((c) => c.status === "AVAILABLE");
   const selectedCapsterId = manualDraft.capsterId;
