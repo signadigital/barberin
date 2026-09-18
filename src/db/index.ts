@@ -30,15 +30,13 @@ export function getClient(): ReturnType<typeof postgres> {
 
   const conn = postgres(connectionString, {
     prepare: false,
-    max: 10,
-    idle_timeout: 15,
-    max_lifetime: 45,
-    connect_timeout: 10,
+    max: 2,
+    idle_timeout: 20,
+    max_lifetime: 60 * 30,
+    connect_timeout: 15,
   });
 
-  if (process.env["NODE_ENV"] !== "production") {
-    globalForDb.conn = conn;
-  }
+  globalForDb.conn = conn;
 
   return conn;
 }
@@ -51,9 +49,7 @@ export function getDb(): PostgresJsDatabase<typeof schema> {
   const conn = getClient();
   const dbInstance = drizzle(conn, { schema });
 
-  if (process.env["NODE_ENV"] !== "production") {
-    globalForDb.db = dbInstance;
-  }
+  globalForDb.db = dbInstance;
 
   return dbInstance;
 }

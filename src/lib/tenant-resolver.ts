@@ -28,20 +28,33 @@ export const resolveBarbershopBySlug = createServerFn({
   .handler(async ({ data: slug }): Promise<ResolvedBarbershop | null> => {
     if (!slug) return null;
 
-    const [found] = await db
-      .select({
-        id_barbershop: barbershop.id_barbershop,
-        slug: barbershop.slug,
-        nama_barbershop: barbershop.nama_barbershop,
-        alamat: barbershop.alamat,
-        no_hp: barbershop.no_hp,
-        jam_buka: barbershop.jam_buka,
-        jam_tutup: barbershop.jam_tutup,
-        status: barbershop.status,
-      })
-      .from(barbershop)
-      .where(eq(barbershop.slug, slug))
-      .limit(1);
+    const queryShop = async () => {
+      const [shop] = await db
+        .select({
+          id_barbershop: barbershop.id_barbershop,
+          slug: barbershop.slug,
+          nama_barbershop: barbershop.nama_barbershop,
+          alamat: barbershop.alamat,
+          no_hp: barbershop.no_hp,
+          jam_buka: barbershop.jam_buka,
+          jam_tutup: barbershop.jam_tutup,
+          status: barbershop.status,
+        })
+        .from(barbershop)
+        .where(eq(barbershop.slug, slug))
+        .limit(1);
+      return shop;
+    };
+
+    let found;
+    try {
+      found = await queryShop();
+    } catch (firstErr) {
+      console.warn("[TENANT RESOLVER] Transient error fetching shop, retrying...", firstErr);
+      // Retry once after 250ms delay
+      await new Promise((r) => setTimeout(r, 250));
+      found = await queryShop();
+    }
 
     if (!found) return null;
 
