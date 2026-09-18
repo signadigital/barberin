@@ -38,12 +38,40 @@ import {
 import { getCapsterTransactions } from "@/lib/capster-transactions";
 
 // ============================================================================
-// 0. CAPSTER AUTH GUARD
+// TENANT SLUG HELPERS
 // ============================================================================
-export function CapsterAuthGuard({ children }: { children: React.ReactNode }) {
+export function useCapsterTenantSlug(): string {
+  const { barbershopSlug } = useCapster();
+  if (barbershopSlug) return barbershopSlug;
+  if (typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    if (
+      parts.length > 0 &&
+      parts[0] !== "owner" &&
+      parts[0] !== "capster" &&
+      parts[0] !== "customer" &&
+      parts[0] !== "superadmin"
+    ) {
+      return parts[0]!;
+    }
+  }
+  return "";
+}
+
+export function getCapsterTenantPath(slug: string, path: string): string {
+  if (!slug) return path;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `/${slug}${cleanPath}`;
+}
+
+// ============================================================================
+// 0. AUTH GUARD
+// ============================================================================
+export function CapsterAuthGuard({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const { isLoggedIn } = useCapster();
   const navigate = useNavigate();
+  const slug = useCapsterTenantSlug();
 
   useEffect(() => {
     setMounted(true);
@@ -51,11 +79,11 @@ export function CapsterAuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    const hasAuth = isLoggedIn || getCapsterAuth();
+    const hasAuth = isLoggedIn || getCapsterAuth(slug || undefined);
     if (!hasAuth) {
-      navigate({ to: "/capster/login", replace: true });
+      navigate({ to: getCapsterTenantPath(slug, "/capster/login") as any, replace: true });
     }
-  }, [mounted, isLoggedIn, navigate]);
+  }, [mounted, isLoggedIn, slug, navigate]);
 
   if (!mounted) {
     return (
@@ -280,6 +308,7 @@ export function CapsterHeader({
   showActions?: boolean;
 }) {
   const router = useRouter();
+  const slug = useCapsterTenantSlug();
   const { transactions, capsterId, shiftInfo } = useCapster();
   const [showNotifications, setShowNotifications] = useState(false);
   const [headerPending, setHeaderPending] = useState<CapsterTransaction[]>([]);
@@ -420,8 +449,7 @@ export function CapsterHeader({
           onClick: () => {
             handleDismiss(latest.id);
             router.navigate({
-              to: "/capster/transactions/$transactionId",
-              params: { transactionId: latest.id },
+              to: getCapsterTenantPath(slug, `/capster/transactions/${latest.id}`) as any,
             });
           },
         },
@@ -496,7 +524,7 @@ export function CapsterHeader({
               ) : null}
             </button>
             <Link
-              to="/capster/login"
+              to={getCapsterTenantPath(slug, "/capster/login") as any}
               onClick={() => capsterActions.logout()}
               aria-label="Keluar"
               className="glass-1 flex h-10 w-10 items-center justify-center rounded-[12px] transition-colors active:bg-white/15"
@@ -582,8 +610,7 @@ export function CapsterHeader({
                       setShowNotifications(false);
                       handleDismiss(trx.id);
                       router.navigate({
-                        to: "/capster/transactions/$transactionId",
-                        params: { transactionId: trx.id },
+                        to: getCapsterTenantPath(slug, `/capster/transactions/${trx.id}`) as any,
                       });
                     }}
                     onDismiss={(id) => {
@@ -600,7 +627,7 @@ export function CapsterHeader({
                   type="button"
                   onClick={() => {
                     setShowNotifications(false);
-                    router.navigate({ to: "/capster/transactions" });
+                    router.navigate({ to: getCapsterTenantPath(slug, "/capster/transactions") as any });
                   }}
                   className="text-[12px] font-semibold text-primary-soft hover:underline"
                 >
@@ -621,11 +648,12 @@ export function CapsterBottomNav({
 }: {
   activeTab?: "dashboard" | "transactions" | "services" | "account";
 }) {
+  const slug = useCapsterTenantSlug();
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: Grid, to: "/capster/dashboard" },
-    { id: "transactions", label: "Transaksi", icon: ListOrdered, to: "/capster/transactions" },
-    { id: "services", label: "Layanan", icon: Scissors, to: "/capster/services" },
-  ] as const;
+    { id: "dashboard", label: "Dashboard", icon: Grid, to: getCapsterTenantPath(slug, "/capster/dashboard") },
+    { id: "transactions", label: "Transaksi", icon: ListOrdered, to: getCapsterTenantPath(slug, "/capster/transactions") },
+    { id: "services", label: "Layanan", icon: Scissors, to: getCapsterTenantPath(slug, "/capster/services") },
+  ];
 
   return (
     <nav
@@ -778,6 +806,7 @@ export function UnconfirmedTransactionsSection({
 }: {
   transactions: CapsterTransaction[];
 }) {
+  const slug = useCapsterTenantSlug();
   return (
     <GlassCard className="space-y-3.5 p-4 rounded-[20px] border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
       {/* Header Section */}
@@ -793,7 +822,7 @@ export function UnconfirmedTransactionsSection({
           )}
         </div>
         <Link
-          to="/capster/transactions"
+          to={getCapsterTenantPath(slug, "/capster/transactions") as any}
           className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-primary-soft hover:text-primary whitespace-nowrap transition-colors"
         >
           <span>Lihat Semua</span>
@@ -818,8 +847,7 @@ export function UnconfirmedTransactionsSection({
           {transactions.map((trx) => (
             <Link
               key={trx.id}
-              to="/capster/transactions/$transactionId"
-              params={{ transactionId: trx.id }}
+              to={getCapsterTenantPath(slug, `/capster/transactions/${trx.id}`) as any}
               className="group block rounded-[16px] p-3.5 bg-slate-900/40 hover:bg-slate-800/60 border border-white/[0.08] hover:border-primary/40 transition-all duration-200 active:scale-[0.99] shadow-sm"
             >
               {/* Row 1: ID Transaksi & Waktu */}
@@ -886,6 +914,7 @@ export function ServiceStatusSection({
   menunggu: number;
   dibatalkan: number;
 }) {
+  const slug = useCapsterTenantSlug();
   const items = [
     { label: "Selesai", count: selesai, color: "bg-success", text: "text-success" },
     { label: "Sedang Dikerjakan", count: sedangDikerjakan, color: "bg-info", text: "text-info" },
@@ -910,7 +939,7 @@ export function ServiceStatusSection({
         ))}
       </div>
       <Link
-        to="/capster/services"
+        to={getCapsterTenantPath(slug, "/capster/services") as any}
         className="mt-2 flex items-center justify-end text-[12px] font-semibold text-primary-soft hover:underline"
       >
         Lihat Semua Layanan &gt;
@@ -925,10 +954,11 @@ export function DailyActionButtons({
 }: {
   onEndShift: () => void;
 }) {
+  const slug = useCapsterTenantSlug();
   return (
     <div className="grid grid-cols-2 gap-2.5 pt-1">
       <Link
-        to="/capster/transactions/today"
+        to={getCapsterTenantPath(slug, "/capster/transactions/today") as any}
         className="glass-2 flex h-11 items-center justify-center rounded-[12px] px-3 text-[13px] font-semibold text-foreground transition-all active:scale-[0.98]"
       >
         Transaksi Hari Ini

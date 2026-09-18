@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import {
   CAPSTER_STATUS_LABEL,
+  useBarberin,
   type CartItem as CartItemType,
   type Capster,
 } from "@/lib/barberin-store";
@@ -355,8 +356,23 @@ export function InfoRow({ label, value }: { label: string; value: ReactNode }) {
 }
 
 export function StepBrand() {
+  const { shopSlug } = useBarberin();
+  const slug =
+    shopSlug ||
+    (typeof window !== "undefined"
+      ? window.location.pathname.split("/").filter(Boolean)[0]
+      : "");
+  const target =
+    slug &&
+    slug !== "customer" &&
+    slug !== "owner" &&
+    slug !== "capster" &&
+    slug !== "superadmin"
+      ? `/${slug}/customer/services`
+      : "/";
+
   return (
-    <Link to="/customer/services" className="flex items-center justify-center gap-2 py-4">
+    <Link to={target as any} className="flex items-center justify-center gap-2 py-4">
       <BarberinLogo className="h-7 w-7" />
       <span className="text-[15px] font-bold tracking-wide">BARBERIN</span>
     </Link>

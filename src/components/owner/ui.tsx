@@ -55,6 +55,30 @@ import {
 import { ownerActions, useOwner, getOwnerAuth } from "@/lib/owner-store";
 import { useSuperadmin, superadminActions } from "@/lib/superadmin-store";
 
+export function useTenantSlug(): string {
+  const { user } = useOwner();
+  if (user.barbershopSlug) return user.barbershopSlug;
+  if (typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    if (
+      parts.length > 0 &&
+      parts[0] !== "owner" &&
+      parts[0] !== "capster" &&
+      parts[0] !== "customer" &&
+      parts[0] !== "superadmin"
+    ) {
+      return parts[0]!;
+    }
+  }
+  return "";
+}
+
+export function getTenantPath(slug: string, path: string): string {
+  if (!slug) return path;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `/${slug}${cleanPath}`;
+}
+
 // ============================================================================
 // 0. AUTH GUARD
 // ============================================================================
@@ -62,6 +86,7 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const { isLoggedIn } = useOwner();
   const navigate = useNavigate();
+  const slug = useTenantSlug();
 
   useEffect(() => {
     setMounted(true);
@@ -69,11 +94,11 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    const hasAuth = isLoggedIn || getOwnerAuth();
+    const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
     if (!hasAuth) {
-      navigate({ to: "/owner/login", replace: true });
+      navigate({ to: getTenantPath(slug, "/owner/login") as any, replace: true });
     }
-  }, [mounted, isLoggedIn, navigate]);
+  }, [mounted, isLoggedIn, slug, navigate]);
 
   if (!mounted) {
     return (
@@ -86,7 +111,7 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const hasAuth = isLoggedIn || getOwnerAuth();
+  const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
   if (!hasAuth) {
     return (
       <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
@@ -106,23 +131,25 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
 // ============================================================================
 export function OwnerSidebar({ activePath }: { activePath: string }) {
   const navigate = useNavigate();
+  const slug = useTenantSlug();
+
   const navItems = [
-    { label: "Dashboard", href: "/owner/dashboard", icon: Home },
-    { label: "Layanan", href: "/owner/services", icon: Scissors },
-    { label: "Gaji", href: "/owner/gaji", icon: Wallet },
-    { label: "Manajemen Akun Capster", href: "/owner/capsters", icon: Users },
-    { label: "Audit Aktivitas", href: "/owner/audit-activities", icon: Activity },
-    { label: "Audit Keuangan", href: "/owner/audit-finance", icon: FileText },
+    { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
+    { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
+    { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
+    { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
+    { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
   ];
 
   const bottomItems = [
-    { label: "Setelan", href: "/owner/settings", icon: Settings },
-    { label: "Pusat Bantuan", href: "/owner/help", icon: HelpCircle },
+    { label: "Setelan", href: getTenantPath(slug, "/owner/settings"), icon: Settings },
+    { label: "Pusat Bantuan", href: getTenantPath(slug, "/owner/help"), icon: HelpCircle },
   ];
 
   const handleLogout = () => {
     ownerActions.logout();
-    navigate({ to: "/owner/login" });
+    navigate({ to: getTenantPath(slug, "/owner/login") as any });
   };
 
   return (
@@ -226,6 +253,7 @@ export function OwnerNotificationBell({
   });
 
   const navigate = useNavigate();
+  const slug = useTenantSlug();
   const isLight = variant === "light";
 
   const fetchNotifs = async () => {
@@ -555,7 +583,7 @@ export function OwnerNotificationBell({
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
-                  navigate({ to: "/owner/audit-activities" });
+                  navigate({ to: getTenantPath(slug, "/owner/audit-activities") as any });
                 }}
                 className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1.5 transition-colors"
               >
@@ -756,24 +784,25 @@ export function OwnerMobileHeader({
   const navigate = useNavigate();
   const isLight = variant === "light";
 
+  const slug = useTenantSlug();
   const navItems = [
-    { label: "Dashboard", href: "/owner/dashboard", icon: Home },
-    { label: "Layanan", href: "/owner/services", icon: Scissors },
-    { label: "Gaji", href: "/owner/gaji", icon: Wallet },
-    { label: "Manajemen Akun Capster", href: "/owner/capsters", icon: Users },
-    { label: "Audit Aktivitas", href: "/owner/audit-activities", icon: Activity },
-    { label: "Audit Keuangan", href: "/owner/audit-finance", icon: FileText },
+    { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
+    { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
+    { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
+    { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
+    { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
   ];
 
   const bottomItems = [
-    { label: "Setelan", href: "/owner/settings", icon: Settings },
-    { label: "Pusat Bantuan", href: "/owner/help", icon: HelpCircle },
+    { label: "Setelan", href: getTenantPath(slug, "/owner/settings"), icon: Settings },
+    { label: "Pusat Bantuan", href: getTenantPath(slug, "/owner/help"), icon: HelpCircle },
   ];
 
   const handleLogout = () => {
     ownerActions.logout();
     setDrawerOpen(false);
-    navigate({ to: "/owner/login" });
+    navigate({ to: getTenantPath(slug, "/owner/login") as any });
   };
 
   return (
@@ -930,12 +959,13 @@ export function OwnerMobileHeader({
 }
 
 export function OwnerBottomNav({ activePath }: { activePath: string }) {
+  const slug = useTenantSlug();
   const navItems = [
-    { label: "Dashboard", href: "/owner/dashboard", icon: Home },
-    { label: "Layanan", href: "/owner/services", icon: Scissors },
-    { label: "Gaji", href: "/owner/gaji", icon: Wallet },
-    { label: "Aktivitas", href: "/owner/audit-activities", icon: Activity },
-    { label: "Keuangan", href: "/owner/audit-finance", icon: FileText },
+    { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
+    { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
+    { label: "Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
+    { label: "Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
   ];
 
   return (
@@ -1246,7 +1276,7 @@ export function RecentTransactionsTable({
           </p>
         </div>
         <Link
-          to="/owner/audit"
+          to={getTenantPath(useTenantSlug(), "/owner/audit-finance")}
           className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Semua <ArrowRight className="h-3 w-3" />
@@ -1353,7 +1383,7 @@ export function CapsterPerformanceTable({
           </p>
         </div>
         <Link
-          to="/owner/capsters"
+          to={getTenantPath(useTenantSlug(), "/owner/capsters")}
           className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Capster <ArrowRight className="h-3 w-3" />
@@ -1434,7 +1464,7 @@ export function RecentCancellationsTable({
           </p>
         </div>
         <Link
-          to="/owner/audit"
+          to={getTenantPath(useTenantSlug(), "/owner/audit-activities")}
           className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Semua <ArrowRight className="h-3 w-3" />

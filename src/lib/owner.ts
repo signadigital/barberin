@@ -26,6 +26,8 @@ import {
   autoCancelExpiredPendingTransactions,
   isTransactionExpired,
 } from "@/lib/auto-cancel";
+import { loginOwnerBpmn } from "@/lib/owner-auth";
+import { getOwnerSession, requireOwnerTenant } from "@/lib/auth-session";
 
 export type OwnerPeriodFilter = "today" | "7d" | "30d" | "month" | "custom";
 
@@ -256,6 +258,7 @@ export const getOwnerDashboardMetrics = createServerFn({
             period?: OwnerPeriodFilter;
             startDate?: string;
             endDate?: string;
+            barbershopId?: string;
           }
         | undefined,
     ) => data,
@@ -264,12 +267,15 @@ export const getOwnerDashboardMetrics = createServerFn({
     // 0. Auto-cancel seluruh transaksi pending yang telah melebihi 2 jam
     await autoCancelExpiredPendingTransactions();
 
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
     const now = new Date();
     const period = data?.period || "today";
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =
       getPeriodDates(period, data?.startDate, data?.endDate);
 
-    // 1. Ambil transaksi pada periode sekarang & periode lalu
+    // 1. Ambil transaksi pada periode sekarang & periode lalu (strictly scoped by targetShopId)
     const [currentTxs, prevTxs, allCapsters, activeShifts, cancellations] =
       await Promise.all([
         // Transaksi periode aktif
@@ -288,6 +294,7 @@ export const getOwnerDashboardMetrics = createServerFn({
           .from(transaksi)
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(transaksi.created_at, startDate),
               lte(transaksi.created_at, endDate),
             ),
@@ -304,12 +311,13 @@ export const getOwnerDashboardMetrics = createServerFn({
           .from(transaksi)
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(transaksi.created_at, prevStartDate),
               lte(transaksi.created_at, prevEndDate),
             ),
           ),
 
-        // Semua capster yang aktif di barbershop
+        // Semua capster yang aktif di barbershop ini
         db
           .select({
             id_capster: capster.id_capster,
@@ -320,9 +328,11 @@ export const getOwnerDashboardMetrics = createServerFn({
           })
           .from(capster)
           .innerJoin(users, eq(capster.id_user, users.id_user))
-          .where(eq(capster.status, "active")),
+          .where(
+            and(eq(capster.status, "active"), eq(capster.id_barbershop, targetShopId)),
+          ),
 
-        // Shift yang sedang ONGOING
+        // Shift yang sedang ONGOING milik capster di barbershop ini
         db
           .select({
             id_shift: shiftCapster.id_shift,
@@ -330,9 +340,15 @@ export const getOwnerDashboardMetrics = createServerFn({
             status: shiftCapster.status,
           })
           .from(shiftCapster)
-          .where(eq(shiftCapster.status, "ongoing")),
+          .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
+          .where(
+            and(
+              eq(shiftCapster.status, "ongoing"),
+              eq(capster.id_barbershop, targetShopId),
+            ),
+          ),
 
-        // Data Pembatalan pada periode
+        // Data Pembatalan pada periode milik barbershop ini
         db
           .select({
             id_pembatalan: pembatalan.id_pembatalan,
@@ -343,12 +359,14 @@ export const getOwnerDashboardMetrics = createServerFn({
             alasan_text: alasanPembatalan.alasan,
           })
           .from(pembatalan)
+          .innerJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
           .leftJoin(
             alasanPembatalan,
             eq(pembatalan.id_alasan, alasanPembatalan.id_alasan),
           )
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(pembatalan.waktu_pembatalan, startDate),
               lte(pembatalan.waktu_pembatalan, endDate),
             ),
@@ -439,6 +457,7 @@ export const getOwnerDashboardMetrics = createServerFn({
       .from(transaksi)
       .where(
         and(
+          eq(transaksi.id_barbershop, targetShopId),
           gte(transaksi.created_at, chartStartDate),
           lte(transaksi.created_at, endDate),
           eq(transaksi.status_transaksi, "paid"),
@@ -599,6 +618,7 @@ export const getOwnerDashboardMetrics = createServerFn({
       .from(transaksi)
       .innerJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
       .innerJoin(users, eq(pelanggan.id_user, users.id_user))
+      .where(eq(transaksi.id_barbershop, targetShopId))
       .orderBy(desc(transaksi.created_at))
       .limit(10);
 
@@ -767,6 +787,7 @@ export const getOwnerDashboardMetrics = createServerFn({
       .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
       .where(
         and(
+          eq(transaksi.id_barbershop, targetShopId),
           gte(transaksi.created_at, startDate),
           lte(transaksi.created_at, endDate),
           eq(transaksi.status_transaksi, "paid"),
@@ -827,13 +848,14 @@ export const getOwnerDashboardMetrics = createServerFn({
         bookingNotes: booking.catatan,
       })
       .from(pembatalan)
+      .innerJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
       .leftJoin(
         alasanPembatalan,
         eq(pembatalan.id_alasan, alasanPembatalan.id_alasan),
       )
-      .leftJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
       .leftJoin(booking, eq(transaksi.id_booking, booking.id_booking))
       .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
+      .where(eq(transaksi.id_barbershop, targetShopId))
       .orderBy(desc(pembatalan.waktu_pembatalan))
       .limit(10)
       .catch((err) => {
@@ -958,84 +980,11 @@ export const getOwnerDashboardMetrics = createServerFn({
 export const loginOwner = createServerFn({
   method: "POST",
 })
-  .validator((data: { email: string; password?: string }) => data)
+  .validator((data: { email?: string; identifier?: string; password?: string }) => data)
   .handler(async ({ data }) => {
-    const email = (data.email || "").trim().toLowerCase();
+    const identifier = data.identifier || data.email || "";
     const password = data.password || "";
-
-    if (!email) {
-      throw new Error("Email wajib diisi.");
-    }
-
-    const [user] = await db
-      .select({
-        id_user: users.id_user,
-        email: users.email,
-        nama_lengkap: users.nama_lengkap,
-        role: users.role,
-        status: users.status,
-        password: users.password,
-        id_barbershop: users.id_barbershop,
-      })
-      .from(users)
-      .where(and(eq(users.email, email), eq(users.role, "owner")))
-      .limit(1);
-
-    if (!user) {
-      throw new Error("Akun Owner tidak ditemukan.");
-    }
-
-    if (user.status !== "active") {
-      throw new Error("Akun Owner Anda sedang nonaktif.");
-    }
-
-    if (user.password && user.password !== password) {
-      throw new Error("Password yang Anda masukkan salah.");
-    }
-
-    // Ambil barbershop terkait Owner
-    let shop;
-    if (user.id_barbershop) {
-      const [found] = await db
-        .select({
-          id_barbershop: barbershop.id_barbershop,
-          nama_barbershop: barbershop.nama_barbershop,
-          alamat: barbershop.alamat,
-          status: barbershop.status,
-        })
-        .from(barbershop)
-        .where(eq(barbershop.id_barbershop, user.id_barbershop))
-        .limit(1);
-      shop = found;
-    } else {
-      const [found] = await db
-        .select({
-          id_barbershop: barbershop.id_barbershop,
-          nama_barbershop: barbershop.nama_barbershop,
-          alamat: barbershop.alamat,
-          status: barbershop.status,
-        })
-        .from(barbershop)
-        .limit(1);
-      shop = found;
-    }
-
-    // Cek apakah toko berstatus suspended
-    if (shop && (shop.status === "suspended" || shop.status === "inactive")) {
-      throw new Error("Akun toko Anda sedang dinonaktifkan, hubungi admin.");
-    }
-
-    return {
-      id_user: user.id_user,
-      email: user.email,
-      nama_lengkap: user.nama_lengkap,
-      role: user.role,
-      barbershop: shop || {
-        id_barbershop: "default",
-        nama_barbershop: "BARBERIN Barbershop",
-        alamat: "Jl. Jenderal Soedirman",
-      },
-    };
+    return await loginOwnerBpmn({ data: { identifier, password } });
   });
 
 // ============================================================================
@@ -1120,6 +1069,9 @@ export const getOwnerAuditActivities = createServerFn({
     ) => data,
   )
   .handler(async ({ data }): Promise<OwnerAuditActivitiesResult> => {
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
     const period = data?.period || "today";
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =
       getPeriodDates(period, data?.startDate, data?.endDate);
@@ -1144,6 +1096,7 @@ export const getOwnerAuditActivities = createServerFn({
           .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(transaksi.created_at, startDate),
               lte(transaksi.created_at, endDate),
             ),
@@ -1161,12 +1114,14 @@ export const getOwnerAuditActivities = createServerFn({
             alasan_text: alasanPembatalan.alasan,
           })
           .from(pembatalan)
+          .innerJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
           .leftJoin(
             alasanPembatalan,
             eq(pembatalan.id_alasan, alasanPembatalan.id_alasan),
           )
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(pembatalan.waktu_pembatalan, startDate),
               lte(pembatalan.waktu_pembatalan, endDate),
             ),
@@ -1185,8 +1140,10 @@ export const getOwnerAuditActivities = createServerFn({
             created_at: pembayaran.created_at,
           })
           .from(pembayaran)
+          .innerJoin(transaksi, eq(pembayaran.id_transaksi, transaksi.id_transaksi))
           .where(
             and(
+              eq(transaksi.id_barbershop, targetShopId),
               gte(pembayaran.created_at, startDate),
               lte(pembayaran.created_at, endDate),
             ),
@@ -1205,15 +1162,17 @@ export const getOwnerAuditActivities = createServerFn({
             created_at: shiftCapster.created_at,
           })
           .from(shiftCapster)
+          .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
           .where(
             and(
+              eq(capster.id_barbershop, targetShopId),
               gte(shiftCapster.tanggal, startDate),
               lte(shiftCapster.tanggal, endDate),
             ),
           )
           .orderBy(desc(shiftCapster.tanggal)),
 
-        // 5. Users
+        // 5. Users (Hanya owner dan capster barbershop ini)
         db
           .select({
             id_user: users.id_user,
@@ -1222,6 +1181,18 @@ export const getOwnerAuditActivities = createServerFn({
             created_at: users.created_at,
           })
           .from(users)
+          .where(
+            or(
+              eq(users.id_user, tenant.userId),
+              inArray(
+                users.id_user,
+                db
+                  .select({ id_user: capster.id_user })
+                  .from(capster)
+                  .where(eq(capster.id_barbershop, targetShopId)),
+              ),
+            ),
+          )
           .orderBy(desc(users.created_at)),
 
         // 6. Capsters
@@ -1233,7 +1204,8 @@ export const getOwnerAuditActivities = createServerFn({
             nama_lengkap: users.nama_lengkap,
           })
           .from(capster)
-          .leftJoin(users, eq(capster.id_user, users.id_user)),
+          .leftJoin(users, eq(capster.id_user, users.id_user))
+          .where(eq(capster.id_barbershop, targetShopId)),
       ]);
 
     // Build Capster Map
@@ -1550,6 +1522,7 @@ export const getOwnerAuditActivityDetail = createServerFn({
 })
   .validator((id: string) => id)
   .handler(async ({ data: activityId }): Promise<OwnerActivityItem> => {
+    requireOwnerTenant();
     // Call getOwnerAuditActivities with 30d to find the activity
     const listRes = await getOwnerAuditActivities({ data: { period: "30d", pageSize: 100 } });
     const found = listRes.activities.find(
@@ -1558,30 +1531,7 @@ export const getOwnerAuditActivityDetail = createServerFn({
 
     if (found) return found;
 
-    // Default fallback item if not directly matched in the list
-    const now = new Date();
-    return {
-      no: 1,
-      id: activityId.startsWith("AUD-") ? activityId : `AUD-001`,
-      activityId,
-      waktu: now.toLocaleDateString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
-      dateFormatted: now.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-      timeFormatted: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-      rawDate: now.toISOString(),
-      pengguna: "Ahmad",
-      role: "Capster",
-      roleKey: "capster",
-      aktivitas: "Menyelesaikan transaksi",
-      dataTerkait: "TRX-001",
-      status: "Berhasil",
-      activityType: "transaksi",
-      details: {
-        serviceNames: "Gentleman Cut",
-        capsterName: "Ahmad",
-        nominal: 40000,
-        customerName: "Andi",
-      },
-    };
+    throw new Error("Aktivitas tidak ditemukan atau tidak memiliki akses.");
   });
 
 // ============================================================================
@@ -1610,11 +1560,11 @@ export type OwnerFinanceTransactionItem = {
   customerName: string;
   serviceNames: string;
   capsterName: string;
-  capsterId: string | null;
+  capsterId?: string | null;
   amount: number;
-  paymentMethod: "Tunai" | "QRIS" | "Transfer";
-  statusTransaksi: "Berhasil" | "Dibatalkan" | "Menunggu";
-  statusPembayaran: "Lunas" | "Refund" | "Pending";
+  paymentMethod: string;
+  statusTransaksi: string;
+  statusPembayaran: string;
   rawStatus: string;
   rawPaymentStatus: string;
   rawPaymentMethod: string;
@@ -1689,6 +1639,9 @@ export const getOwnerAuditFinance = createServerFn({
     ) => data,
   )
   .handler(async ({ data }): Promise<OwnerAuditFinanceResult> => {
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
     const period = data?.period || "today";
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =
       getPeriodDates(period, data?.startDate, data?.endDate);
@@ -1700,7 +1653,7 @@ export const getOwnerAuditFinance = createServerFn({
       activeShifts,
       dbPemeriksaan,
     ] = await Promise.all([
-      // Current transactions
+      // Current transactions (strictly scoped to this barbershop)
       db
         .select({
           id_transaksi: transaksi.id_transaksi,
@@ -1726,13 +1679,14 @@ export const getOwnerAuditFinance = createServerFn({
         .leftJoin(pembayaran, eq(transaksi.id_transaksi, pembayaran.id_transaksi))
         .where(
           and(
+            eq(transaksi.id_barbershop, targetShopId),
             gte(transaksi.created_at, startDate),
             lte(transaksi.created_at, endDate),
           ),
         )
         .orderBy(desc(transaksi.created_at)),
 
-      // Previous transactions for delta calculation
+      // Previous transactions for delta calculation (strictly scoped)
       db
         .select({
           id_transaksi: transaksi.id_transaksi,
@@ -1742,12 +1696,13 @@ export const getOwnerAuditFinance = createServerFn({
         .from(transaksi)
         .where(
           and(
+            eq(transaksi.id_barbershop, targetShopId),
             gte(transaksi.created_at, prevStartDate),
             lte(transaksi.created_at, prevEndDate),
           ),
         ),
 
-      // All capsters
+      // All capsters for this barbershop
       db
         .select({
           id_capster: capster.id_capster,
@@ -1755,17 +1710,20 @@ export const getOwnerAuditFinance = createServerFn({
           nama_lengkap: users.nama_lengkap,
         })
         .from(capster)
-        .leftJoin(users, eq(capster.id_user, users.id_user)),
+        .leftJoin(users, eq(capster.id_user, users.id_user))
+        .where(eq(capster.id_barbershop, targetShopId)),
 
-      // Active shifts
+      // Active shifts for this barbershop
       db
         .select({
           id_shift: shiftCapster.id_shift,
           id_capster: shiftCapster.id_capster,
         })
-        .from(shiftCapster),
+        .from(shiftCapster)
+        .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
+        .where(eq(capster.id_barbershop, targetShopId)),
 
-      // Pemeriksaan keuangan records
+      // Pemeriksaan keuangan records for this barbershop
       db
         .select({
           id_pemeriksaan: pemeriksaanKeuangan.id_pemeriksaan,
@@ -1779,6 +1737,7 @@ export const getOwnerAuditFinance = createServerFn({
           keterangan: pemeriksaanKeuangan.keterangan,
         })
         .from(pemeriksaanKeuangan)
+        .where(eq(pemeriksaanKeuangan.id_barbershop, targetShopId))
         .orderBy(desc(pemeriksaanKeuangan.tanggal))
         .limit(10)
         .catch(() => []),
@@ -2127,6 +2086,7 @@ export const getOwnerAuditFinanceDetail = createServerFn({
 })
   .validator((id: string) => id)
   .handler(async ({ data: txId }): Promise<OwnerFinanceDetailItem> => {
+    requireOwnerTenant();
     // Search in current or 30d
     const res = await getOwnerAuditFinance({ data: { period: "30d", pageSize: 100 } });
     const found = res.transactions.find(
@@ -2158,29 +2118,7 @@ export const getOwnerAuditFinanceDetail = createServerFn({
       };
     }
 
-    const now = new Date();
-    return {
-      id: txId,
-      shortId: txId.startsWith("TRX-") ? txId : "TRX-001",
-      tanggal: now.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-      waktu: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-      customerName: "Budi",
-      serviceNames: "Fade Cut",
-      capsterName: "Rizky",
-      amount: 50000,
-      paymentMethod: "QRIS",
-      statusTransaksi: "Berhasil",
-      statusPembayaran: "Lunas",
-      systemNominal: 50000,
-      systemMethod: "QRIS",
-      systemPaymentStatus: "Lunas",
-      actualNominal: 50000,
-      actualMethod: "QRIS",
-      actualProof: "Bukti Digital (QRIS)",
-      difference: 0,
-      checkStatus: "Sesuai",
-      catatanPemeriksaan: "",
-    };
+    throw new Error("Detail transaksi tidak ditemukan atau tidak memiliki akses.");
   });
 
 export const saveOwnerCashAudit = createServerFn({
@@ -2196,13 +2134,15 @@ export const saveOwnerCashAudit = createServerFn({
     }) => data,
   )
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
     const selisih = data.kasFisik - data.kasSistem;
     const status = selisih === 0 ? "Sesuai" : "Selisih";
-    const pemeriksa = data.pemeriksa || "Owner";
+    const pemeriksa = data.pemeriksa || tenant.namaLengkap || "Owner";
 
     const [inserted] = await db
       .insert(pemeriksaanKeuangan)
       .values({
+        id_barbershop: tenant.barbershopId,
         periode: data.periode,
         kas_sistem: String(data.kasSistem),
         kas_fisik: String(data.kasFisik),
@@ -2229,13 +2169,24 @@ export const saveOwnerTransactionAuditNote = createServerFn({
     }) => data,
   )
   .handler(async ({ data }) => {
-    await db
+    const tenant = requireOwnerTenant();
+    const [updated] = await db
       .update(transaksi)
       .set({
         catatan_pemeriksaan: data.notes,
         updated_at: new Date(),
       })
-      .where(eq(transaksi.id_transaksi, data.transactionId));
+      .where(
+        and(
+          eq(transaksi.id_transaksi, data.transactionId),
+          eq(transaksi.id_barbershop, tenant.barbershopId),
+        ),
+      )
+      .returning();
+
+    if (!updated) {
+      throw new Error("Transaksi tidak ditemukan atau bukan milik barbershop Anda.");
+    }
 
     return {
       success: true,
@@ -2253,10 +2204,12 @@ export const getOwnerNotifications = createServerFn({
       notifications: OwnerNotificationItem[];
       totalCount: number;
     }> => {
+      const tenant = requireOwnerTenant();
+      const targetShopId = tenant.barbershopId;
       const maxLimit = data?.limit || 25;
 
       try {
-        // 1. Capster map
+        // 1. Capster map for this barbershop
         const capsterRows = await db
           .select({
             id_capster: capster.id_capster,
@@ -2265,6 +2218,7 @@ export const getOwnerNotifications = createServerFn({
           })
           .from(capster)
           .leftJoin(users, eq(capster.id_user, users.id_user))
+          .where(eq(capster.id_barbershop, targetShopId))
           .catch(() => []);
 
         const capsterMap = new Map<string, { name: string; noPegawai: string }>();
@@ -2277,7 +2231,7 @@ export const getOwnerNotifications = createServerFn({
           }
         });
 
-        // 2. Transaksi Berhasil (paid)
+        // 2. Transaksi Berhasil (paid) for this barbershop
         const paidTxs = await db
           .select({
             id_transaksi: transaksi.id_transaksi,
@@ -2292,7 +2246,12 @@ export const getOwnerNotifications = createServerFn({
           .leftJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
           .leftJoin(users, eq(pelanggan.id_user, users.id_user))
           .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
-          .where(eq(transaksi.status_transaksi, "paid"))
+          .where(
+            and(
+              eq(transaksi.id_barbershop, targetShopId),
+              eq(transaksi.status_transaksi, "paid"),
+            ),
+          )
           .orderBy(desc(transaksi.created_at))
           .limit(15)
           .catch(() => []);
@@ -2347,7 +2306,7 @@ export const getOwnerNotifications = createServerFn({
           };
         });
 
-        // 3. Pembatalan Transaksi
+        // 3. Pembatalan Transaksi for this barbershop
         const cancelRows = await db
           .select({
             id_pembatalan: pembatalan.id_pembatalan,
@@ -2358,7 +2317,9 @@ export const getOwnerNotifications = createServerFn({
             alasan: alasanPembatalan.alasan,
           })
           .from(pembatalan)
+          .innerJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
           .leftJoin(alasanPembatalan, eq(pembatalan.id_alasan, alasanPembatalan.id_alasan))
+          .where(eq(transaksi.id_barbershop, targetShopId))
           .orderBy(desc(pembatalan.waktu_pembatalan))
           .limit(15)
           .catch(() => []);
@@ -2374,7 +2335,12 @@ export const getOwnerNotifications = createServerFn({
           .from(transaksi)
           .leftJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
           .leftJoin(users, eq(pelanggan.id_user, users.id_user))
-          .where(eq(transaksi.status_transaksi, "cancelled"))
+          .where(
+            and(
+              eq(transaksi.id_barbershop, targetShopId),
+              eq(transaksi.status_transaksi, "cancelled"),
+            ),
+          )
           .orderBy(desc(transaksi.created_at))
           .limit(15)
           .catch(() => []);
@@ -2424,7 +2390,7 @@ export const getOwnerNotifications = createServerFn({
           });
         });
 
-        // 4. Capster Check-in
+        // 4. Capster Check-in for this barbershop
         const checkinRows = await db
           .select({
             id_shift: shiftCapster.id_shift,
@@ -2436,8 +2402,9 @@ export const getOwnerNotifications = createServerFn({
             noPegawai: capster.no_pegawai,
           })
           .from(shiftCapster)
-          .leftJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
+          .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
           .leftJoin(users, eq(capster.id_user, users.id_user))
+          .where(eq(capster.id_barbershop, targetShopId))
           .orderBy(desc(shiftCapster.created_at))
           .limit(10)
           .catch(() => []);
@@ -2460,7 +2427,7 @@ export const getOwnerNotifications = createServerFn({
           };
         });
 
-        // 5. Capster Mengakhiri Shift
+        // 5. Capster Mengakhiri Shift for this barbershop
         const shiftEndRows = await db
           .select({
             id_shift: shiftCapster.id_shift,
@@ -2475,9 +2442,14 @@ export const getOwnerNotifications = createServerFn({
             noPegawai: capster.no_pegawai,
           })
           .from(shiftCapster)
-          .leftJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
+          .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
           .leftJoin(users, eq(capster.id_user, users.id_user))
-          .where(eq(shiftCapster.status, "completed"))
+          .where(
+            and(
+              eq(capster.id_barbershop, targetShopId),
+              eq(shiftCapster.status, "completed"),
+            ),
+          )
           .orderBy(desc(shiftCapster.updated_at))
           .limit(10)
           .catch(() => []);

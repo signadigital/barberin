@@ -233,6 +233,7 @@ function SuperadminTenantsPage() {
       {
         id_barbershop: tenant.id_barbershop,
         nama_barbershop: tenant.nama_barbershop,
+        slug: tenant.slug,
         alamat: tenant.alamat,
         no_hp: tenant.no_hp,
       },
@@ -254,7 +255,7 @@ function SuperadminTenantsPage() {
       description: `Beralih ke konteks ${tenant.nama_barbershop}.`,
     });
 
-    navigate({ to: "/owner/dashboard" });
+    navigate({ to: `/${tenant.slug}/owner/dashboard` as any });
   };
 
   return (

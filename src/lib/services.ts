@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq, desc, asc, count } from "drizzle-orm";
+import { eq, desc, asc, count, and } from "drizzle-orm";
 import { db } from "@/db";
-import { layanan, barbershop, detailBooking } from "@/db/schema";
+import { layanan, barbershop, detailBooking, booking } from "@/db/schema";
+import { requireOwnerTenant } from "@/lib/auth-session";
 
 export type OwnerServiceItem = {
   id: string;
@@ -43,37 +44,84 @@ export type ToggleServiceStatusInput = {
   id_layanan: string;
 };
 
-// 1. READ: For Customer & Capster (active only)
+// 1. READ: For Customer & Capster (active only, strictly scoped to target barbershop)
 export const getServices = createServerFn({
   method: "GET",
-}).handler(async () => {
-  const result = await db
-    .select({
-      id: layanan.id_layanan,
-      id_layanan: layanan.id_layanan,
-      name: layanan.nama_layanan,
-      nama_layanan: layanan.nama_layanan,
-      description: layanan.deskripsi,
-      deskripsi: layanan.deskripsi,
-      durasi_menit: layanan.durasi_menit,
-      price: layanan.harga,
-      harga: layanan.harga,
-      status: layanan.status,
-    })
-    .from(layanan)
-    .where(eq(layanan.status, "active"))
-    .orderBy(asc(layanan.nama_layanan));
+})
+  .validator(
+    (data: { barbershopId?: string | undefined; slug?: string | undefined } | undefined) =>
+      data,
+  )
+  .handler(async ({ data }) => {
+    let targetShopId = data?.barbershopId;
 
-  return result.map((s) => ({
-    ...s,
-    price: Number(s.price),
-  }));
-});
+    if (targetShopId) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.id_barbershop, targetShopId),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    } else if (data?.slug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.slug, data.slug),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    } else {
+      // Tidak ada tenant context yang diberikan: jangan tampilkan data barbershop lain
+      return [];
+    }
 
-// 2. READ: For Owner Management (all services with usage count)
+    const result = await db
+      .select({
+        id: layanan.id_layanan,
+        id_layanan: layanan.id_layanan,
+        id_barbershop: layanan.id_barbershop,
+        name: layanan.nama_layanan,
+        nama_layanan: layanan.nama_layanan,
+        description: layanan.deskripsi,
+        deskripsi: layanan.deskripsi,
+        durasi_menit: layanan.durasi_menit,
+        price: layanan.harga,
+        harga: layanan.harga,
+        status: layanan.status,
+      })
+      .from(layanan)
+      .where(
+        and(
+          eq(layanan.status, "active"),
+          eq(layanan.id_barbershop, targetShopId),
+        ),
+      )
+      .orderBy(asc(layanan.nama_layanan));
+
+    return result.map((s) => ({
+      ...s,
+      price: Number(s.price),
+    }));
+  });
+
+// 2. READ: For Owner Management (all services with usage count, strictly scoped to current owner's barbershop)
 export const getOwnerServices = createServerFn({
   method: "GET",
 }).handler(async (): Promise<OwnerServiceItem[]> => {
+  const tenant = requireOwnerTenant();
+  const barbershopId = tenant.barbershopId;
+
   const allServices = await db
     .select({
       id_layanan: layanan.id_layanan,
@@ -85,15 +133,18 @@ export const getOwnerServices = createServerFn({
       created_at: layanan.created_at,
     })
     .from(layanan)
+    .where(eq(layanan.id_barbershop, barbershopId))
     .orderBy(asc(layanan.created_at));
 
-  // Get usage count per service
+  // Get usage count per service strictly for this barbershop's bookings
   const usageCounts = await db
     .select({
       id_layanan: detailBooking.id_layanan,
       count: count(),
     })
     .from(detailBooking)
+    .innerJoin(booking, eq(detailBooking.id_booking, booking.id_booking))
+    .where(eq(booking.id_barbershop, barbershopId))
     .groupBy(detailBooking.id_layanan);
 
   const usageMap = new Map<string, number>();
@@ -119,12 +170,15 @@ export const getOwnerServices = createServerFn({
   }));
 });
 
-// 3. CREATE: Add new service
+// 3. CREATE: Add new service (scoped strictly to current owner's barbershop)
 export const createOwnerService = createServerFn({
   method: "POST",
 })
   .validator((data: CreateServiceInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     const nama = data.nama_layanan?.trim();
     if (!nama) {
       throw new Error("Nama layanan wajib diisi.");
@@ -138,29 +192,10 @@ export const createOwnerService = createServerFn({
       throw new Error("Durasi pengerjaan harus lebih dari 0 menit.");
     }
 
-    // Resolve barbershop
-    let [shop] = await db
-      .select({ id_barbershop: barbershop.id_barbershop })
-      .from(barbershop)
-      .where(eq(barbershop.status, "active"))
-      .limit(1);
-
-    if (!shop) {
-      const [anyShop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .limit(1);
-      shop = anyShop;
-    }
-
-    if (!shop) {
-      throw new Error("Barbershop tidak ditemukan dalam sistem.");
-    }
-
     const [created] = await db
       .insert(layanan)
       .values({
-        id_barbershop: shop.id_barbershop,
+        id_barbershop: barbershopId,
         nama_layanan: nama,
         deskripsi: data.deskripsi?.trim() || null,
         durasi_menit: durasi,
@@ -187,12 +222,15 @@ export const createOwnerService = createServerFn({
     };
   });
 
-// 4. UPDATE: Modify service details
+// 4. UPDATE: Modify service details (isolated by id_barbershop)
 export const updateOwnerService = createServerFn({
   method: "POST",
 })
   .validator((data: UpdateServiceInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_layanan) {
       throw new Error("ID layanan tidak valid.");
     }
@@ -219,11 +257,11 @@ export const updateOwnerService = createServerFn({
         status: data.status,
         updated_at: new Date(),
       })
-      .where(eq(layanan.id_layanan, data.id_layanan))
+      .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)))
       .returning();
 
     if (!updated) {
-      throw new Error("Layanan tidak ditemukan atau gagal diperbarui.");
+      throw new Error("Layanan tidak ditemukan atau Anda tidak memiliki akses untuk mengubahnya.");
     }
 
     return {
@@ -240,12 +278,15 @@ export const updateOwnerService = createServerFn({
     };
   });
 
-// 5. TOGGLE: Fast switch status active <-> inactive
+// 5. TOGGLE: Fast switch status active <-> inactive (isolated by id_barbershop)
 export const toggleOwnerServiceStatus = createServerFn({
   method: "POST",
 })
   .validator((data: ToggleServiceStatusInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_layanan) {
       throw new Error("ID layanan tidak valid.");
     }
@@ -253,11 +294,11 @@ export const toggleOwnerServiceStatus = createServerFn({
     const [current] = await db
       .select({ status: layanan.status })
       .from(layanan)
-      .where(eq(layanan.id_layanan, data.id_layanan))
+      .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)))
       .limit(1);
 
     if (!current) {
-      throw new Error("Layanan tidak ditemukan.");
+      throw new Error("Layanan tidak ditemukan atau Anda tidak memiliki akses.");
     }
 
     const newStatus = current.status === "active" ? "inactive" : "active";
@@ -268,7 +309,7 @@ export const toggleOwnerServiceStatus = createServerFn({
         status: newStatus,
         updated_at: new Date(),
       })
-      .where(eq(layanan.id_layanan, data.id_layanan));
+      .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)));
 
     return {
       success: true,
@@ -280,14 +321,28 @@ export const toggleOwnerServiceStatus = createServerFn({
     };
   });
 
-// 6. DELETE: Delete or soft-deactivate if referenced
+// 6. DELETE: Delete or soft-deactivate if referenced (isolated by id_barbershop)
 export const deleteOwnerService = createServerFn({
   method: "POST",
 })
   .validator((data: DeleteServiceInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_layanan) {
       throw new Error("ID layanan tidak valid.");
+    }
+
+    // Verify service belongs to this tenant
+    const [existing] = await db
+      .select({ id: layanan.id_layanan })
+      .from(layanan)
+      .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)))
+      .limit(1);
+
+    if (!existing) {
+      throw new Error("Layanan tidak ditemukan atau Anda tidak memiliki akses.");
     }
 
     // Check if this service has been used in detail_booking
@@ -306,7 +361,7 @@ export const deleteOwnerService = createServerFn({
           status: "inactive",
           updated_at: new Date(),
         })
-        .where(eq(layanan.id_layanan, data.id_layanan));
+        .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)));
 
       return {
         success: true,
@@ -318,11 +373,11 @@ export const deleteOwnerService = createServerFn({
     // Unreferenced: perform hard delete
     const [deleted] = await db
       .delete(layanan)
-      .where(eq(layanan.id_layanan, data.id_layanan))
+      .where(and(eq(layanan.id_layanan, data.id_layanan), eq(layanan.id_barbershop, barbershopId)))
       .returning();
 
     if (!deleted) {
-      throw new Error("Layanan tidak ditemukan.");
+      throw new Error("Layanan tidak ditemukan atau gagal dihapus.");
     }
 
     return {

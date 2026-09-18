@@ -23,10 +23,12 @@ import {
 
 type CreateBookingInput = {
   customerName: string;
-  customerPhone?: string;
+  customerPhone?: string | undefined;
   capsterId: string;
   items: { serviceId: string; quantity: number }[];
   paymentMethod: "tunai" | "qris" | "transfer";
+  barbershopId?: string | undefined;
+  barbershopSlug?: string | undefined;
 };
 
 function generateStrukNumber() {
@@ -51,15 +53,73 @@ export const createCustomerBookingAndTransaction = createServerFn({
       throw new Error("Minimal pilih satu layanan.");
     }
 
-    // 1. Get Barbershop
-    const [shop] = await db
-      .select()
-      .from(barbershop)
-      .where(eq(barbershop.status, "active"))
-      .limit(1);
+    // 1. Resolve Barbershop
+    let shop;
+    if (data.barbershopId) {
+      const [found] = await db
+        .select()
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.id_barbershop, data.barbershopId),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      shop = found;
+    } else if (data.barbershopSlug) {
+      const [found] = await db
+        .select()
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.slug, data.barbershopSlug),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      shop = found;
+    } else {
+      // Resolve from capster's barbershop
+      const [c] = await db
+        .select({ id_barbershop: capster.id_barbershop })
+        .from(capster)
+        .where(eq(capster.id_capster, data.capsterId))
+        .limit(1);
+
+      if (c?.id_barbershop) {
+        const [found] = await db
+          .select()
+          .from(barbershop)
+          .where(
+            and(
+              eq(barbershop.id_barbershop, c.id_barbershop),
+              eq(barbershop.status, "active"),
+            ),
+          )
+          .limit(1);
+        shop = found;
+      }
+    }
 
     if (!shop) {
       throw new Error("Barbershop tidak ditemukan atau sedang tidak aktif.");
+    }
+
+    // Verify capster belongs to this barbershop
+    const [capsterRecord] = await db
+      .select({ id_capster: capster.id_capster })
+      .from(capster)
+      .where(
+        and(
+          eq(capster.id_capster, data.capsterId),
+          eq(capster.id_barbershop, shop.id_barbershop),
+        ),
+      )
+      .limit(1);
+
+    if (!capsterRecord) {
+      throw new Error("Capster tidak valid untuk barbershop ini.");
     }
 
     // 2. Find or Create User & Pelanggan
@@ -148,7 +208,12 @@ export const createCustomerBookingAndTransaction = createServerFn({
     const serviceRows = await db
       .select()
       .from(layanan)
-      .where(inArray(layanan.id_layanan, serviceIds));
+      .where(
+        and(
+          inArray(layanan.id_layanan, serviceIds),
+          eq(layanan.id_barbershop, shop.id_barbershop),
+        ),
+      );
 
     if (serviceRows.length === 0) {
       throw new Error("Layanan tidak valid.");
@@ -217,6 +282,7 @@ export const createCustomerBookingAndTransaction = createServerFn({
     const [transaksiRow] = await db
       .insert(transaksi)
       .values({
+        id_barbershop: shop.id_barbershop,
         id_booking: bookingRow.id_booking,
         id_shift: activeShift.id_shift,
         id_pelanggan: pelangganRow.id_pelanggan,
@@ -271,14 +337,33 @@ export const createCustomerBookingAndTransaction = createServerFn({
 export const getTransactionDetail = createServerFn({
   method: "GET",
 })
-  .validator((data: { transactionId: string }) => data)
+  .validator(
+    (data: {
+      transactionId: string;
+      barbershopSlug?: string | undefined;
+      barbershopId?: string | undefined;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     // 0. Jalankan pembersihan auto-cancel untuk transaksi > 2 jam
     await autoCancelExpiredPendingTransactions();
 
+    let targetShopId = data.barbershopId;
+    if (data.barbershopSlug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+
+      if (!shop) return null;
+      targetShopId = shop.id_barbershop;
+    }
+
     const txRows = await db
       .select({
         id_transaksi: transaksi.id_transaksi,
+        id_barbershop: transaksi.id_barbershop,
         id_booking: transaksi.id_booking,
         id_shift: transaksi.id_shift,
         id_pelanggan: transaksi.id_pelanggan,
@@ -301,6 +386,24 @@ export const getTransactionDetail = createServerFn({
     }
 
     const tx = txRows[0];
+
+    // Validasi isolasi tenant: jika targetShopId ditentukan, transaksi wajib milik toko tersebut
+    if (targetShopId) {
+      let isMatch = tx.id_barbershop === targetShopId;
+      if (!isMatch && tx.id_booking) {
+        const [b] = await db
+          .select({ id_barbershop: booking.id_barbershop })
+          .from(booking)
+          .where(eq(booking.id_booking, tx.id_booking))
+          .limit(1);
+        if (b && b.id_barbershop === targetShopId) {
+          isMatch = true;
+        }
+      }
+      if (!isMatch) {
+        return null; // Tolak / 404 jika transaksi bukan milik barbershop ini
+      }
+    }
 
     // Get Booking & Capster
     let bookingInfo = null;
@@ -412,6 +515,8 @@ export const getTransactionDetail = createServerFn({
       .from(struk)
       .where(eq(struk.id_transaksi, tx.id_transaksi))
       .limit(1);
+
+    const strukData = strukRows[0] ?? null;
 
     const isExpired = isTransactionExpired(tx.created_at, tx.status_transaksi);
     const finalStatus = isExpired ? "cancelled" : tx.status_transaksi;
@@ -590,7 +695,18 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
 export const getCustomerTransactions = createServerFn({
   method: "GET",
 })
-  .validator((data: { customerId?: string; customerName?: string } | undefined) => data)
+  .validator(
+    (
+      data:
+        | {
+            customerId?: string;
+            customerName?: string;
+            barbershopSlug?: string;
+            barbershopId?: string;
+          }
+        | undefined,
+    ) => data,
+  )
   .handler(async ({ data }) => {
     let customerId = data?.customerId;
 
@@ -609,6 +725,22 @@ export const getCustomerTransactions = createServerFn({
       return [];
     }
 
+    let targetShopId = data?.barbershopId;
+    if (data?.barbershopSlug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    }
+
+    const conditions = [eq(transaksi.id_pelanggan, customerId)];
+    if (targetShopId) {
+      conditions.push(eq(transaksi.id_barbershop, targetShopId));
+    }
+
     const txs = await db
       .select({
         id_transaksi: transaksi.id_transaksi,
@@ -621,7 +753,7 @@ export const getCustomerTransactions = createServerFn({
       .from(transaksi)
       .innerJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
       .innerJoin(users, eq(pelanggan.id_user, users.id_user))
-      .where(eq(transaksi.id_pelanggan, customerId))
+      .where(and(...conditions))
       .orderBy(desc(transaksi.created_at));
 
     const results = [];

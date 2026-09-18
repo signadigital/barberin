@@ -112,7 +112,6 @@ export async function autoCancelExpiredPendingTransactions(): Promise<number> {
         .update(pembayaran)
         .set({
           status_pembayaran: "failed",
-          updated_at: new Date(),
         })
         .where(eq(pembayaran.id_transaksi, tx.id_transaksi));
 

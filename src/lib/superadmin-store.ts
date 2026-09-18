@@ -13,8 +13,8 @@ export type ImpersonateContext = {
   targetTenant: {
     id_barbershop: string;
     nama_barbershop: string;
-    ownerName?: string;
-    ownerEmail?: string;
+    ownerName?: string | undefined;
+    ownerEmail?: string | undefined;
   } | null;
   originalSuperadmin: SuperadminUser | null;
 };
@@ -146,6 +146,7 @@ export const superadminActions = {
     targetTenant: {
       id_barbershop: string;
       nama_barbershop: string;
+      slug?: string | null;
       alamat?: string | null;
       no_hp?: string | null;
     },
@@ -178,6 +179,8 @@ export const superadminActions = {
     // Alihkan konteks Owner store ke toko target
     ownerActions.login({
       id_user: targetOwner?.id_user || `impersonated-owner-${targetTenant.id_barbershop}`,
+      id_barbershop: targetTenant.id_barbershop,
+      barbershopSlug: targetTenant.slug || targetTenant.id_barbershop,
       email: targetOwner?.email || `owner-${targetTenant.id_barbershop.slice(0, 6)}@barberin.test`,
       nama_lengkap: targetOwner?.nama_lengkap || `Owner ${targetTenant.nama_barbershop}`,
       role: "owner",

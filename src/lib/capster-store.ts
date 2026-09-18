@@ -98,6 +98,7 @@ export type CapsterState = {
   userId: string | null;
   capsterId: string | null;
   barbershopId: string | null;
+  barbershopSlug: string | null;
   shiftId: string | null;
   capsterName: string;
   capsterRole: string;
@@ -159,6 +160,7 @@ const initialCapsterState: CapsterState = {
   userId: null,
   capsterId: null,
   barbershopId: null,
+  barbershopSlug: null,
   shiftId: null,
   capsterName: "",
   capsterRole: "",
@@ -194,7 +196,7 @@ const CAPSTER_LOCAL_KEY = "barberin_capster_state_v1";
 const CAPSTER_STORAGE_KEY = "barberin-capster-state";
 const COOKIE_KEY = "barberin_capster_logged_in";
 
-export function getCapsterAuth(): boolean {
+export function getCapsterAuth(barbershopSlug?: string): boolean {
   if (typeof window === "undefined") return false;
   try {
     const raw =
@@ -202,7 +204,13 @@ export function getCapsterAuth(): boolean {
       sessionStorage.getItem(CAPSTER_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return Boolean(parsed && parsed.isLoggedIn);
+      if (!parsed || !parsed.isLoggedIn) return false;
+      if (barbershopSlug) {
+        const matchesSlug = parsed.barbershopSlug === barbershopSlug;
+        const matchesId = parsed.barbershopId === barbershopSlug;
+        if (!matchesSlug && !matchesId) return false;
+      }
+      return true;
     }
   } catch {}
   return false;
@@ -242,8 +250,19 @@ function persist() {
       const serialized = JSON.stringify(state);
       localStorage.setItem(CAPSTER_LOCAL_KEY, serialized);
       sessionStorage.setItem(CAPSTER_STORAGE_KEY, serialized);
+      if (state.barbershopId && state.capsterId) {
+        localStorage.setItem(
+          `barberin_capster_state_${state.barbershopId}_${state.capsterId}`,
+          serialized,
+        );
+      }
       document.cookie = `${COOKIE_KEY}=1; path=/; max-age=2592000; SameSite=Lax`;
     } else {
+      if (state.barbershopId && state.capsterId) {
+        localStorage.removeItem(
+          `barberin_capster_state_${state.barbershopId}_${state.capsterId}`,
+        );
+      }
       localStorage.removeItem(CAPSTER_LOCAL_KEY);
       sessionStorage.removeItem(CAPSTER_STORAGE_KEY);
       document.cookie = `${COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
@@ -313,6 +332,7 @@ export const capsterActions = {
           name: string;
           role?: string;
           barbershopId?: string;
+          barbershopSlug?: string;
           shiftId?: string;
         },
   ) {
@@ -333,6 +353,7 @@ export const capsterActions = {
         capsterId: payload.id ?? state.capsterId,
         userId: payload.userId ?? state.userId,
         barbershopId: payload.barbershopId ?? state.barbershopId,
+        barbershopSlug: payload.barbershopSlug ?? state.barbershopSlug,
         shiftId: payload.shiftId ?? (isSwitchingCapster ? null : state.shiftId),
         dashboardMetrics: EMPTY_METRICS,
         transactions: [],

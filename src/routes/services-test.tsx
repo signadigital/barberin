@@ -13,7 +13,7 @@ function ServicesTestPage() {
       name: string;
       category: string;
       price: string;
-      status: "active" | "inactive";
+      status: "active" | "inactive" | "suspended";
     }[]
   >([]);
 

@@ -86,6 +86,8 @@ export function paymentMethodName(id: PaymentMethodId | null): string {
 }
 
 export type BarberinState = {
+  shopSlug: string | null;
+  shopId: string | null;
   cartItems: CartItem[];
   selectedCapster: Capster | null;
   customerName: string;
@@ -99,6 +101,8 @@ export type BarberinState = {
 };
 
 const initialState: BarberinState = {
+  shopSlug: null,
+  shopId: null,
   cartItems: [],
   selectedCapster: null,
   customerName: "",
@@ -111,7 +115,12 @@ const initialState: BarberinState = {
   receiptData: null,
 };
 
-const STORAGE_KEY = "barberin-customer-state";
+function getCustomerStorageKey(shopSlugOrId?: string | null): string {
+  if (shopSlugOrId) {
+    return `barberin_customer_state_${shopSlugOrId}`;
+  }
+  return "barberin-customer-state";
+}
 
 let state: BarberinState = initialState;
 const listeners = new Set<() => void>();
@@ -119,19 +128,25 @@ const listeners = new Set<() => void>();
 function persist() {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const key = getCustomerStorageKey(state.shopSlug || state.shopId);
+    window.sessionStorage.setItem(key, JSON.stringify(state));
+    window.sessionStorage.setItem("barberin-customer-state", JSON.stringify(state));
   } catch {
     /* ignore */
   }
 }
 
 let hydrated = false;
-function hydrate() {
-  if (hydrated || typeof window === "undefined") return;
+function hydrate(targetSlugOrId?: string | null) {
+  if (typeof window === "undefined") return;
+  if (hydrated && !targetSlugOrId) return;
   hydrated = true;
   try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (raw) state = { ...initialState, ...(JSON.parse(raw) as BarberinState) };
+    const key = getCustomerStorageKey(targetSlugOrId || state.shopSlug || state.shopId);
+    const raw = window.sessionStorage.getItem(key);
+    if (raw) {
+      state = { ...initialState, ...(JSON.parse(raw) as BarberinState) };
+    }
   } catch {
     /* ignore */
   }
@@ -164,6 +179,25 @@ export const cartTotal = (items: CartItem[]) =>
 export const cartCount = (items: CartItem[]) => items.reduce((sum, i) => sum + i.quantity, 0);
 
 export const actions = {
+  setShop(slug: string | null, shopId: string | null) {
+    if (state.shopSlug !== slug || state.shopId !== shopId) {
+      if (typeof window !== "undefined") {
+        const key = getCustomerStorageKey(slug || shopId);
+        const saved = window.sessionStorage.getItem(key);
+        if (saved) {
+          try {
+            state = { ...initialState, ...(JSON.parse(saved) as BarberinState), shopSlug: slug, shopId };
+            persist();
+            listeners.forEach((l) => l());
+            return;
+          } catch {}
+        }
+      }
+      setState({ shopSlug: slug, shopId, cartItems: [], selectedCapster: null });
+    } else {
+      setState({ shopSlug: slug, shopId });
+    }
+  },
   addService(service: Service) {
     const existing = state.cartItems.find((i) => i.service.id === service.id);
     if (existing) {

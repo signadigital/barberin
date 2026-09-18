@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
@@ -32,7 +31,8 @@ export function getClient(): ReturnType<typeof postgres> {
   const conn = postgres(connectionString, {
     prepare: false,
     max: 10,
-    idle_timeout: 20,
+    idle_timeout: 15,
+    max_lifetime: 45,
     connect_timeout: 10,
   });
 

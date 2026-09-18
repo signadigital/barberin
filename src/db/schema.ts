@@ -10,6 +10,7 @@ import {
   index,
   bigint,
   bigserial,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -80,6 +81,11 @@ export const users = pgTable(
       () => barbershop.id_barbershop,
       { onDelete: "set null" },
     ),
+    email_verified: boolean("email_verified").notNull().default(false),
+    email_verified_at: timestamp("email_verified_at", { mode: "date" }),
+    verification_status: varchar("verification_status", { length: 50 })
+      .notNull()
+      .default("pending"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
@@ -113,18 +119,25 @@ export const pelanggan = pgTable(
 // ==============================
 // 3. BARBERSHOP
 // ==============================
-export const barbershop = pgTable("barbershop", {
-  id_barbershop: uuid("id_barbershop").defaultRandom().primaryKey(),
-  nama_barbershop: varchar("nama_barbershop", { length: 255 }).notNull(),
-  alamat: text("alamat"),
-  no_hp: varchar("no_hp", { length: 50 }),
-  foto: text("foto"),
-  jam_buka: varchar("jam_buka", { length: 20 }),
-  jam_tutup: varchar("jam_tutup", { length: 20 }),
-  status: commonStatusEnum("status").notNull().default("active"),
-  created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-  updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-});
+export const barbershop = pgTable(
+  "barbershop",
+  {
+    id_barbershop: uuid("id_barbershop").defaultRandom().primaryKey(),
+    slug: varchar("slug", { length: 100 }).notNull().unique(),
+    nama_barbershop: varchar("nama_barbershop", { length: 255 }).notNull(),
+    alamat: text("alamat"),
+    no_hp: varchar("no_hp", { length: 50 }),
+    foto: text("foto"),
+    jam_buka: varchar("jam_buka", { length: 20 }),
+    jam_tutup: varchar("jam_tutup", { length: 20 }),
+    latitude: numeric("latitude", { precision: 10, scale: 7 }),
+    longitude: numeric("longitude", { precision: 10, scale: 7 }),
+    status: commonStatusEnum("status").notNull().default("active"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("barbershop_slug_idx").on(table.slug)],
+);
 
 // ==============================
 // 4. CAPSTER
@@ -263,6 +276,10 @@ export const transaksi = pgTable(
   "transaksi",
   {
     id_transaksi: uuid("id_transaksi").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "restrict" },
+    ),
     id_booking: uuid("id_booking").references(() => booking.id_booking, {
       onDelete: "set null",
     }),
@@ -285,6 +302,7 @@ export const transaksi = pgTable(
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [
+    index("transaksi_barbershop_idx").on(table.id_barbershop),
     index("transaksi_booking_idx").on(table.id_booking),
     index("transaksi_shift_idx").on(table.id_shift),
     index("transaksi_pelanggan_idx").on(table.id_pelanggan),
@@ -388,23 +406,54 @@ export const pembatalan = pgTable(
 // ==============================
 // 14. PEMERIKSAAN KEUANGAN (AUDIT KEUANGAN / CASH ON HAND)
 // ==============================
-export const pemeriksaanKeuangan = pgTable("pemeriksaan_keuangan", {
-  id_pemeriksaan: uuid("id_pemeriksaan").defaultRandom().primaryKey(),
-  tanggal: timestamp("tanggal", { mode: "date" }).notNull().defaultNow(),
-  periode: varchar("periode", { length: 50 }).notNull(),
-  kas_sistem: numeric("kas_sistem", { precision: 12, scale: 2 }).notNull(),
-  kas_fisik: numeric("kas_fisik", { precision: 12, scale: 2 }).notNull(),
-  selisih: numeric("selisih", { precision: 12, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull(), // 'Sesuai' | 'Selisih'
-  pemeriksa: varchar("pemeriksa", { length: 100 }).notNull(),
-  keterangan: text("keterangan"),
-  created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+export const pemeriksaanKeuangan = pgTable(
+  "pemeriksaan_keuangan",
+  {
+    id_pemeriksaan: uuid("id_pemeriksaan").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "cascade" },
+    ),
+    tanggal: timestamp("tanggal", { mode: "date" }).notNull().defaultNow(),
+    periode: varchar("periode", { length: 50 }).notNull(),
+    kas_sistem: numeric("kas_sistem", { precision: 12, scale: 2 }).notNull(),
+    kas_fisik: numeric("kas_fisik", { precision: 12, scale: 2 }).notNull(),
+    selisih: numeric("selisih", { precision: 12, scale: 2 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull(), // 'Sesuai' | 'Selisih'
+    pemeriksa: varchar("pemeriksa", { length: 100 }).notNull(),
+    keterangan: text("keterangan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("pemeriksaan_barbershop_idx").on(table.id_barbershop),
+  ],
+);
+
+// ==============================
+// 15. OWNER VERIFICATION TOKENS
+// ==============================
+export const ownerVerificationTokens = pgTable(
+  "owner_verification_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    id_user: uuid("id_user")
+      .notNull()
+      .references(() => users.id_user, { onDelete: "cascade" }),
+    token_hash: varchar("token_hash", { length: 255 }).notNull().unique(),
+    expires_at: timestamp("expires_at", { mode: "date" }).notNull(),
+    used_at: timestamp("used_at", { mode: "date" }),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("owner_verif_token_hash_idx").on(table.token_hash),
+    index("owner_verif_user_idx").on(table.id_user),
+  ],
+);
 
 // ==============================
 // RELATIONS
 // ==============================
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   pelanggan: one(pelanggan, {
     fields: [users.id_user],
     references: [pelanggan.id_user],
@@ -413,7 +462,22 @@ export const usersRelations = relations(users, ({ one }) => ({
     fields: [users.id_user],
     references: [capster.id_user],
   }),
+  barbershop: one(barbershop, {
+    fields: [users.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+  verificationTokens: many(ownerVerificationTokens),
 }));
+
+export const ownerVerificationTokensRelations = relations(
+  ownerVerificationTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [ownerVerificationTokens.id_user],
+      references: [users.id_user],
+    }),
+  }),
+);
 
 export const pelangganRelations = relations(pelanggan, ({ one, many }) => ({
   user: one(users, {
@@ -428,6 +492,8 @@ export const barbershopRelations = relations(barbershop, ({ many }) => ({
   capsters: many(capster),
   layanan: many(layanan),
   bookings: many(booking),
+  transaksi: many(transaksi),
+  pemeriksaanKeuangan: many(pemeriksaanKeuangan),
 }));
 
 export const capsterRelations = relations(capster, ({ one, many }) => ({
@@ -491,6 +557,10 @@ export const shiftCapsterRelations = relations(shiftCapster, ({ one, many }) => 
 }));
 
 export const transaksiRelations = relations(transaksi, ({ one, many }) => ({
+  barbershop: one(barbershop, {
+    fields: [transaksi.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
   booking: one(booking, {
     fields: [transaksi.id_booking],
     references: [booking.id_booking],
@@ -513,6 +583,16 @@ export const transaksiRelations = relations(transaksi, ({ one, many }) => ({
     references: [pembatalan.id_transaksi],
   }),
 }));
+
+export const pemeriksaanKeuanganRelations = relations(
+  pemeriksaanKeuangan,
+  ({ one }) => ({
+    barbershop: one(barbershop, {
+      fields: [pemeriksaanKeuangan.id_barbershop],
+      references: [barbershop.id_barbershop],
+    }),
+  }),
+);
 
 export const pembayaranRelations = relations(pembayaran, ({ one }) => ({
   transaksi: one(transaksi, {
@@ -584,6 +664,9 @@ export type NewPembatalan = typeof pembatalan.$inferInsert;
 
 export type AlasanPembatalan = typeof alasanPembatalan.$inferSelect;
 export type NewAlasanPembatalan = typeof alasanPembatalan.$inferInsert;
+
+export type OwnerVerificationToken = typeof ownerVerificationTokens.$inferSelect;
+export type NewOwnerVerificationToken = typeof ownerVerificationTokens.$inferInsert;
 
 // ============================================================================
 // SAAS PLATFORM / ADMIN PLATFORM SCHEMA (SESUAI GAMBAR 2)

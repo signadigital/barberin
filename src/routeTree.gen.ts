@@ -10,56 +10,65 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BarbershopSlugRouteImport } from './routes/$barbershopSlug'
 import { Route as DbTestRouteImport } from './routes/db-test'
 import { Route as ServicesTestRouteImport } from './routes/services-test'
-import { Route as CapsterAccountRouteImport } from './routes/capster.account'
-import { Route as CapsterCheckInRouteImport } from './routes/capster.check-in'
-import { Route as CapsterDashboardRouteImport } from './routes/capster.dashboard'
-import { Route as CapsterEndShiftRouteImport } from './routes/capster.end-shift'
-import { Route as CapsterLoginRouteImport } from './routes/capster.login'
-import { Route as CapsterServicesRouteImport } from './routes/capster.services'
-import { Route as CapsterShiftSavedRouteImport } from './routes/capster.shift-saved'
-import { Route as CapsterTransactionsRouteImport } from './routes/capster.transactions'
-import { Route as CustomerCapsterRouteImport } from './routes/customer.capster'
-import { Route as CustomerCartRouteImport } from './routes/customer.cart'
-import { Route as CustomerCompletedRouteImport } from './routes/customer.completed'
-import { Route as CustomerCustomerInfoRouteImport } from './routes/customer.customer-info'
-import { Route as CustomerHistoryRouteImport } from './routes/customer.history'
-import { Route as CustomerPaymentRouteImport } from './routes/customer.payment'
-import { Route as CustomerPaymentConfirmationRouteImport } from './routes/customer.payment-confirmation'
-import { Route as CustomerServiceExecutionRouteImport } from './routes/customer.service-execution'
-import { Route as CustomerServicesRouteImport } from './routes/customer.services'
-import { Route as CustomerSuccessRouteImport } from './routes/customer.success'
-import { Route as OwnerAuditRouteImport } from './routes/owner.audit'
-import { Route as OwnerAuditActivitiesRouteImport } from './routes/owner.audit-activities'
-import { Route as OwnerAuditFinanceRouteImport } from './routes/owner.audit-finance'
-import { Route as OwnerCapstersRouteImport } from './routes/owner.capsters'
-import { Route as OwnerDashboardRouteImport } from './routes/owner.dashboard'
-import { Route as OwnerGajiRouteImport } from './routes/owner.gaji'
-import { Route as OwnerHelpRouteImport } from './routes/owner.help'
-import { Route as OwnerKomisiRouteImport } from './routes/owner.komisi'
-import { Route as OwnerLoginRouteImport } from './routes/owner.login'
-import { Route as OwnerServicesRouteImport } from './routes/owner.services'
-import { Route as OwnerSettingsRouteImport } from './routes/owner.settings'
+import { Route as BSlugRouteImport } from './routes/b.$slug'
+import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
+import { Route as OwnerVerifyEmailRouteImport } from './routes/owner.verify-email'
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SuperadminLoginRouteImport } from './routes/superadmin.login'
 import { Route as SuperadminTenantsRouteImport } from './routes/superadmin.tenants'
-import { Route as CapsterTransactionsTransactionIdRouteImport } from './routes/capster.transactions.$transactionId'
-import { Route as CapsterTransactionsManualRouteImport } from './routes/capster.transactions.manual'
-import { Route as CapsterTransactionsSuccessRouteImport } from './routes/capster.transactions.success'
-import { Route as CapsterTransactionsTodayRouteImport } from './routes/capster.transactions.today'
-import { Route as CustomerReceiptTransactionIdRouteImport } from './routes/customer.receipt.$transactionId'
-import { Route as OwnerAuditActivitiesIdRouteImport } from './routes/owner.audit-activities.$id'
-import { Route as OwnerAuditFinanceIdRouteImport } from './routes/owner.audit-finance.$id'
-import { Route as CapsterTransactionsTransactionIdReceiptRouteImport } from './routes/capster.transactions.$transactionId.receipt'
-import { Route as CapsterTransactionsManualCapsterRouteImport } from './routes/capster.transactions.manual.capster'
-import { Route as CapsterTransactionsManualDetailRouteImport } from './routes/capster.transactions.manual.detail'
-import { Route as CapsterTransactionsManualPaymentRouteImport } from './routes/capster.transactions.manual.payment'
-import { Route as CapsterTransactionsManualServicesRouteImport } from './routes/capster.transactions.manual.services'
+import { Route as BarbershopSlugCapsterAccountRouteImport } from './routes/$barbershopSlug.capster.account'
+import { Route as BarbershopSlugCapsterCheckInRouteImport } from './routes/$barbershopSlug.capster.check-in'
+import { Route as BarbershopSlugCapsterDashboardRouteImport } from './routes/$barbershopSlug.capster.dashboard'
+import { Route as BarbershopSlugCapsterEndShiftRouteImport } from './routes/$barbershopSlug.capster.end-shift'
+import { Route as BarbershopSlugCapsterLoginRouteImport } from './routes/$barbershopSlug.capster.login'
+import { Route as BarbershopSlugCapsterServicesRouteImport } from './routes/$barbershopSlug.capster.services'
+import { Route as BarbershopSlugCapsterShiftSavedRouteImport } from './routes/$barbershopSlug.capster.shift-saved'
+import { Route as BarbershopSlugCapsterTransactionsRouteImport } from './routes/$barbershopSlug.capster.transactions'
+import { Route as BarbershopSlugCustomerCapsterRouteImport } from './routes/$barbershopSlug.customer.capster'
+import { Route as BarbershopSlugCustomerCartRouteImport } from './routes/$barbershopSlug.customer.cart'
+import { Route as BarbershopSlugCustomerCompletedRouteImport } from './routes/$barbershopSlug.customer.completed'
+import { Route as BarbershopSlugCustomerCustomerInfoRouteImport } from './routes/$barbershopSlug.customer.customer-info'
+import { Route as BarbershopSlugCustomerHistoryRouteImport } from './routes/$barbershopSlug.customer.history'
+import { Route as BarbershopSlugCustomerPaymentRouteImport } from './routes/$barbershopSlug.customer.payment'
+import { Route as BarbershopSlugCustomerPaymentConfirmationRouteImport } from './routes/$barbershopSlug.customer.payment-confirmation'
+import { Route as BarbershopSlugCustomerServiceExecutionRouteImport } from './routes/$barbershopSlug.customer.service-execution'
+import { Route as BarbershopSlugCustomerServicesRouteImport } from './routes/$barbershopSlug.customer.services'
+import { Route as BarbershopSlugCustomerSuccessRouteImport } from './routes/$barbershopSlug.customer.success'
+import { Route as BarbershopSlugOwnerAuditRouteImport } from './routes/$barbershopSlug.owner.audit'
+import { Route as BarbershopSlugOwnerAuditActivitiesRouteImport } from './routes/$barbershopSlug.owner.audit-activities'
+import { Route as BarbershopSlugOwnerAuditFinanceRouteImport } from './routes/$barbershopSlug.owner.audit-finance'
+import { Route as BarbershopSlugOwnerCapstersRouteImport } from './routes/$barbershopSlug.owner.capsters'
+import { Route as BarbershopSlugOwnerDashboardRouteImport } from './routes/$barbershopSlug.owner.dashboard'
+import { Route as BarbershopSlugOwnerGajiRouteImport } from './routes/$barbershopSlug.owner.gaji'
+import { Route as BarbershopSlugOwnerHelpRouteImport } from './routes/$barbershopSlug.owner.help'
+import { Route as BarbershopSlugOwnerKomisiRouteImport } from './routes/$barbershopSlug.owner.komisi'
+import { Route as BarbershopSlugOwnerLoginRouteImport } from './routes/$barbershopSlug.owner.login'
+import { Route as BarbershopSlugOwnerServicesRouteImport } from './routes/$barbershopSlug.owner.services'
+import { Route as BarbershopSlugOwnerSettingsRouteImport } from './routes/$barbershopSlug.owner.settings'
+import { Route as BarbershopSlugCapsterTransactionsTransactionIdRouteImport } from './routes/$barbershopSlug.capster.transactions.$transactionId'
+import { Route as BarbershopSlugCapsterTransactionsManualRouteImport } from './routes/$barbershopSlug.capster.transactions.manual'
+import { Route as BarbershopSlugCapsterTransactionsSuccessRouteImport } from './routes/$barbershopSlug.capster.transactions.success'
+import { Route as BarbershopSlugCapsterTransactionsTodayRouteImport } from './routes/$barbershopSlug.capster.transactions.today'
+import { Route as BarbershopSlugCustomerReceiptTransactionIdRouteImport } from './routes/$barbershopSlug.customer.receipt.$transactionId'
+import { Route as BarbershopSlugOwnerAuditActivitiesIdRouteImport } from './routes/$barbershopSlug.owner.audit-activities.$id'
+import { Route as BarbershopSlugOwnerAuditFinanceIdRouteImport } from './routes/$barbershopSlug.owner.audit-finance.$id'
+import { Route as BarbershopSlugCapsterTransactionsTransactionIdReceiptRouteImport } from './routes/$barbershopSlug.capster.transactions.$transactionId.receipt'
+import { Route as BarbershopSlugCapsterTransactionsManualCapsterRouteImport } from './routes/$barbershopSlug.capster.transactions.manual.capster'
+import { Route as BarbershopSlugCapsterTransactionsManualDetailRouteImport } from './routes/$barbershopSlug.capster.transactions.manual.detail'
+import { Route as BarbershopSlugCapsterTransactionsManualPaymentRouteImport } from './routes/$barbershopSlug.capster.transactions.manual.payment'
+import { Route as BarbershopSlugCapsterTransactionsManualServicesRouteImport } from './routes/$barbershopSlug.capster.transactions.manual.services'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BarbershopSlugRoute = BarbershopSlugRouteImport.update({
+  id: '/$barbershopSlug',
+  path: '/$barbershopSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DbTestRoute = DbTestRouteImport.update({
@@ -72,151 +81,19 @@ const ServicesTestRoute = ServicesTestRouteImport.update({
   path: '/services-test',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CapsterAccountRoute = CapsterAccountRouteImport.update({
-  id: '/capster/account',
-  path: '/capster/account',
+const BSlugRoute = BSlugRouteImport.update({
+  id: '/b/$slug',
+  path: '/b/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CapsterCheckInRoute = CapsterCheckInRouteImport.update({
-  id: '/capster/check-in',
-  path: '/capster/check-in',
+const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
+  id: '/owner/register',
+  path: '/owner/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CapsterDashboardRoute = CapsterDashboardRouteImport.update({
-  id: '/capster/dashboard',
-  path: '/capster/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapsterEndShiftRoute = CapsterEndShiftRouteImport.update({
-  id: '/capster/end-shift',
-  path: '/capster/end-shift',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapsterLoginRoute = CapsterLoginRouteImport.update({
-  id: '/capster/login',
-  path: '/capster/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapsterServicesRoute = CapsterServicesRouteImport.update({
-  id: '/capster/services',
-  path: '/capster/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapsterShiftSavedRoute = CapsterShiftSavedRouteImport.update({
-  id: '/capster/shift-saved',
-  path: '/capster/shift-saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapsterTransactionsRoute = CapsterTransactionsRouteImport.update({
-  id: '/capster/transactions',
-  path: '/capster/transactions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerCapsterRoute = CustomerCapsterRouteImport.update({
-  id: '/customer/capster',
-  path: '/customer/capster',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerCartRoute = CustomerCartRouteImport.update({
-  id: '/customer/cart',
-  path: '/customer/cart',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerCompletedRoute = CustomerCompletedRouteImport.update({
-  id: '/customer/completed',
-  path: '/customer/completed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerCustomerInfoRoute = CustomerCustomerInfoRouteImport.update({
-  id: '/customer/customer-info',
-  path: '/customer/customer-info',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerHistoryRoute = CustomerHistoryRouteImport.update({
-  id: '/customer/history',
-  path: '/customer/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerPaymentRoute = CustomerPaymentRouteImport.update({
-  id: '/customer/payment',
-  path: '/customer/payment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerPaymentConfirmationRoute =
-  CustomerPaymentConfirmationRouteImport.update({
-    id: '/customer/payment-confirmation',
-    path: '/customer/payment-confirmation',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const CustomerServiceExecutionRoute =
-  CustomerServiceExecutionRouteImport.update({
-    id: '/customer/service-execution',
-    path: '/customer/service-execution',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const CustomerServicesRoute = CustomerServicesRouteImport.update({
-  id: '/customer/services',
-  path: '/customer/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerSuccessRoute = CustomerSuccessRouteImport.update({
-  id: '/customer/success',
-  path: '/customer/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerAuditRoute = OwnerAuditRouteImport.update({
-  id: '/owner/audit',
-  path: '/owner/audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerAuditActivitiesRoute = OwnerAuditActivitiesRouteImport.update({
-  id: '/owner/audit-activities',
-  path: '/owner/audit-activities',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerAuditFinanceRoute = OwnerAuditFinanceRouteImport.update({
-  id: '/owner/audit-finance',
-  path: '/owner/audit-finance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerCapstersRoute = OwnerCapstersRouteImport.update({
-  id: '/owner/capsters',
-  path: '/owner/capsters',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerDashboardRoute = OwnerDashboardRouteImport.update({
-  id: '/owner/dashboard',
-  path: '/owner/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerGajiRoute = OwnerGajiRouteImport.update({
-  id: '/owner/gaji',
-  path: '/owner/gaji',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerHelpRoute = OwnerHelpRouteImport.update({
-  id: '/owner/help',
-  path: '/owner/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerKomisiRoute = OwnerKomisiRouteImport.update({
-  id: '/owner/komisi',
-  path: '/owner/komisi',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerLoginRoute = OwnerLoginRouteImport.update({
-  id: '/owner/login',
-  path: '/owner/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerServicesRoute = OwnerServicesRouteImport.update({
-  id: '/owner/services',
-  path: '/owner/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerSettingsRoute = OwnerSettingsRouteImport.update({
-  id: '/owner/settings',
-  path: '/owner/settings',
+const OwnerVerifyEmailRoute = OwnerVerifyEmailRouteImport.update({
+  id: '/owner/verify-email',
+  path: '/owner/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperadminDashboardRoute = SuperadminDashboardRouteImport.update({
@@ -234,412 +111,584 @@ const SuperadminTenantsRoute = SuperadminTenantsRouteImport.update({
   path: '/superadmin/tenants',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CapsterTransactionsTransactionIdRoute =
-  CapsterTransactionsTransactionIdRouteImport.update({
+const BarbershopSlugCapsterAccountRoute =
+  BarbershopSlugCapsterAccountRouteImport.update({
+    id: '/capster/account',
+    path: '/capster/account',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterCheckInRoute =
+  BarbershopSlugCapsterCheckInRouteImport.update({
+    id: '/capster/check-in',
+    path: '/capster/check-in',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterDashboardRoute =
+  BarbershopSlugCapsterDashboardRouteImport.update({
+    id: '/capster/dashboard',
+    path: '/capster/dashboard',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterEndShiftRoute =
+  BarbershopSlugCapsterEndShiftRouteImport.update({
+    id: '/capster/end-shift',
+    path: '/capster/end-shift',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterLoginRoute =
+  BarbershopSlugCapsterLoginRouteImport.update({
+    id: '/capster/login',
+    path: '/capster/login',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterServicesRoute =
+  BarbershopSlugCapsterServicesRouteImport.update({
+    id: '/capster/services',
+    path: '/capster/services',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterShiftSavedRoute =
+  BarbershopSlugCapsterShiftSavedRouteImport.update({
+    id: '/capster/shift-saved',
+    path: '/capster/shift-saved',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterTransactionsRoute =
+  BarbershopSlugCapsterTransactionsRouteImport.update({
+    id: '/capster/transactions',
+    path: '/capster/transactions',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerCapsterRoute =
+  BarbershopSlugCustomerCapsterRouteImport.update({
+    id: '/customer/capster',
+    path: '/customer/capster',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerCartRoute =
+  BarbershopSlugCustomerCartRouteImport.update({
+    id: '/customer/cart',
+    path: '/customer/cart',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerCompletedRoute =
+  BarbershopSlugCustomerCompletedRouteImport.update({
+    id: '/customer/completed',
+    path: '/customer/completed',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerCustomerInfoRoute =
+  BarbershopSlugCustomerCustomerInfoRouteImport.update({
+    id: '/customer/customer-info',
+    path: '/customer/customer-info',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerHistoryRoute =
+  BarbershopSlugCustomerHistoryRouteImport.update({
+    id: '/customer/history',
+    path: '/customer/history',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerPaymentRoute =
+  BarbershopSlugCustomerPaymentRouteImport.update({
+    id: '/customer/payment',
+    path: '/customer/payment',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerPaymentConfirmationRoute =
+  BarbershopSlugCustomerPaymentConfirmationRouteImport.update({
+    id: '/customer/payment-confirmation',
+    path: '/customer/payment-confirmation',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerServiceExecutionRoute =
+  BarbershopSlugCustomerServiceExecutionRouteImport.update({
+    id: '/customer/service-execution',
+    path: '/customer/service-execution',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerServicesRoute =
+  BarbershopSlugCustomerServicesRouteImport.update({
+    id: '/customer/services',
+    path: '/customer/services',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCustomerSuccessRoute =
+  BarbershopSlugCustomerSuccessRouteImport.update({
+    id: '/customer/success',
+    path: '/customer/success',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerAuditRoute =
+  BarbershopSlugOwnerAuditRouteImport.update({
+    id: '/owner/audit',
+    path: '/owner/audit',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerAuditActivitiesRoute =
+  BarbershopSlugOwnerAuditActivitiesRouteImport.update({
+    id: '/owner/audit-activities',
+    path: '/owner/audit-activities',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerAuditFinanceRoute =
+  BarbershopSlugOwnerAuditFinanceRouteImport.update({
+    id: '/owner/audit-finance',
+    path: '/owner/audit-finance',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerCapstersRoute =
+  BarbershopSlugOwnerCapstersRouteImport.update({
+    id: '/owner/capsters',
+    path: '/owner/capsters',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerDashboardRoute =
+  BarbershopSlugOwnerDashboardRouteImport.update({
+    id: '/owner/dashboard',
+    path: '/owner/dashboard',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerGajiRoute = BarbershopSlugOwnerGajiRouteImport.update({
+  id: '/owner/gaji',
+  path: '/owner/gaji',
+  getParentRoute: () => BarbershopSlugRoute,
+} as any)
+const BarbershopSlugOwnerHelpRoute = BarbershopSlugOwnerHelpRouteImport.update({
+  id: '/owner/help',
+  path: '/owner/help',
+  getParentRoute: () => BarbershopSlugRoute,
+} as any)
+const BarbershopSlugOwnerKomisiRoute =
+  BarbershopSlugOwnerKomisiRouteImport.update({
+    id: '/owner/komisi',
+    path: '/owner/komisi',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerLoginRoute =
+  BarbershopSlugOwnerLoginRouteImport.update({
+    id: '/owner/login',
+    path: '/owner/login',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerServicesRoute =
+  BarbershopSlugOwnerServicesRouteImport.update({
+    id: '/owner/services',
+    path: '/owner/services',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerSettingsRoute =
+  BarbershopSlugOwnerSettingsRouteImport.update({
+    id: '/owner/settings',
+    path: '/owner/settings',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterTransactionsTransactionIdRoute =
+  BarbershopSlugCapsterTransactionsTransactionIdRouteImport.update({
     id: '/$transactionId',
     path: '/$transactionId',
-    getParentRoute: () => CapsterTransactionsRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsRoute,
   } as any)
-const CapsterTransactionsManualRoute =
-  CapsterTransactionsManualRouteImport.update({
+const BarbershopSlugCapsterTransactionsManualRoute =
+  BarbershopSlugCapsterTransactionsManualRouteImport.update({
     id: '/manual',
     path: '/manual',
-    getParentRoute: () => CapsterTransactionsRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsRoute,
   } as any)
-const CapsterTransactionsSuccessRoute =
-  CapsterTransactionsSuccessRouteImport.update({
+const BarbershopSlugCapsterTransactionsSuccessRoute =
+  BarbershopSlugCapsterTransactionsSuccessRouteImport.update({
     id: '/success',
     path: '/success',
-    getParentRoute: () => CapsterTransactionsRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsRoute,
   } as any)
-const CapsterTransactionsTodayRoute =
-  CapsterTransactionsTodayRouteImport.update({
+const BarbershopSlugCapsterTransactionsTodayRoute =
+  BarbershopSlugCapsterTransactionsTodayRouteImport.update({
     id: '/today',
     path: '/today',
-    getParentRoute: () => CapsterTransactionsRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsRoute,
   } as any)
-const CustomerReceiptTransactionIdRoute =
-  CustomerReceiptTransactionIdRouteImport.update({
+const BarbershopSlugCustomerReceiptTransactionIdRoute =
+  BarbershopSlugCustomerReceiptTransactionIdRouteImport.update({
     id: '/customer/receipt/$transactionId',
     path: '/customer/receipt/$transactionId',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => BarbershopSlugRoute,
   } as any)
-const OwnerAuditActivitiesIdRoute = OwnerAuditActivitiesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => OwnerAuditActivitiesRoute,
-} as any)
-const OwnerAuditFinanceIdRoute = OwnerAuditFinanceIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => OwnerAuditFinanceRoute,
-} as any)
-const CapsterTransactionsTransactionIdReceiptRoute =
-  CapsterTransactionsTransactionIdReceiptRouteImport.update({
+const BarbershopSlugOwnerAuditActivitiesIdRoute =
+  BarbershopSlugOwnerAuditActivitiesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => BarbershopSlugOwnerAuditActivitiesRoute,
+  } as any)
+const BarbershopSlugOwnerAuditFinanceIdRoute =
+  BarbershopSlugOwnerAuditFinanceIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => BarbershopSlugOwnerAuditFinanceRoute,
+  } as any)
+const BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute =
+  BarbershopSlugCapsterTransactionsTransactionIdReceiptRouteImport.update({
     id: '/receipt',
     path: '/receipt',
-    getParentRoute: () => CapsterTransactionsTransactionIdRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsTransactionIdRoute,
   } as any)
-const CapsterTransactionsManualCapsterRoute =
-  CapsterTransactionsManualCapsterRouteImport.update({
+const BarbershopSlugCapsterTransactionsManualCapsterRoute =
+  BarbershopSlugCapsterTransactionsManualCapsterRouteImport.update({
     id: '/capster',
     path: '/capster',
-    getParentRoute: () => CapsterTransactionsManualRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsManualRoute,
   } as any)
-const CapsterTransactionsManualDetailRoute =
-  CapsterTransactionsManualDetailRouteImport.update({
+const BarbershopSlugCapsterTransactionsManualDetailRoute =
+  BarbershopSlugCapsterTransactionsManualDetailRouteImport.update({
     id: '/detail',
     path: '/detail',
-    getParentRoute: () => CapsterTransactionsManualRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsManualRoute,
   } as any)
-const CapsterTransactionsManualPaymentRoute =
-  CapsterTransactionsManualPaymentRouteImport.update({
+const BarbershopSlugCapsterTransactionsManualPaymentRoute =
+  BarbershopSlugCapsterTransactionsManualPaymentRouteImport.update({
     id: '/payment',
     path: '/payment',
-    getParentRoute: () => CapsterTransactionsManualRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsManualRoute,
   } as any)
-const CapsterTransactionsManualServicesRoute =
-  CapsterTransactionsManualServicesRouteImport.update({
+const BarbershopSlugCapsterTransactionsManualServicesRoute =
+  BarbershopSlugCapsterTransactionsManualServicesRouteImport.update({
     id: '/services',
     path: '/services',
-    getParentRoute: () => CapsterTransactionsManualRoute,
+    getParentRoute: () => BarbershopSlugCapsterTransactionsManualRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$barbershopSlug': typeof BarbershopSlugRouteWithChildren
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
-  '/capster/account': typeof CapsterAccountRoute
-  '/capster/check-in': typeof CapsterCheckInRoute
-  '/capster/dashboard': typeof CapsterDashboardRoute
-  '/capster/end-shift': typeof CapsterEndShiftRoute
-  '/capster/login': typeof CapsterLoginRoute
-  '/capster/services': typeof CapsterServicesRoute
-  '/capster/shift-saved': typeof CapsterShiftSavedRoute
-  '/capster/transactions': typeof CapsterTransactionsRouteWithChildren
-  '/customer/capster': typeof CustomerCapsterRoute
-  '/customer/cart': typeof CustomerCartRoute
-  '/customer/completed': typeof CustomerCompletedRoute
-  '/customer/customer-info': typeof CustomerCustomerInfoRoute
-  '/customer/history': typeof CustomerHistoryRoute
-  '/customer/payment': typeof CustomerPaymentRoute
-  '/customer/payment-confirmation': typeof CustomerPaymentConfirmationRoute
-  '/customer/service-execution': typeof CustomerServiceExecutionRoute
-  '/customer/services': typeof CustomerServicesRoute
-  '/customer/success': typeof CustomerSuccessRoute
-  '/owner/audit': typeof OwnerAuditRoute
-  '/owner/audit-activities': typeof OwnerAuditActivitiesRouteWithChildren
-  '/owner/audit-finance': typeof OwnerAuditFinanceRouteWithChildren
-  '/owner/capsters': typeof OwnerCapstersRoute
-  '/owner/dashboard': typeof OwnerDashboardRoute
-  '/owner/gaji': typeof OwnerGajiRoute
-  '/owner/help': typeof OwnerHelpRoute
-  '/owner/komisi': typeof OwnerKomisiRoute
-  '/owner/login': typeof OwnerLoginRoute
-  '/owner/services': typeof OwnerServicesRoute
-  '/owner/settings': typeof OwnerSettingsRoute
+  '/b/$slug': typeof BSlugRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
-  '/capster/transactions/$transactionId': typeof CapsterTransactionsTransactionIdRouteWithChildren
-  '/capster/transactions/manual': typeof CapsterTransactionsManualRouteWithChildren
-  '/capster/transactions/success': typeof CapsterTransactionsSuccessRoute
-  '/capster/transactions/today': typeof CapsterTransactionsTodayRoute
-  '/customer/receipt/$transactionId': typeof CustomerReceiptTransactionIdRoute
-  '/owner/audit-activities/$id': typeof OwnerAuditActivitiesIdRoute
-  '/owner/audit-finance/$id': typeof OwnerAuditFinanceIdRoute
-  '/capster/transactions/$transactionId/receipt': typeof CapsterTransactionsTransactionIdReceiptRoute
-  '/capster/transactions/manual/capster': typeof CapsterTransactionsManualCapsterRoute
-  '/capster/transactions/manual/detail': typeof CapsterTransactionsManualDetailRoute
-  '/capster/transactions/manual/payment': typeof CapsterTransactionsManualPaymentRoute
-  '/capster/transactions/manual/services': typeof CapsterTransactionsManualServicesRoute
+  '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
+  '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
+  '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
+  '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
+  '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
+  '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
+  '/$barbershopSlug/customer/capster': typeof BarbershopSlugCustomerCapsterRoute
+  '/$barbershopSlug/customer/cart': typeof BarbershopSlugCustomerCartRoute
+  '/$barbershopSlug/customer/completed': typeof BarbershopSlugCustomerCompletedRoute
+  '/$barbershopSlug/customer/customer-info': typeof BarbershopSlugCustomerCustomerInfoRoute
+  '/$barbershopSlug/customer/history': typeof BarbershopSlugCustomerHistoryRoute
+  '/$barbershopSlug/customer/payment': typeof BarbershopSlugCustomerPaymentRoute
+  '/$barbershopSlug/customer/payment-confirmation': typeof BarbershopSlugCustomerPaymentConfirmationRoute
+  '/$barbershopSlug/customer/service-execution': typeof BarbershopSlugCustomerServiceExecutionRoute
+  '/$barbershopSlug/customer/services': typeof BarbershopSlugCustomerServicesRoute
+  '/$barbershopSlug/customer/success': typeof BarbershopSlugCustomerSuccessRoute
+  '/$barbershopSlug/owner/audit': typeof BarbershopSlugOwnerAuditRoute
+  '/$barbershopSlug/owner/audit-activities': typeof BarbershopSlugOwnerAuditActivitiesRouteWithChildren
+  '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
+  '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
+  '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
+  '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
+  '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
+  '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
+  '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
+  '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
+  '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
+  '/$barbershopSlug/capster/transactions/today': typeof BarbershopSlugCapsterTransactionsTodayRoute
+  '/$barbershopSlug/customer/receipt/$transactionId': typeof BarbershopSlugCustomerReceiptTransactionIdRoute
+  '/$barbershopSlug/owner/audit-activities/$id': typeof BarbershopSlugOwnerAuditActivitiesIdRoute
+  '/$barbershopSlug/owner/audit-finance/$id': typeof BarbershopSlugOwnerAuditFinanceIdRoute
+  '/$barbershopSlug/capster/transactions/$transactionId/receipt': typeof BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute
+  '/$barbershopSlug/capster/transactions/manual/capster': typeof BarbershopSlugCapsterTransactionsManualCapsterRoute
+  '/$barbershopSlug/capster/transactions/manual/detail': typeof BarbershopSlugCapsterTransactionsManualDetailRoute
+  '/$barbershopSlug/capster/transactions/manual/payment': typeof BarbershopSlugCapsterTransactionsManualPaymentRoute
+  '/$barbershopSlug/capster/transactions/manual/services': typeof BarbershopSlugCapsterTransactionsManualServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$barbershopSlug': typeof BarbershopSlugRouteWithChildren
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
-  '/capster/account': typeof CapsterAccountRoute
-  '/capster/check-in': typeof CapsterCheckInRoute
-  '/capster/dashboard': typeof CapsterDashboardRoute
-  '/capster/end-shift': typeof CapsterEndShiftRoute
-  '/capster/login': typeof CapsterLoginRoute
-  '/capster/services': typeof CapsterServicesRoute
-  '/capster/shift-saved': typeof CapsterShiftSavedRoute
-  '/capster/transactions': typeof CapsterTransactionsRouteWithChildren
-  '/customer/capster': typeof CustomerCapsterRoute
-  '/customer/cart': typeof CustomerCartRoute
-  '/customer/completed': typeof CustomerCompletedRoute
-  '/customer/customer-info': typeof CustomerCustomerInfoRoute
-  '/customer/history': typeof CustomerHistoryRoute
-  '/customer/payment': typeof CustomerPaymentRoute
-  '/customer/payment-confirmation': typeof CustomerPaymentConfirmationRoute
-  '/customer/service-execution': typeof CustomerServiceExecutionRoute
-  '/customer/services': typeof CustomerServicesRoute
-  '/customer/success': typeof CustomerSuccessRoute
-  '/owner/audit': typeof OwnerAuditRoute
-  '/owner/audit-activities': typeof OwnerAuditActivitiesRouteWithChildren
-  '/owner/audit-finance': typeof OwnerAuditFinanceRouteWithChildren
-  '/owner/capsters': typeof OwnerCapstersRoute
-  '/owner/dashboard': typeof OwnerDashboardRoute
-  '/owner/gaji': typeof OwnerGajiRoute
-  '/owner/help': typeof OwnerHelpRoute
-  '/owner/komisi': typeof OwnerKomisiRoute
-  '/owner/login': typeof OwnerLoginRoute
-  '/owner/services': typeof OwnerServicesRoute
-  '/owner/settings': typeof OwnerSettingsRoute
+  '/b/$slug': typeof BSlugRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
-  '/capster/transactions/$transactionId': typeof CapsterTransactionsTransactionIdRouteWithChildren
-  '/capster/transactions/manual': typeof CapsterTransactionsManualRouteWithChildren
-  '/capster/transactions/success': typeof CapsterTransactionsSuccessRoute
-  '/capster/transactions/today': typeof CapsterTransactionsTodayRoute
-  '/customer/receipt/$transactionId': typeof CustomerReceiptTransactionIdRoute
-  '/owner/audit-activities/$id': typeof OwnerAuditActivitiesIdRoute
-  '/owner/audit-finance/$id': typeof OwnerAuditFinanceIdRoute
-  '/capster/transactions/$transactionId/receipt': typeof CapsterTransactionsTransactionIdReceiptRoute
-  '/capster/transactions/manual/capster': typeof CapsterTransactionsManualCapsterRoute
-  '/capster/transactions/manual/detail': typeof CapsterTransactionsManualDetailRoute
-  '/capster/transactions/manual/payment': typeof CapsterTransactionsManualPaymentRoute
-  '/capster/transactions/manual/services': typeof CapsterTransactionsManualServicesRoute
+  '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
+  '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
+  '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
+  '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
+  '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
+  '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
+  '/$barbershopSlug/customer/capster': typeof BarbershopSlugCustomerCapsterRoute
+  '/$barbershopSlug/customer/cart': typeof BarbershopSlugCustomerCartRoute
+  '/$barbershopSlug/customer/completed': typeof BarbershopSlugCustomerCompletedRoute
+  '/$barbershopSlug/customer/customer-info': typeof BarbershopSlugCustomerCustomerInfoRoute
+  '/$barbershopSlug/customer/history': typeof BarbershopSlugCustomerHistoryRoute
+  '/$barbershopSlug/customer/payment': typeof BarbershopSlugCustomerPaymentRoute
+  '/$barbershopSlug/customer/payment-confirmation': typeof BarbershopSlugCustomerPaymentConfirmationRoute
+  '/$barbershopSlug/customer/service-execution': typeof BarbershopSlugCustomerServiceExecutionRoute
+  '/$barbershopSlug/customer/services': typeof BarbershopSlugCustomerServicesRoute
+  '/$barbershopSlug/customer/success': typeof BarbershopSlugCustomerSuccessRoute
+  '/$barbershopSlug/owner/audit': typeof BarbershopSlugOwnerAuditRoute
+  '/$barbershopSlug/owner/audit-activities': typeof BarbershopSlugOwnerAuditActivitiesRouteWithChildren
+  '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
+  '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
+  '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
+  '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
+  '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
+  '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
+  '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
+  '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
+  '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
+  '/$barbershopSlug/capster/transactions/today': typeof BarbershopSlugCapsterTransactionsTodayRoute
+  '/$barbershopSlug/customer/receipt/$transactionId': typeof BarbershopSlugCustomerReceiptTransactionIdRoute
+  '/$barbershopSlug/owner/audit-activities/$id': typeof BarbershopSlugOwnerAuditActivitiesIdRoute
+  '/$barbershopSlug/owner/audit-finance/$id': typeof BarbershopSlugOwnerAuditFinanceIdRoute
+  '/$barbershopSlug/capster/transactions/$transactionId/receipt': typeof BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute
+  '/$barbershopSlug/capster/transactions/manual/capster': typeof BarbershopSlugCapsterTransactionsManualCapsterRoute
+  '/$barbershopSlug/capster/transactions/manual/detail': typeof BarbershopSlugCapsterTransactionsManualDetailRoute
+  '/$barbershopSlug/capster/transactions/manual/payment': typeof BarbershopSlugCapsterTransactionsManualPaymentRoute
+  '/$barbershopSlug/capster/transactions/manual/services': typeof BarbershopSlugCapsterTransactionsManualServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$barbershopSlug': typeof BarbershopSlugRouteWithChildren
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
-  '/capster/account': typeof CapsterAccountRoute
-  '/capster/check-in': typeof CapsterCheckInRoute
-  '/capster/dashboard': typeof CapsterDashboardRoute
-  '/capster/end-shift': typeof CapsterEndShiftRoute
-  '/capster/login': typeof CapsterLoginRoute
-  '/capster/services': typeof CapsterServicesRoute
-  '/capster/shift-saved': typeof CapsterShiftSavedRoute
-  '/capster/transactions': typeof CapsterTransactionsRouteWithChildren
-  '/customer/capster': typeof CustomerCapsterRoute
-  '/customer/cart': typeof CustomerCartRoute
-  '/customer/completed': typeof CustomerCompletedRoute
-  '/customer/customer-info': typeof CustomerCustomerInfoRoute
-  '/customer/history': typeof CustomerHistoryRoute
-  '/customer/payment': typeof CustomerPaymentRoute
-  '/customer/payment-confirmation': typeof CustomerPaymentConfirmationRoute
-  '/customer/service-execution': typeof CustomerServiceExecutionRoute
-  '/customer/services': typeof CustomerServicesRoute
-  '/customer/success': typeof CustomerSuccessRoute
-  '/owner/audit': typeof OwnerAuditRoute
-  '/owner/audit-activities': typeof OwnerAuditActivitiesRouteWithChildren
-  '/owner/audit-finance': typeof OwnerAuditFinanceRouteWithChildren
-  '/owner/capsters': typeof OwnerCapstersRoute
-  '/owner/dashboard': typeof OwnerDashboardRoute
-  '/owner/gaji': typeof OwnerGajiRoute
-  '/owner/help': typeof OwnerHelpRoute
-  '/owner/komisi': typeof OwnerKomisiRoute
-  '/owner/login': typeof OwnerLoginRoute
-  '/owner/services': typeof OwnerServicesRoute
-  '/owner/settings': typeof OwnerSettingsRoute
+  '/b/$slug': typeof BSlugRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
-  '/capster/transactions/$transactionId': typeof CapsterTransactionsTransactionIdRouteWithChildren
-  '/capster/transactions/manual': typeof CapsterTransactionsManualRouteWithChildren
-  '/capster/transactions/success': typeof CapsterTransactionsSuccessRoute
-  '/capster/transactions/today': typeof CapsterTransactionsTodayRoute
-  '/customer/receipt/$transactionId': typeof CustomerReceiptTransactionIdRoute
-  '/owner/audit-activities/$id': typeof OwnerAuditActivitiesIdRoute
-  '/owner/audit-finance/$id': typeof OwnerAuditFinanceIdRoute
-  '/capster/transactions/$transactionId/receipt': typeof CapsterTransactionsTransactionIdReceiptRoute
-  '/capster/transactions/manual/capster': typeof CapsterTransactionsManualCapsterRoute
-  '/capster/transactions/manual/detail': typeof CapsterTransactionsManualDetailRoute
-  '/capster/transactions/manual/payment': typeof CapsterTransactionsManualPaymentRoute
-  '/capster/transactions/manual/services': typeof CapsterTransactionsManualServicesRoute
+  '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
+  '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
+  '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
+  '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
+  '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
+  '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
+  '/$barbershopSlug/customer/capster': typeof BarbershopSlugCustomerCapsterRoute
+  '/$barbershopSlug/customer/cart': typeof BarbershopSlugCustomerCartRoute
+  '/$barbershopSlug/customer/completed': typeof BarbershopSlugCustomerCompletedRoute
+  '/$barbershopSlug/customer/customer-info': typeof BarbershopSlugCustomerCustomerInfoRoute
+  '/$barbershopSlug/customer/history': typeof BarbershopSlugCustomerHistoryRoute
+  '/$barbershopSlug/customer/payment': typeof BarbershopSlugCustomerPaymentRoute
+  '/$barbershopSlug/customer/payment-confirmation': typeof BarbershopSlugCustomerPaymentConfirmationRoute
+  '/$barbershopSlug/customer/service-execution': typeof BarbershopSlugCustomerServiceExecutionRoute
+  '/$barbershopSlug/customer/services': typeof BarbershopSlugCustomerServicesRoute
+  '/$barbershopSlug/customer/success': typeof BarbershopSlugCustomerSuccessRoute
+  '/$barbershopSlug/owner/audit': typeof BarbershopSlugOwnerAuditRoute
+  '/$barbershopSlug/owner/audit-activities': typeof BarbershopSlugOwnerAuditActivitiesRouteWithChildren
+  '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
+  '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
+  '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
+  '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
+  '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
+  '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
+  '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
+  '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
+  '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
+  '/$barbershopSlug/capster/transactions/today': typeof BarbershopSlugCapsterTransactionsTodayRoute
+  '/$barbershopSlug/customer/receipt/$transactionId': typeof BarbershopSlugCustomerReceiptTransactionIdRoute
+  '/$barbershopSlug/owner/audit-activities/$id': typeof BarbershopSlugOwnerAuditActivitiesIdRoute
+  '/$barbershopSlug/owner/audit-finance/$id': typeof BarbershopSlugOwnerAuditFinanceIdRoute
+  '/$barbershopSlug/capster/transactions/$transactionId/receipt': typeof BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute
+  '/$barbershopSlug/capster/transactions/manual/capster': typeof BarbershopSlugCapsterTransactionsManualCapsterRoute
+  '/$barbershopSlug/capster/transactions/manual/detail': typeof BarbershopSlugCapsterTransactionsManualDetailRoute
+  '/$barbershopSlug/capster/transactions/manual/payment': typeof BarbershopSlugCapsterTransactionsManualPaymentRoute
+  '/$barbershopSlug/capster/transactions/manual/services': typeof BarbershopSlugCapsterTransactionsManualServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$barbershopSlug'
     | '/db-test'
     | '/services-test'
-    | '/capster/account'
-    | '/capster/check-in'
-    | '/capster/dashboard'
-    | '/capster/end-shift'
-    | '/capster/login'
-    | '/capster/services'
-    | '/capster/shift-saved'
-    | '/capster/transactions'
-    | '/customer/capster'
-    | '/customer/cart'
-    | '/customer/completed'
-    | '/customer/customer-info'
-    | '/customer/history'
-    | '/customer/payment'
-    | '/customer/payment-confirmation'
-    | '/customer/service-execution'
-    | '/customer/services'
-    | '/customer/success'
-    | '/owner/audit'
-    | '/owner/audit-activities'
-    | '/owner/audit-finance'
-    | '/owner/capsters'
-    | '/owner/dashboard'
-    | '/owner/gaji'
-    | '/owner/help'
-    | '/owner/komisi'
-    | '/owner/login'
-    | '/owner/services'
-    | '/owner/settings'
+    | '/b/$slug'
+    | '/owner/register'
+    | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
-    | '/capster/transactions/$transactionId'
-    | '/capster/transactions/manual'
-    | '/capster/transactions/success'
-    | '/capster/transactions/today'
-    | '/customer/receipt/$transactionId'
-    | '/owner/audit-activities/$id'
-    | '/owner/audit-finance/$id'
-    | '/capster/transactions/$transactionId/receipt'
-    | '/capster/transactions/manual/capster'
-    | '/capster/transactions/manual/detail'
-    | '/capster/transactions/manual/payment'
-    | '/capster/transactions/manual/services'
+    | '/$barbershopSlug/capster/account'
+    | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/dashboard'
+    | '/$barbershopSlug/capster/end-shift'
+    | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/services'
+    | '/$barbershopSlug/capster/shift-saved'
+    | '/$barbershopSlug/capster/transactions'
+    | '/$barbershopSlug/customer/capster'
+    | '/$barbershopSlug/customer/cart'
+    | '/$barbershopSlug/customer/completed'
+    | '/$barbershopSlug/customer/customer-info'
+    | '/$barbershopSlug/customer/history'
+    | '/$barbershopSlug/customer/payment'
+    | '/$barbershopSlug/customer/payment-confirmation'
+    | '/$barbershopSlug/customer/service-execution'
+    | '/$barbershopSlug/customer/services'
+    | '/$barbershopSlug/customer/success'
+    | '/$barbershopSlug/owner/audit'
+    | '/$barbershopSlug/owner/audit-activities'
+    | '/$barbershopSlug/owner/audit-finance'
+    | '/$barbershopSlug/owner/capsters'
+    | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/gaji'
+    | '/$barbershopSlug/owner/help'
+    | '/$barbershopSlug/owner/komisi'
+    | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/services'
+    | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/capster/transactions/$transactionId'
+    | '/$barbershopSlug/capster/transactions/manual'
+    | '/$barbershopSlug/capster/transactions/success'
+    | '/$barbershopSlug/capster/transactions/today'
+    | '/$barbershopSlug/customer/receipt/$transactionId'
+    | '/$barbershopSlug/owner/audit-activities/$id'
+    | '/$barbershopSlug/owner/audit-finance/$id'
+    | '/$barbershopSlug/capster/transactions/$transactionId/receipt'
+    | '/$barbershopSlug/capster/transactions/manual/capster'
+    | '/$barbershopSlug/capster/transactions/manual/detail'
+    | '/$barbershopSlug/capster/transactions/manual/payment'
+    | '/$barbershopSlug/capster/transactions/manual/services'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$barbershopSlug'
     | '/db-test'
     | '/services-test'
-    | '/capster/account'
-    | '/capster/check-in'
-    | '/capster/dashboard'
-    | '/capster/end-shift'
-    | '/capster/login'
-    | '/capster/services'
-    | '/capster/shift-saved'
-    | '/capster/transactions'
-    | '/customer/capster'
-    | '/customer/cart'
-    | '/customer/completed'
-    | '/customer/customer-info'
-    | '/customer/history'
-    | '/customer/payment'
-    | '/customer/payment-confirmation'
-    | '/customer/service-execution'
-    | '/customer/services'
-    | '/customer/success'
-    | '/owner/audit'
-    | '/owner/audit-activities'
-    | '/owner/audit-finance'
-    | '/owner/capsters'
-    | '/owner/dashboard'
-    | '/owner/gaji'
-    | '/owner/help'
-    | '/owner/komisi'
-    | '/owner/login'
-    | '/owner/services'
-    | '/owner/settings'
+    | '/b/$slug'
+    | '/owner/register'
+    | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
-    | '/capster/transactions/$transactionId'
-    | '/capster/transactions/manual'
-    | '/capster/transactions/success'
-    | '/capster/transactions/today'
-    | '/customer/receipt/$transactionId'
-    | '/owner/audit-activities/$id'
-    | '/owner/audit-finance/$id'
-    | '/capster/transactions/$transactionId/receipt'
-    | '/capster/transactions/manual/capster'
-    | '/capster/transactions/manual/detail'
-    | '/capster/transactions/manual/payment'
-    | '/capster/transactions/manual/services'
+    | '/$barbershopSlug/capster/account'
+    | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/dashboard'
+    | '/$barbershopSlug/capster/end-shift'
+    | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/services'
+    | '/$barbershopSlug/capster/shift-saved'
+    | '/$barbershopSlug/capster/transactions'
+    | '/$barbershopSlug/customer/capster'
+    | '/$barbershopSlug/customer/cart'
+    | '/$barbershopSlug/customer/completed'
+    | '/$barbershopSlug/customer/customer-info'
+    | '/$barbershopSlug/customer/history'
+    | '/$barbershopSlug/customer/payment'
+    | '/$barbershopSlug/customer/payment-confirmation'
+    | '/$barbershopSlug/customer/service-execution'
+    | '/$barbershopSlug/customer/services'
+    | '/$barbershopSlug/customer/success'
+    | '/$barbershopSlug/owner/audit'
+    | '/$barbershopSlug/owner/audit-activities'
+    | '/$barbershopSlug/owner/audit-finance'
+    | '/$barbershopSlug/owner/capsters'
+    | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/gaji'
+    | '/$barbershopSlug/owner/help'
+    | '/$barbershopSlug/owner/komisi'
+    | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/services'
+    | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/capster/transactions/$transactionId'
+    | '/$barbershopSlug/capster/transactions/manual'
+    | '/$barbershopSlug/capster/transactions/success'
+    | '/$barbershopSlug/capster/transactions/today'
+    | '/$barbershopSlug/customer/receipt/$transactionId'
+    | '/$barbershopSlug/owner/audit-activities/$id'
+    | '/$barbershopSlug/owner/audit-finance/$id'
+    | '/$barbershopSlug/capster/transactions/$transactionId/receipt'
+    | '/$barbershopSlug/capster/transactions/manual/capster'
+    | '/$barbershopSlug/capster/transactions/manual/detail'
+    | '/$barbershopSlug/capster/transactions/manual/payment'
+    | '/$barbershopSlug/capster/transactions/manual/services'
   id:
     | '__root__'
     | '/'
+    | '/$barbershopSlug'
     | '/db-test'
     | '/services-test'
-    | '/capster/account'
-    | '/capster/check-in'
-    | '/capster/dashboard'
-    | '/capster/end-shift'
-    | '/capster/login'
-    | '/capster/services'
-    | '/capster/shift-saved'
-    | '/capster/transactions'
-    | '/customer/capster'
-    | '/customer/cart'
-    | '/customer/completed'
-    | '/customer/customer-info'
-    | '/customer/history'
-    | '/customer/payment'
-    | '/customer/payment-confirmation'
-    | '/customer/service-execution'
-    | '/customer/services'
-    | '/customer/success'
-    | '/owner/audit'
-    | '/owner/audit-activities'
-    | '/owner/audit-finance'
-    | '/owner/capsters'
-    | '/owner/dashboard'
-    | '/owner/gaji'
-    | '/owner/help'
-    | '/owner/komisi'
-    | '/owner/login'
-    | '/owner/services'
-    | '/owner/settings'
+    | '/b/$slug'
+    | '/owner/register'
+    | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
-    | '/capster/transactions/$transactionId'
-    | '/capster/transactions/manual'
-    | '/capster/transactions/success'
-    | '/capster/transactions/today'
-    | '/customer/receipt/$transactionId'
-    | '/owner/audit-activities/$id'
-    | '/owner/audit-finance/$id'
-    | '/capster/transactions/$transactionId/receipt'
-    | '/capster/transactions/manual/capster'
-    | '/capster/transactions/manual/detail'
-    | '/capster/transactions/manual/payment'
-    | '/capster/transactions/manual/services'
+    | '/$barbershopSlug/capster/account'
+    | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/dashboard'
+    | '/$barbershopSlug/capster/end-shift'
+    | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/services'
+    | '/$barbershopSlug/capster/shift-saved'
+    | '/$barbershopSlug/capster/transactions'
+    | '/$barbershopSlug/customer/capster'
+    | '/$barbershopSlug/customer/cart'
+    | '/$barbershopSlug/customer/completed'
+    | '/$barbershopSlug/customer/customer-info'
+    | '/$barbershopSlug/customer/history'
+    | '/$barbershopSlug/customer/payment'
+    | '/$barbershopSlug/customer/payment-confirmation'
+    | '/$barbershopSlug/customer/service-execution'
+    | '/$barbershopSlug/customer/services'
+    | '/$barbershopSlug/customer/success'
+    | '/$barbershopSlug/owner/audit'
+    | '/$barbershopSlug/owner/audit-activities'
+    | '/$barbershopSlug/owner/audit-finance'
+    | '/$barbershopSlug/owner/capsters'
+    | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/gaji'
+    | '/$barbershopSlug/owner/help'
+    | '/$barbershopSlug/owner/komisi'
+    | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/services'
+    | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/capster/transactions/$transactionId'
+    | '/$barbershopSlug/capster/transactions/manual'
+    | '/$barbershopSlug/capster/transactions/success'
+    | '/$barbershopSlug/capster/transactions/today'
+    | '/$barbershopSlug/customer/receipt/$transactionId'
+    | '/$barbershopSlug/owner/audit-activities/$id'
+    | '/$barbershopSlug/owner/audit-finance/$id'
+    | '/$barbershopSlug/capster/transactions/$transactionId/receipt'
+    | '/$barbershopSlug/capster/transactions/manual/capster'
+    | '/$barbershopSlug/capster/transactions/manual/detail'
+    | '/$barbershopSlug/capster/transactions/manual/payment'
+    | '/$barbershopSlug/capster/transactions/manual/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BarbershopSlugRoute: typeof BarbershopSlugRouteWithChildren
   DbTestRoute: typeof DbTestRoute
   ServicesTestRoute: typeof ServicesTestRoute
-  CapsterAccountRoute: typeof CapsterAccountRoute
-  CapsterCheckInRoute: typeof CapsterCheckInRoute
-  CapsterDashboardRoute: typeof CapsterDashboardRoute
-  CapsterEndShiftRoute: typeof CapsterEndShiftRoute
-  CapsterLoginRoute: typeof CapsterLoginRoute
-  CapsterServicesRoute: typeof CapsterServicesRoute
-  CapsterShiftSavedRoute: typeof CapsterShiftSavedRoute
-  CapsterTransactionsRoute: typeof CapsterTransactionsRouteWithChildren
-  CustomerCapsterRoute: typeof CustomerCapsterRoute
-  CustomerCartRoute: typeof CustomerCartRoute
-  CustomerCompletedRoute: typeof CustomerCompletedRoute
-  CustomerCustomerInfoRoute: typeof CustomerCustomerInfoRoute
-  CustomerHistoryRoute: typeof CustomerHistoryRoute
-  CustomerPaymentRoute: typeof CustomerPaymentRoute
-  CustomerPaymentConfirmationRoute: typeof CustomerPaymentConfirmationRoute
-  CustomerServiceExecutionRoute: typeof CustomerServiceExecutionRoute
-  CustomerServicesRoute: typeof CustomerServicesRoute
-  CustomerSuccessRoute: typeof CustomerSuccessRoute
-  OwnerAuditRoute: typeof OwnerAuditRoute
-  OwnerAuditActivitiesRoute: typeof OwnerAuditActivitiesRouteWithChildren
-  OwnerAuditFinanceRoute: typeof OwnerAuditFinanceRouteWithChildren
-  OwnerCapstersRoute: typeof OwnerCapstersRoute
-  OwnerDashboardRoute: typeof OwnerDashboardRoute
-  OwnerGajiRoute: typeof OwnerGajiRoute
-  OwnerHelpRoute: typeof OwnerHelpRoute
-  OwnerKomisiRoute: typeof OwnerKomisiRoute
-  OwnerLoginRoute: typeof OwnerLoginRoute
-  OwnerServicesRoute: typeof OwnerServicesRoute
-  OwnerSettingsRoute: typeof OwnerSettingsRoute
+  BSlugRoute: typeof BSlugRoute
+  OwnerRegisterRoute: typeof OwnerRegisterRoute
+  OwnerVerifyEmailRoute: typeof OwnerVerifyEmailRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   SuperadminLoginRoute: typeof SuperadminLoginRoute
   SuperadminTenantsRoute: typeof SuperadminTenantsRoute
-  CustomerReceiptTransactionIdRoute: typeof CustomerReceiptTransactionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -649,6 +698,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$barbershopSlug': {
+      id: '/$barbershopSlug'
+      path: '/$barbershopSlug'
+      fullPath: '/$barbershopSlug'
+      preLoaderRoute: typeof BarbershopSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/db-test': {
@@ -665,207 +721,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesTestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/capster/account': {
-      id: '/capster/account'
-      path: '/capster/account'
-      fullPath: '/capster/account'
-      preLoaderRoute: typeof CapsterAccountRouteImport
+    '/b/$slug': {
+      id: '/b/$slug'
+      path: '/b/$slug'
+      fullPath: '/b/$slug'
+      preLoaderRoute: typeof BSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/capster/check-in': {
-      id: '/capster/check-in'
-      path: '/capster/check-in'
-      fullPath: '/capster/check-in'
-      preLoaderRoute: typeof CapsterCheckInRouteImport
+    '/owner/register': {
+      id: '/owner/register'
+      path: '/owner/register'
+      fullPath: '/owner/register'
+      preLoaderRoute: typeof OwnerRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/capster/dashboard': {
-      id: '/capster/dashboard'
-      path: '/capster/dashboard'
-      fullPath: '/capster/dashboard'
-      preLoaderRoute: typeof CapsterDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capster/end-shift': {
-      id: '/capster/end-shift'
-      path: '/capster/end-shift'
-      fullPath: '/capster/end-shift'
-      preLoaderRoute: typeof CapsterEndShiftRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capster/login': {
-      id: '/capster/login'
-      path: '/capster/login'
-      fullPath: '/capster/login'
-      preLoaderRoute: typeof CapsterLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capster/services': {
-      id: '/capster/services'
-      path: '/capster/services'
-      fullPath: '/capster/services'
-      preLoaderRoute: typeof CapsterServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capster/shift-saved': {
-      id: '/capster/shift-saved'
-      path: '/capster/shift-saved'
-      fullPath: '/capster/shift-saved'
-      preLoaderRoute: typeof CapsterShiftSavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capster/transactions': {
-      id: '/capster/transactions'
-      path: '/capster/transactions'
-      fullPath: '/capster/transactions'
-      preLoaderRoute: typeof CapsterTransactionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/capster': {
-      id: '/customer/capster'
-      path: '/customer/capster'
-      fullPath: '/customer/capster'
-      preLoaderRoute: typeof CustomerCapsterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/cart': {
-      id: '/customer/cart'
-      path: '/customer/cart'
-      fullPath: '/customer/cart'
-      preLoaderRoute: typeof CustomerCartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/completed': {
-      id: '/customer/completed'
-      path: '/customer/completed'
-      fullPath: '/customer/completed'
-      preLoaderRoute: typeof CustomerCompletedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/customer-info': {
-      id: '/customer/customer-info'
-      path: '/customer/customer-info'
-      fullPath: '/customer/customer-info'
-      preLoaderRoute: typeof CustomerCustomerInfoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/history': {
-      id: '/customer/history'
-      path: '/customer/history'
-      fullPath: '/customer/history'
-      preLoaderRoute: typeof CustomerHistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/payment': {
-      id: '/customer/payment'
-      path: '/customer/payment'
-      fullPath: '/customer/payment'
-      preLoaderRoute: typeof CustomerPaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/payment-confirmation': {
-      id: '/customer/payment-confirmation'
-      path: '/customer/payment-confirmation'
-      fullPath: '/customer/payment-confirmation'
-      preLoaderRoute: typeof CustomerPaymentConfirmationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/service-execution': {
-      id: '/customer/service-execution'
-      path: '/customer/service-execution'
-      fullPath: '/customer/service-execution'
-      preLoaderRoute: typeof CustomerServiceExecutionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/services': {
-      id: '/customer/services'
-      path: '/customer/services'
-      fullPath: '/customer/services'
-      preLoaderRoute: typeof CustomerServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer/success': {
-      id: '/customer/success'
-      path: '/customer/success'
-      fullPath: '/customer/success'
-      preLoaderRoute: typeof CustomerSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/audit': {
-      id: '/owner/audit'
-      path: '/owner/audit'
-      fullPath: '/owner/audit'
-      preLoaderRoute: typeof OwnerAuditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/audit-activities': {
-      id: '/owner/audit-activities'
-      path: '/owner/audit-activities'
-      fullPath: '/owner/audit-activities'
-      preLoaderRoute: typeof OwnerAuditActivitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/audit-finance': {
-      id: '/owner/audit-finance'
-      path: '/owner/audit-finance'
-      fullPath: '/owner/audit-finance'
-      preLoaderRoute: typeof OwnerAuditFinanceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/capsters': {
-      id: '/owner/capsters'
-      path: '/owner/capsters'
-      fullPath: '/owner/capsters'
-      preLoaderRoute: typeof OwnerCapstersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/dashboard': {
-      id: '/owner/dashboard'
-      path: '/owner/dashboard'
-      fullPath: '/owner/dashboard'
-      preLoaderRoute: typeof OwnerDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/gaji': {
-      id: '/owner/gaji'
-      path: '/owner/gaji'
-      fullPath: '/owner/gaji'
-      preLoaderRoute: typeof OwnerGajiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/help': {
-      id: '/owner/help'
-      path: '/owner/help'
-      fullPath: '/owner/help'
-      preLoaderRoute: typeof OwnerHelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/komisi': {
-      id: '/owner/komisi'
-      path: '/owner/komisi'
-      fullPath: '/owner/komisi'
-      preLoaderRoute: typeof OwnerKomisiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/login': {
-      id: '/owner/login'
-      path: '/owner/login'
-      fullPath: '/owner/login'
-      preLoaderRoute: typeof OwnerLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/services': {
-      id: '/owner/services'
-      path: '/owner/services'
-      fullPath: '/owner/services'
-      preLoaderRoute: typeof OwnerServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner/settings': {
-      id: '/owner/settings'
-      path: '/owner/settings'
-      fullPath: '/owner/settings'
-      preLoaderRoute: typeof OwnerSettingsRouteImport
+    '/owner/verify-email': {
+      id: '/owner/verify-email'
+      path: '/owner/verify-email'
+      fullPath: '/owner/verify-email'
+      preLoaderRoute: typeof OwnerVerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin/dashboard': {
@@ -889,208 +763,477 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminTenantsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/capster/transactions/$transactionId': {
-      id: '/capster/transactions/$transactionId'
+    '/$barbershopSlug/capster/account': {
+      id: '/$barbershopSlug/capster/account'
+      path: '/capster/account'
+      fullPath: '/$barbershopSlug/capster/account'
+      preLoaderRoute: typeof BarbershopSlugCapsterAccountRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/check-in': {
+      id: '/$barbershopSlug/capster/check-in'
+      path: '/capster/check-in'
+      fullPath: '/$barbershopSlug/capster/check-in'
+      preLoaderRoute: typeof BarbershopSlugCapsterCheckInRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/dashboard': {
+      id: '/$barbershopSlug/capster/dashboard'
+      path: '/capster/dashboard'
+      fullPath: '/$barbershopSlug/capster/dashboard'
+      preLoaderRoute: typeof BarbershopSlugCapsterDashboardRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/end-shift': {
+      id: '/$barbershopSlug/capster/end-shift'
+      path: '/capster/end-shift'
+      fullPath: '/$barbershopSlug/capster/end-shift'
+      preLoaderRoute: typeof BarbershopSlugCapsterEndShiftRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/login': {
+      id: '/$barbershopSlug/capster/login'
+      path: '/capster/login'
+      fullPath: '/$barbershopSlug/capster/login'
+      preLoaderRoute: typeof BarbershopSlugCapsterLoginRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/services': {
+      id: '/$barbershopSlug/capster/services'
+      path: '/capster/services'
+      fullPath: '/$barbershopSlug/capster/services'
+      preLoaderRoute: typeof BarbershopSlugCapsterServicesRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/shift-saved': {
+      id: '/$barbershopSlug/capster/shift-saved'
+      path: '/capster/shift-saved'
+      fullPath: '/$barbershopSlug/capster/shift-saved'
+      preLoaderRoute: typeof BarbershopSlugCapsterShiftSavedRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/transactions': {
+      id: '/$barbershopSlug/capster/transactions'
+      path: '/capster/transactions'
+      fullPath: '/$barbershopSlug/capster/transactions'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/capster': {
+      id: '/$barbershopSlug/customer/capster'
+      path: '/customer/capster'
+      fullPath: '/$barbershopSlug/customer/capster'
+      preLoaderRoute: typeof BarbershopSlugCustomerCapsterRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/cart': {
+      id: '/$barbershopSlug/customer/cart'
+      path: '/customer/cart'
+      fullPath: '/$barbershopSlug/customer/cart'
+      preLoaderRoute: typeof BarbershopSlugCustomerCartRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/completed': {
+      id: '/$barbershopSlug/customer/completed'
+      path: '/customer/completed'
+      fullPath: '/$barbershopSlug/customer/completed'
+      preLoaderRoute: typeof BarbershopSlugCustomerCompletedRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/customer-info': {
+      id: '/$barbershopSlug/customer/customer-info'
+      path: '/customer/customer-info'
+      fullPath: '/$barbershopSlug/customer/customer-info'
+      preLoaderRoute: typeof BarbershopSlugCustomerCustomerInfoRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/history': {
+      id: '/$barbershopSlug/customer/history'
+      path: '/customer/history'
+      fullPath: '/$barbershopSlug/customer/history'
+      preLoaderRoute: typeof BarbershopSlugCustomerHistoryRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/payment': {
+      id: '/$barbershopSlug/customer/payment'
+      path: '/customer/payment'
+      fullPath: '/$barbershopSlug/customer/payment'
+      preLoaderRoute: typeof BarbershopSlugCustomerPaymentRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/payment-confirmation': {
+      id: '/$barbershopSlug/customer/payment-confirmation'
+      path: '/customer/payment-confirmation'
+      fullPath: '/$barbershopSlug/customer/payment-confirmation'
+      preLoaderRoute: typeof BarbershopSlugCustomerPaymentConfirmationRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/service-execution': {
+      id: '/$barbershopSlug/customer/service-execution'
+      path: '/customer/service-execution'
+      fullPath: '/$barbershopSlug/customer/service-execution'
+      preLoaderRoute: typeof BarbershopSlugCustomerServiceExecutionRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/services': {
+      id: '/$barbershopSlug/customer/services'
+      path: '/customer/services'
+      fullPath: '/$barbershopSlug/customer/services'
+      preLoaderRoute: typeof BarbershopSlugCustomerServicesRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/customer/success': {
+      id: '/$barbershopSlug/customer/success'
+      path: '/customer/success'
+      fullPath: '/$barbershopSlug/customer/success'
+      preLoaderRoute: typeof BarbershopSlugCustomerSuccessRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/audit': {
+      id: '/$barbershopSlug/owner/audit'
+      path: '/owner/audit'
+      fullPath: '/$barbershopSlug/owner/audit'
+      preLoaderRoute: typeof BarbershopSlugOwnerAuditRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/audit-activities': {
+      id: '/$barbershopSlug/owner/audit-activities'
+      path: '/owner/audit-activities'
+      fullPath: '/$barbershopSlug/owner/audit-activities'
+      preLoaderRoute: typeof BarbershopSlugOwnerAuditActivitiesRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/audit-finance': {
+      id: '/$barbershopSlug/owner/audit-finance'
+      path: '/owner/audit-finance'
+      fullPath: '/$barbershopSlug/owner/audit-finance'
+      preLoaderRoute: typeof BarbershopSlugOwnerAuditFinanceRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/capsters': {
+      id: '/$barbershopSlug/owner/capsters'
+      path: '/owner/capsters'
+      fullPath: '/$barbershopSlug/owner/capsters'
+      preLoaderRoute: typeof BarbershopSlugOwnerCapstersRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/dashboard': {
+      id: '/$barbershopSlug/owner/dashboard'
+      path: '/owner/dashboard'
+      fullPath: '/$barbershopSlug/owner/dashboard'
+      preLoaderRoute: typeof BarbershopSlugOwnerDashboardRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/gaji': {
+      id: '/$barbershopSlug/owner/gaji'
+      path: '/owner/gaji'
+      fullPath: '/$barbershopSlug/owner/gaji'
+      preLoaderRoute: typeof BarbershopSlugOwnerGajiRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/help': {
+      id: '/$barbershopSlug/owner/help'
+      path: '/owner/help'
+      fullPath: '/$barbershopSlug/owner/help'
+      preLoaderRoute: typeof BarbershopSlugOwnerHelpRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/komisi': {
+      id: '/$barbershopSlug/owner/komisi'
+      path: '/owner/komisi'
+      fullPath: '/$barbershopSlug/owner/komisi'
+      preLoaderRoute: typeof BarbershopSlugOwnerKomisiRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/login': {
+      id: '/$barbershopSlug/owner/login'
+      path: '/owner/login'
+      fullPath: '/$barbershopSlug/owner/login'
+      preLoaderRoute: typeof BarbershopSlugOwnerLoginRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/services': {
+      id: '/$barbershopSlug/owner/services'
+      path: '/owner/services'
+      fullPath: '/$barbershopSlug/owner/services'
+      preLoaderRoute: typeof BarbershopSlugOwnerServicesRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/settings': {
+      id: '/$barbershopSlug/owner/settings'
+      path: '/owner/settings'
+      fullPath: '/$barbershopSlug/owner/settings'
+      preLoaderRoute: typeof BarbershopSlugOwnerSettingsRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/transactions/$transactionId': {
+      id: '/$barbershopSlug/capster/transactions/$transactionId'
       path: '/$transactionId'
-      fullPath: '/capster/transactions/$transactionId'
-      preLoaderRoute: typeof CapsterTransactionsTransactionIdRouteImport
-      parentRoute: typeof CapsterTransactionsRoute
+      fullPath: '/$barbershopSlug/capster/transactions/$transactionId'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsTransactionIdRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsRoute
     }
-    '/capster/transactions/manual': {
-      id: '/capster/transactions/manual'
+    '/$barbershopSlug/capster/transactions/manual': {
+      id: '/$barbershopSlug/capster/transactions/manual'
       path: '/manual'
-      fullPath: '/capster/transactions/manual'
-      preLoaderRoute: typeof CapsterTransactionsManualRouteImport
-      parentRoute: typeof CapsterTransactionsRoute
+      fullPath: '/$barbershopSlug/capster/transactions/manual'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsManualRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsRoute
     }
-    '/capster/transactions/success': {
-      id: '/capster/transactions/success'
+    '/$barbershopSlug/capster/transactions/success': {
+      id: '/$barbershopSlug/capster/transactions/success'
       path: '/success'
-      fullPath: '/capster/transactions/success'
-      preLoaderRoute: typeof CapsterTransactionsSuccessRouteImport
-      parentRoute: typeof CapsterTransactionsRoute
+      fullPath: '/$barbershopSlug/capster/transactions/success'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsSuccessRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsRoute
     }
-    '/capster/transactions/today': {
-      id: '/capster/transactions/today'
+    '/$barbershopSlug/capster/transactions/today': {
+      id: '/$barbershopSlug/capster/transactions/today'
       path: '/today'
-      fullPath: '/capster/transactions/today'
-      preLoaderRoute: typeof CapsterTransactionsTodayRouteImport
-      parentRoute: typeof CapsterTransactionsRoute
+      fullPath: '/$barbershopSlug/capster/transactions/today'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsTodayRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsRoute
     }
-    '/customer/receipt/$transactionId': {
-      id: '/customer/receipt/$transactionId'
+    '/$barbershopSlug/customer/receipt/$transactionId': {
+      id: '/$barbershopSlug/customer/receipt/$transactionId'
       path: '/customer/receipt/$transactionId'
-      fullPath: '/customer/receipt/$transactionId'
-      preLoaderRoute: typeof CustomerReceiptTransactionIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$barbershopSlug/customer/receipt/$transactionId'
+      preLoaderRoute: typeof BarbershopSlugCustomerReceiptTransactionIdRouteImport
+      parentRoute: typeof BarbershopSlugRoute
     }
-    '/owner/audit-activities/$id': {
-      id: '/owner/audit-activities/$id'
+    '/$barbershopSlug/owner/audit-activities/$id': {
+      id: '/$barbershopSlug/owner/audit-activities/$id'
       path: '/$id'
-      fullPath: '/owner/audit-activities/$id'
-      preLoaderRoute: typeof OwnerAuditActivitiesIdRouteImport
-      parentRoute: typeof OwnerAuditActivitiesRoute
+      fullPath: '/$barbershopSlug/owner/audit-activities/$id'
+      preLoaderRoute: typeof BarbershopSlugOwnerAuditActivitiesIdRouteImport
+      parentRoute: typeof BarbershopSlugOwnerAuditActivitiesRoute
     }
-    '/owner/audit-finance/$id': {
-      id: '/owner/audit-finance/$id'
+    '/$barbershopSlug/owner/audit-finance/$id': {
+      id: '/$barbershopSlug/owner/audit-finance/$id'
       path: '/$id'
-      fullPath: '/owner/audit-finance/$id'
-      preLoaderRoute: typeof OwnerAuditFinanceIdRouteImport
-      parentRoute: typeof OwnerAuditFinanceRoute
+      fullPath: '/$barbershopSlug/owner/audit-finance/$id'
+      preLoaderRoute: typeof BarbershopSlugOwnerAuditFinanceIdRouteImport
+      parentRoute: typeof BarbershopSlugOwnerAuditFinanceRoute
     }
-    '/capster/transactions/$transactionId/receipt': {
-      id: '/capster/transactions/$transactionId/receipt'
+    '/$barbershopSlug/capster/transactions/$transactionId/receipt': {
+      id: '/$barbershopSlug/capster/transactions/$transactionId/receipt'
       path: '/receipt'
-      fullPath: '/capster/transactions/$transactionId/receipt'
-      preLoaderRoute: typeof CapsterTransactionsTransactionIdReceiptRouteImport
-      parentRoute: typeof CapsterTransactionsTransactionIdRoute
+      fullPath: '/$barbershopSlug/capster/transactions/$transactionId/receipt'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsTransactionIdReceiptRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsTransactionIdRoute
     }
-    '/capster/transactions/manual/capster': {
-      id: '/capster/transactions/manual/capster'
+    '/$barbershopSlug/capster/transactions/manual/capster': {
+      id: '/$barbershopSlug/capster/transactions/manual/capster'
       path: '/capster'
-      fullPath: '/capster/transactions/manual/capster'
-      preLoaderRoute: typeof CapsterTransactionsManualCapsterRouteImport
-      parentRoute: typeof CapsterTransactionsManualRoute
+      fullPath: '/$barbershopSlug/capster/transactions/manual/capster'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsManualCapsterRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsManualRoute
     }
-    '/capster/transactions/manual/detail': {
-      id: '/capster/transactions/manual/detail'
+    '/$barbershopSlug/capster/transactions/manual/detail': {
+      id: '/$barbershopSlug/capster/transactions/manual/detail'
       path: '/detail'
-      fullPath: '/capster/transactions/manual/detail'
-      preLoaderRoute: typeof CapsterTransactionsManualDetailRouteImport
-      parentRoute: typeof CapsterTransactionsManualRoute
+      fullPath: '/$barbershopSlug/capster/transactions/manual/detail'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsManualDetailRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsManualRoute
     }
-    '/capster/transactions/manual/payment': {
-      id: '/capster/transactions/manual/payment'
+    '/$barbershopSlug/capster/transactions/manual/payment': {
+      id: '/$barbershopSlug/capster/transactions/manual/payment'
       path: '/payment'
-      fullPath: '/capster/transactions/manual/payment'
-      preLoaderRoute: typeof CapsterTransactionsManualPaymentRouteImport
-      parentRoute: typeof CapsterTransactionsManualRoute
+      fullPath: '/$barbershopSlug/capster/transactions/manual/payment'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsManualPaymentRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsManualRoute
     }
-    '/capster/transactions/manual/services': {
-      id: '/capster/transactions/manual/services'
+    '/$barbershopSlug/capster/transactions/manual/services': {
+      id: '/$barbershopSlug/capster/transactions/manual/services'
       path: '/services'
-      fullPath: '/capster/transactions/manual/services'
-      preLoaderRoute: typeof CapsterTransactionsManualServicesRouteImport
-      parentRoute: typeof CapsterTransactionsManualRoute
+      fullPath: '/$barbershopSlug/capster/transactions/manual/services'
+      preLoaderRoute: typeof BarbershopSlugCapsterTransactionsManualServicesRouteImport
+      parentRoute: typeof BarbershopSlugCapsterTransactionsManualRoute
     }
   }
 }
 
-interface CapsterTransactionsTransactionIdRouteChildren {
-  CapsterTransactionsTransactionIdReceiptRoute: typeof CapsterTransactionsTransactionIdReceiptRoute
+interface BarbershopSlugCapsterTransactionsTransactionIdRouteChildren {
+  BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute: typeof BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute
 }
 
-const CapsterTransactionsTransactionIdRouteChildren: CapsterTransactionsTransactionIdRouteChildren =
+const BarbershopSlugCapsterTransactionsTransactionIdRouteChildren: BarbershopSlugCapsterTransactionsTransactionIdRouteChildren =
   {
-    CapsterTransactionsTransactionIdReceiptRoute:
-      CapsterTransactionsTransactionIdReceiptRoute,
+    BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute:
+      BarbershopSlugCapsterTransactionsTransactionIdReceiptRoute,
   }
 
-const CapsterTransactionsTransactionIdRouteWithChildren =
-  CapsterTransactionsTransactionIdRoute._addFileChildren(
-    CapsterTransactionsTransactionIdRouteChildren,
+const BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren =
+  BarbershopSlugCapsterTransactionsTransactionIdRoute._addFileChildren(
+    BarbershopSlugCapsterTransactionsTransactionIdRouteChildren,
   )
 
-interface CapsterTransactionsManualRouteChildren {
-  CapsterTransactionsManualCapsterRoute: typeof CapsterTransactionsManualCapsterRoute
-  CapsterTransactionsManualDetailRoute: typeof CapsterTransactionsManualDetailRoute
-  CapsterTransactionsManualPaymentRoute: typeof CapsterTransactionsManualPaymentRoute
-  CapsterTransactionsManualServicesRoute: typeof CapsterTransactionsManualServicesRoute
+interface BarbershopSlugCapsterTransactionsManualRouteChildren {
+  BarbershopSlugCapsterTransactionsManualCapsterRoute: typeof BarbershopSlugCapsterTransactionsManualCapsterRoute
+  BarbershopSlugCapsterTransactionsManualDetailRoute: typeof BarbershopSlugCapsterTransactionsManualDetailRoute
+  BarbershopSlugCapsterTransactionsManualPaymentRoute: typeof BarbershopSlugCapsterTransactionsManualPaymentRoute
+  BarbershopSlugCapsterTransactionsManualServicesRoute: typeof BarbershopSlugCapsterTransactionsManualServicesRoute
 }
 
-const CapsterTransactionsManualRouteChildren: CapsterTransactionsManualRouteChildren =
+const BarbershopSlugCapsterTransactionsManualRouteChildren: BarbershopSlugCapsterTransactionsManualRouteChildren =
   {
-    CapsterTransactionsManualCapsterRoute:
-      CapsterTransactionsManualCapsterRoute,
-    CapsterTransactionsManualDetailRoute: CapsterTransactionsManualDetailRoute,
-    CapsterTransactionsManualPaymentRoute:
-      CapsterTransactionsManualPaymentRoute,
-    CapsterTransactionsManualServicesRoute:
-      CapsterTransactionsManualServicesRoute,
+    BarbershopSlugCapsterTransactionsManualCapsterRoute:
+      BarbershopSlugCapsterTransactionsManualCapsterRoute,
+    BarbershopSlugCapsterTransactionsManualDetailRoute:
+      BarbershopSlugCapsterTransactionsManualDetailRoute,
+    BarbershopSlugCapsterTransactionsManualPaymentRoute:
+      BarbershopSlugCapsterTransactionsManualPaymentRoute,
+    BarbershopSlugCapsterTransactionsManualServicesRoute:
+      BarbershopSlugCapsterTransactionsManualServicesRoute,
   }
 
-const CapsterTransactionsManualRouteWithChildren =
-  CapsterTransactionsManualRoute._addFileChildren(
-    CapsterTransactionsManualRouteChildren,
+const BarbershopSlugCapsterTransactionsManualRouteWithChildren =
+  BarbershopSlugCapsterTransactionsManualRoute._addFileChildren(
+    BarbershopSlugCapsterTransactionsManualRouteChildren,
   )
 
-interface CapsterTransactionsRouteChildren {
-  CapsterTransactionsTransactionIdRoute: typeof CapsterTransactionsTransactionIdRouteWithChildren
-  CapsterTransactionsManualRoute: typeof CapsterTransactionsManualRouteWithChildren
-  CapsterTransactionsSuccessRoute: typeof CapsterTransactionsSuccessRoute
-  CapsterTransactionsTodayRoute: typeof CapsterTransactionsTodayRoute
+interface BarbershopSlugCapsterTransactionsRouteChildren {
+  BarbershopSlugCapsterTransactionsTransactionIdRoute: typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
+  BarbershopSlugCapsterTransactionsManualRoute: typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
+  BarbershopSlugCapsterTransactionsSuccessRoute: typeof BarbershopSlugCapsterTransactionsSuccessRoute
+  BarbershopSlugCapsterTransactionsTodayRoute: typeof BarbershopSlugCapsterTransactionsTodayRoute
 }
 
-const CapsterTransactionsRouteChildren: CapsterTransactionsRouteChildren = {
-  CapsterTransactionsTransactionIdRoute:
-    CapsterTransactionsTransactionIdRouteWithChildren,
-  CapsterTransactionsManualRoute: CapsterTransactionsManualRouteWithChildren,
-  CapsterTransactionsSuccessRoute: CapsterTransactionsSuccessRoute,
-  CapsterTransactionsTodayRoute: CapsterTransactionsTodayRoute,
+const BarbershopSlugCapsterTransactionsRouteChildren: BarbershopSlugCapsterTransactionsRouteChildren =
+  {
+    BarbershopSlugCapsterTransactionsTransactionIdRoute:
+      BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren,
+    BarbershopSlugCapsterTransactionsManualRoute:
+      BarbershopSlugCapsterTransactionsManualRouteWithChildren,
+    BarbershopSlugCapsterTransactionsSuccessRoute:
+      BarbershopSlugCapsterTransactionsSuccessRoute,
+    BarbershopSlugCapsterTransactionsTodayRoute:
+      BarbershopSlugCapsterTransactionsTodayRoute,
+  }
+
+const BarbershopSlugCapsterTransactionsRouteWithChildren =
+  BarbershopSlugCapsterTransactionsRoute._addFileChildren(
+    BarbershopSlugCapsterTransactionsRouteChildren,
+  )
+
+interface BarbershopSlugOwnerAuditActivitiesRouteChildren {
+  BarbershopSlugOwnerAuditActivitiesIdRoute: typeof BarbershopSlugOwnerAuditActivitiesIdRoute
 }
 
-const CapsterTransactionsRouteWithChildren =
-  CapsterTransactionsRoute._addFileChildren(CapsterTransactionsRouteChildren)
+const BarbershopSlugOwnerAuditActivitiesRouteChildren: BarbershopSlugOwnerAuditActivitiesRouteChildren =
+  {
+    BarbershopSlugOwnerAuditActivitiesIdRoute:
+      BarbershopSlugOwnerAuditActivitiesIdRoute,
+  }
 
-interface OwnerAuditActivitiesRouteChildren {
-  OwnerAuditActivitiesIdRoute: typeof OwnerAuditActivitiesIdRoute
+const BarbershopSlugOwnerAuditActivitiesRouteWithChildren =
+  BarbershopSlugOwnerAuditActivitiesRoute._addFileChildren(
+    BarbershopSlugOwnerAuditActivitiesRouteChildren,
+  )
+
+interface BarbershopSlugOwnerAuditFinanceRouteChildren {
+  BarbershopSlugOwnerAuditFinanceIdRoute: typeof BarbershopSlugOwnerAuditFinanceIdRoute
 }
 
-const OwnerAuditActivitiesRouteChildren: OwnerAuditActivitiesRouteChildren = {
-  OwnerAuditActivitiesIdRoute: OwnerAuditActivitiesIdRoute,
+const BarbershopSlugOwnerAuditFinanceRouteChildren: BarbershopSlugOwnerAuditFinanceRouteChildren =
+  {
+    BarbershopSlugOwnerAuditFinanceIdRoute:
+      BarbershopSlugOwnerAuditFinanceIdRoute,
+  }
+
+const BarbershopSlugOwnerAuditFinanceRouteWithChildren =
+  BarbershopSlugOwnerAuditFinanceRoute._addFileChildren(
+    BarbershopSlugOwnerAuditFinanceRouteChildren,
+  )
+
+interface BarbershopSlugRouteChildren {
+  BarbershopSlugCapsterAccountRoute: typeof BarbershopSlugCapsterAccountRoute
+  BarbershopSlugCapsterCheckInRoute: typeof BarbershopSlugCapsterCheckInRoute
+  BarbershopSlugCapsterDashboardRoute: typeof BarbershopSlugCapsterDashboardRoute
+  BarbershopSlugCapsterEndShiftRoute: typeof BarbershopSlugCapsterEndShiftRoute
+  BarbershopSlugCapsterLoginRoute: typeof BarbershopSlugCapsterLoginRoute
+  BarbershopSlugCapsterServicesRoute: typeof BarbershopSlugCapsterServicesRoute
+  BarbershopSlugCapsterShiftSavedRoute: typeof BarbershopSlugCapsterShiftSavedRoute
+  BarbershopSlugCapsterTransactionsRoute: typeof BarbershopSlugCapsterTransactionsRouteWithChildren
+  BarbershopSlugCustomerCapsterRoute: typeof BarbershopSlugCustomerCapsterRoute
+  BarbershopSlugCustomerCartRoute: typeof BarbershopSlugCustomerCartRoute
+  BarbershopSlugCustomerCompletedRoute: typeof BarbershopSlugCustomerCompletedRoute
+  BarbershopSlugCustomerCustomerInfoRoute: typeof BarbershopSlugCustomerCustomerInfoRoute
+  BarbershopSlugCustomerHistoryRoute: typeof BarbershopSlugCustomerHistoryRoute
+  BarbershopSlugCustomerPaymentRoute: typeof BarbershopSlugCustomerPaymentRoute
+  BarbershopSlugCustomerPaymentConfirmationRoute: typeof BarbershopSlugCustomerPaymentConfirmationRoute
+  BarbershopSlugCustomerServiceExecutionRoute: typeof BarbershopSlugCustomerServiceExecutionRoute
+  BarbershopSlugCustomerServicesRoute: typeof BarbershopSlugCustomerServicesRoute
+  BarbershopSlugCustomerSuccessRoute: typeof BarbershopSlugCustomerSuccessRoute
+  BarbershopSlugOwnerAuditRoute: typeof BarbershopSlugOwnerAuditRoute
+  BarbershopSlugOwnerAuditActivitiesRoute: typeof BarbershopSlugOwnerAuditActivitiesRouteWithChildren
+  BarbershopSlugOwnerAuditFinanceRoute: typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
+  BarbershopSlugOwnerCapstersRoute: typeof BarbershopSlugOwnerCapstersRoute
+  BarbershopSlugOwnerDashboardRoute: typeof BarbershopSlugOwnerDashboardRoute
+  BarbershopSlugOwnerGajiRoute: typeof BarbershopSlugOwnerGajiRoute
+  BarbershopSlugOwnerHelpRoute: typeof BarbershopSlugOwnerHelpRoute
+  BarbershopSlugOwnerKomisiRoute: typeof BarbershopSlugOwnerKomisiRoute
+  BarbershopSlugOwnerLoginRoute: typeof BarbershopSlugOwnerLoginRoute
+  BarbershopSlugOwnerServicesRoute: typeof BarbershopSlugOwnerServicesRoute
+  BarbershopSlugOwnerSettingsRoute: typeof BarbershopSlugOwnerSettingsRoute
+  BarbershopSlugCustomerReceiptTransactionIdRoute: typeof BarbershopSlugCustomerReceiptTransactionIdRoute
 }
 
-const OwnerAuditActivitiesRouteWithChildren =
-  OwnerAuditActivitiesRoute._addFileChildren(OwnerAuditActivitiesRouteChildren)
-
-interface OwnerAuditFinanceRouteChildren {
-  OwnerAuditFinanceIdRoute: typeof OwnerAuditFinanceIdRoute
+const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
+  BarbershopSlugCapsterAccountRoute: BarbershopSlugCapsterAccountRoute,
+  BarbershopSlugCapsterCheckInRoute: BarbershopSlugCapsterCheckInRoute,
+  BarbershopSlugCapsterDashboardRoute: BarbershopSlugCapsterDashboardRoute,
+  BarbershopSlugCapsterEndShiftRoute: BarbershopSlugCapsterEndShiftRoute,
+  BarbershopSlugCapsterLoginRoute: BarbershopSlugCapsterLoginRoute,
+  BarbershopSlugCapsterServicesRoute: BarbershopSlugCapsterServicesRoute,
+  BarbershopSlugCapsterShiftSavedRoute: BarbershopSlugCapsterShiftSavedRoute,
+  BarbershopSlugCapsterTransactionsRoute:
+    BarbershopSlugCapsterTransactionsRouteWithChildren,
+  BarbershopSlugCustomerCapsterRoute: BarbershopSlugCustomerCapsterRoute,
+  BarbershopSlugCustomerCartRoute: BarbershopSlugCustomerCartRoute,
+  BarbershopSlugCustomerCompletedRoute: BarbershopSlugCustomerCompletedRoute,
+  BarbershopSlugCustomerCustomerInfoRoute:
+    BarbershopSlugCustomerCustomerInfoRoute,
+  BarbershopSlugCustomerHistoryRoute: BarbershopSlugCustomerHistoryRoute,
+  BarbershopSlugCustomerPaymentRoute: BarbershopSlugCustomerPaymentRoute,
+  BarbershopSlugCustomerPaymentConfirmationRoute:
+    BarbershopSlugCustomerPaymentConfirmationRoute,
+  BarbershopSlugCustomerServiceExecutionRoute:
+    BarbershopSlugCustomerServiceExecutionRoute,
+  BarbershopSlugCustomerServicesRoute: BarbershopSlugCustomerServicesRoute,
+  BarbershopSlugCustomerSuccessRoute: BarbershopSlugCustomerSuccessRoute,
+  BarbershopSlugOwnerAuditRoute: BarbershopSlugOwnerAuditRoute,
+  BarbershopSlugOwnerAuditActivitiesRoute:
+    BarbershopSlugOwnerAuditActivitiesRouteWithChildren,
+  BarbershopSlugOwnerAuditFinanceRoute:
+    BarbershopSlugOwnerAuditFinanceRouteWithChildren,
+  BarbershopSlugOwnerCapstersRoute: BarbershopSlugOwnerCapstersRoute,
+  BarbershopSlugOwnerDashboardRoute: BarbershopSlugOwnerDashboardRoute,
+  BarbershopSlugOwnerGajiRoute: BarbershopSlugOwnerGajiRoute,
+  BarbershopSlugOwnerHelpRoute: BarbershopSlugOwnerHelpRoute,
+  BarbershopSlugOwnerKomisiRoute: BarbershopSlugOwnerKomisiRoute,
+  BarbershopSlugOwnerLoginRoute: BarbershopSlugOwnerLoginRoute,
+  BarbershopSlugOwnerServicesRoute: BarbershopSlugOwnerServicesRoute,
+  BarbershopSlugOwnerSettingsRoute: BarbershopSlugOwnerSettingsRoute,
+  BarbershopSlugCustomerReceiptTransactionIdRoute:
+    BarbershopSlugCustomerReceiptTransactionIdRoute,
 }
 
-const OwnerAuditFinanceRouteChildren: OwnerAuditFinanceRouteChildren = {
-  OwnerAuditFinanceIdRoute: OwnerAuditFinanceIdRoute,
-}
-
-const OwnerAuditFinanceRouteWithChildren =
-  OwnerAuditFinanceRoute._addFileChildren(OwnerAuditFinanceRouteChildren)
+const BarbershopSlugRouteWithChildren = BarbershopSlugRoute._addFileChildren(
+  BarbershopSlugRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BarbershopSlugRoute: BarbershopSlugRouteWithChildren,
   DbTestRoute: DbTestRoute,
   ServicesTestRoute: ServicesTestRoute,
-  CapsterAccountRoute: CapsterAccountRoute,
-  CapsterCheckInRoute: CapsterCheckInRoute,
-  CapsterDashboardRoute: CapsterDashboardRoute,
-  CapsterEndShiftRoute: CapsterEndShiftRoute,
-  CapsterLoginRoute: CapsterLoginRoute,
-  CapsterServicesRoute: CapsterServicesRoute,
-  CapsterShiftSavedRoute: CapsterShiftSavedRoute,
-  CapsterTransactionsRoute: CapsterTransactionsRouteWithChildren,
-  CustomerCapsterRoute: CustomerCapsterRoute,
-  CustomerCartRoute: CustomerCartRoute,
-  CustomerCompletedRoute: CustomerCompletedRoute,
-  CustomerCustomerInfoRoute: CustomerCustomerInfoRoute,
-  CustomerHistoryRoute: CustomerHistoryRoute,
-  CustomerPaymentRoute: CustomerPaymentRoute,
-  CustomerPaymentConfirmationRoute: CustomerPaymentConfirmationRoute,
-  CustomerServiceExecutionRoute: CustomerServiceExecutionRoute,
-  CustomerServicesRoute: CustomerServicesRoute,
-  CustomerSuccessRoute: CustomerSuccessRoute,
-  OwnerAuditRoute: OwnerAuditRoute,
-  OwnerAuditActivitiesRoute: OwnerAuditActivitiesRouteWithChildren,
-  OwnerAuditFinanceRoute: OwnerAuditFinanceRouteWithChildren,
-  OwnerCapstersRoute: OwnerCapstersRoute,
-  OwnerDashboardRoute: OwnerDashboardRoute,
-  OwnerGajiRoute: OwnerGajiRoute,
-  OwnerHelpRoute: OwnerHelpRoute,
-  OwnerKomisiRoute: OwnerKomisiRoute,
-  OwnerLoginRoute: OwnerLoginRoute,
-  OwnerServicesRoute: OwnerServicesRoute,
-  OwnerSettingsRoute: OwnerSettingsRoute,
+  BSlugRoute: BSlugRoute,
+  OwnerRegisterRoute: OwnerRegisterRoute,
+  OwnerVerifyEmailRoute: OwnerVerifyEmailRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   SuperadminLoginRoute: SuperadminLoginRoute,
   SuperadminTenantsRoute: SuperadminTenantsRoute,
-  CustomerReceiptTransactionIdRoute: CustomerReceiptTransactionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

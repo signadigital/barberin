@@ -433,16 +433,21 @@ export const createManualTransaction = createServerFn({
       throw new Error("Minimal pilih satu layanan.");
     }
 
-    // 1. Get Barbershop
-    const [shop] = await db
-      .select()
-      .from(barbershop)
-      .where(eq(barbershop.status, "active"))
+    // 1. Get Capster & Barbershop
+    const [capsterRecord] = await db
+      .select({
+        id_capster: capster.id_capster,
+        id_barbershop: capster.id_barbershop,
+      })
+      .from(capster)
+      .where(eq(capster.id_capster, data.capsterId))
       .limit(1);
 
-    if (!shop) {
-      throw new Error("Barbershop tidak ditemukan.");
+    if (!capsterRecord) {
+      throw new Error("Capster tidak ditemukan.");
     }
+
+    const targetShopId = capsterRecord.id_barbershop;
 
     // 2. Find or Create User & Pelanggan
     let userRow;
@@ -525,11 +530,16 @@ export const createManualTransaction = createServerFn({
       throw new Error("Gagal memproses shift capster.");
     }
 
-    // 4. Fetch services
+    // 4. Fetch services belonging to this barbershop
     const serviceRows = await db
       .select()
       .from(layanan)
-      .where(inArray(layanan.id_layanan, data.serviceIds));
+      .where(
+        and(
+          inArray(layanan.id_layanan, data.serviceIds),
+          eq(layanan.id_barbershop, targetShopId),
+        ),
+      );
 
     if (serviceRows.length === 0) {
       throw new Error("Layanan tidak ditemukan.");
@@ -561,7 +571,7 @@ export const createManualTransaction = createServerFn({
       .insert(booking)
       .values({
         id_pelanggan: pelangganRow.id_pelanggan,
-        id_barbershop: shop.id_barbershop,
+        id_barbershop: targetShopId,
         id_capster: data.capsterId,
         tanggal_booking: now,
         waktu_booking: timeStr,
@@ -589,6 +599,7 @@ export const createManualTransaction = createServerFn({
     const [transaksiRow] = await db
       .insert(transaksi)
       .values({
+        id_barbershop: targetShopId,
         id_booking: bookingRow.id_booking,
         id_shift: activeShift.id_shift,
         id_pelanggan: pelangganRow.id_pelanggan,

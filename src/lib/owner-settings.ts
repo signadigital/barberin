@@ -2,11 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { barbershop, users } from "@/db/schema";
+import { requireOwnerTenant } from "@/lib/auth-session";
 
 export type OwnerSettingsData = {
   barbershop: {
     id_barbershop: string;
     nama_barbershop: string;
+    slug?: string | undefined;
     alamat: string;
     no_hp: string;
     jam_buka: string;
@@ -22,113 +24,70 @@ export type OwnerSettingsData = {
 };
 
 export type UpdateOwnerSettingsInput = {
-  id_barbershop?: string;
+  id_barbershop?: string | undefined;
   nama_barbershop: string;
   alamat: string;
   no_hp_barbershop: string;
   jam_buka: string;
   jam_tutup: string;
-  id_user?: string;
+  id_user?: string | undefined;
   nama_lengkap: string;
   email: string;
   no_hp_owner: string;
-  new_password?: string;
+  new_password?: string | undefined;
 };
 
 export const getOwnerSettings = createServerFn({
   method: "GET",
 }).handler(async (): Promise<OwnerSettingsData> => {
-  try {
-    // 1. Ambil Barbershop
-    let [shop] = await db.select().from(barbershop).limit(1);
+  const tenant = requireOwnerTenant();
 
-    if (!shop) {
-      const [newShop] = await db
-        .insert(barbershop)
-        .values({
-          nama_barbershop: "BARBERIN Barbershop",
-          alamat: "Jl. Jenderal Soedirman No. 123, Purbalingga",
-          no_hp: "0812-3456-7890",
-          jam_buka: "08:00",
-          jam_tutup: "21:00",
-          status: "active",
-        })
-        .returning();
-      shop = newShop;
-    }
+  // 1. Ambil Barbershop milik owner yang sedang login
+  const [shop] = await db
+    .select()
+    .from(barbershop)
+    .where(eq(barbershop.id_barbershop, tenant.barbershopId))
+    .limit(1);
 
-    // 2. Ambil Owner User
-    let [ownerUser] = await db
-      .select({
-        id_user: users.id_user,
-        email: users.email,
-        nama_lengkap: users.nama_lengkap,
-        no_hp: users.no_hp,
-        role: users.role,
-      })
-      .from(users)
-      .where(eq(users.role, "owner"))
-      .limit(1);
-
-    if (!ownerUser) {
-      const [newOwner] = await db
-        .insert(users)
-        .values({
-          email: "owner@barberin.test",
-          password: "password",
-          nama_lengkap: "Owner Barbershop",
-          no_hp: "0812-3456-7890",
-          role: "owner",
-          status: "active",
-        })
-        .returning({
-          id_user: users.id_user,
-          email: users.email,
-          nama_lengkap: users.nama_lengkap,
-          no_hp: users.no_hp,
-          role: users.role,
-        });
-      ownerUser = newOwner;
-    }
-
-    return {
-      barbershop: {
-        id_barbershop: shop.id_barbershop,
-        nama_barbershop: shop.nama_barbershop,
-        alamat: shop.alamat || "",
-        no_hp: shop.no_hp || "",
-        jam_buka: shop.jam_buka || "08:00",
-        jam_tutup: shop.jam_tutup || "21:00",
-      },
-      owner: {
-        id_user: ownerUser.id_user,
-        email: ownerUser.email,
-        nama_lengkap: ownerUser.nama_lengkap,
-        no_hp: ownerUser.no_hp || "",
-        role: ownerUser.role,
-      },
-    };
-  } catch (err: any) {
-    console.error("Gagal getOwnerSettings dari DB:", err);
-    // Fallback data
-    return {
-      barbershop: {
-        id_barbershop: "default-barbershop",
-        nama_barbershop: "BARBERIN Barbershop",
-        alamat: "Jl. Jenderal Soedirman No. 123, Purbalingga",
-        no_hp: "0812-3456-7890",
-        jam_buka: "08:00",
-        jam_tutup: "21:00",
-      },
-      owner: {
-        id_user: "owner-system-id",
-        email: "owner@barberin.test",
-        nama_lengkap: "Owner Barbershop",
-        no_hp: "0812-3456-7890",
-        role: "owner",
-      },
-    };
+  if (!shop) {
+    throw new Error("Data Barbershop milik Anda tidak ditemukan.");
   }
+
+  // 2. Ambil Akun User Owner yang sedang login
+  const [ownerUser] = await db
+    .select({
+      id_user: users.id_user,
+      email: users.email,
+      nama_lengkap: users.nama_lengkap,
+      no_hp: users.no_hp,
+      role: users.role,
+    })
+    .from(users)
+    .where(eq(users.id_user, tenant.userId))
+    .limit(1);
+
+  if (!ownerUser) {
+    throw new Error("Data akun Owner tidak ditemukan.");
+  }
+
+  return {
+    barbershop: {
+      id_barbershop: shop.id_barbershop,
+      nama_barbershop: shop.nama_barbershop,
+      slug: shop.slug || undefined,
+      alamat: shop.alamat || "",
+      no_hp: shop.no_hp || "",
+      jam_buka: shop.jam_buka || "08:00",
+      jam_tutup: shop.jam_tutup || "21:00",
+    },
+    owner: {
+      id_user: ownerUser.id_user,
+      email: ownerUser.email,
+      nama_lengkap: ownerUser.nama_lengkap,
+      no_hp: ownerUser.no_hp || "",
+      role: ownerUser.role,
+    },
+  };
 });
 
 export const updateOwnerSettings = createServerFn({
@@ -136,6 +95,10 @@ export const updateOwnerSettings = createServerFn({
 })
   .validator((input: UpdateOwnerSettingsInput) => input)
   .handler(async ({ data }): Promise<{ success: boolean; message: string; data: OwnerSettingsData }> => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+    const userId = tenant.userId;
+
     const namaBarbershop = (data.nama_barbershop || "").trim();
     if (!namaBarbershop || namaBarbershop.length < 2) {
       throw new Error("Nama Barbershop minimal 2 karakter.");
@@ -162,143 +125,73 @@ export const updateOwnerSettings = createServerFn({
       throw new Error("Password baru minimal 4 karakter.");
     }
 
-    try {
-      // 1. Update atau insert Barbershop
-      let shopId = data.id_barbershop;
-      if (!shopId) {
-        const [firstShop] = await db.select({ id: barbershop.id_barbershop }).from(barbershop).limit(1);
-        shopId = firstShop?.id;
-      }
-
-      let updatedShop;
-      if (shopId) {
-        const [shop] = await db
-          .update(barbershop)
-          .set({
-            nama_barbershop: namaBarbershop,
-            alamat,
-            no_hp: noHpBarbershop,
-            jam_buka: jamBuka,
-            jam_tutup: jamTutup,
-            updated_at: new Date(),
-          })
-          .where(eq(barbershop.id_barbershop, shopId))
-          .returning();
-        updatedShop = shop;
-      } else {
-        const [shop] = await db
-          .insert(barbershop)
-          .values({
-            nama_barbershop: namaBarbershop,
-            alamat,
-            no_hp: noHpBarbershop,
-            jam_buka: jamBuka,
-            jam_tutup: jamTutup,
-            status: "active",
-          })
-          .returning();
-        updatedShop = shop;
-      }
-
-      // 2. Update atau insert User Owner
-      let userId = data.id_user;
-      if (!userId) {
-        const [firstOwner] = await db
-          .select({ id: users.id_user })
-          .from(users)
-          .where(eq(users.role, "owner"))
-          .limit(1);
-        userId = firstOwner?.id;
-      }
-
-      const userPayload: any = {
-        nama_lengkap: namaLengkap,
-        email,
-        no_hp: noHpOwner,
+    // 1. Update Barbershop strictly for this tenant
+    const [updatedShop] = await db
+      .update(barbershop)
+      .set({
+        nama_barbershop: namaBarbershop,
+        alamat,
+        no_hp: noHpBarbershop,
+        jam_buka: jamBuka,
+        jam_tutup: jamTutup,
         updated_at: new Date(),
-      };
+      })
+      .where(eq(barbershop.id_barbershop, barbershopId))
+      .returning();
 
-      if (newPassword) {
-        userPayload.password = newPassword;
-      }
-
-      let updatedUser;
-      if (userId) {
-        const [u] = await db
-          .update(users)
-          .set(userPayload)
-          .where(eq(users.id_user, userId))
-          .returning({
-            id_user: users.id_user,
-            email: users.email,
-            nama_lengkap: users.nama_lengkap,
-            no_hp: users.no_hp,
-            role: users.role,
-          });
-        updatedUser = u;
-      } else {
-        const [u] = await db
-          .insert(users)
-          .values({
-            ...userPayload,
-            role: "owner",
-            status: "active",
-            password: newPassword || "password",
-          })
-          .returning({
-            id_user: users.id_user,
-            email: users.email,
-            nama_lengkap: users.nama_lengkap,
-            no_hp: users.no_hp,
-            role: users.role,
-          });
-        updatedUser = u;
-      }
-
-      return {
-        success: true,
-        message: "Setelan operasional dan profil owner berhasil diperbarui!",
-        data: {
-          barbershop: {
-            id_barbershop: updatedShop?.id_barbershop || shopId || "",
-            nama_barbershop: updatedShop?.nama_barbershop || namaBarbershop,
-            alamat: updatedShop?.alamat || alamat,
-            no_hp: updatedShop?.no_hp || noHpBarbershop,
-            jam_buka: updatedShop?.jam_buka || jamBuka,
-            jam_tutup: updatedShop?.jam_tutup || jamTutup,
-          },
-          owner: {
-            id_user: updatedUser?.id_user || userId || "",
-            email: updatedUser?.email || email,
-            nama_lengkap: updatedUser?.nama_lengkap || namaLengkap,
-            no_hp: updatedUser?.no_hp || noHpOwner,
-            role: updatedUser?.role || "owner",
-          },
-        },
-      };
-    } catch (err: any) {
-      console.error("Gagal updateOwnerSettings ke DB:", err);
-      // Tetap kembalikan data yang diupdate agar perubahan tersimpan di state/store aplikasi
-      return {
-        success: true,
-        message: "Setelan operasional berhasil disimpan di memori sistem!",
-        data: {
-          barbershop: {
-            id_barbershop: data.id_barbershop || "default-barbershop",
-            nama_barbershop: namaBarbershop,
-            alamat,
-            no_hp: noHpBarbershop,
-            jam_buka: jamBuka,
-            jam_tutup: jamTutup,
-          },
-          owner: {
-            id_user: data.id_user || "owner-system-id",
-            email,
-            nama_lengkap: namaLengkap,
-            no_hp: noHpOwner,
-            role: "owner",
-          },
-        },
-      };
+    if (!updatedShop) {
+      throw new Error("Gagal memperbarui profil toko Anda.");
     }
+
+    // 2. Update Akun User Owner strictly for this tenant
+    const userPayload: any = {
+      nama_lengkap: namaLengkap,
+      email,
+      no_hp: noHpOwner,
+      updated_at: new Date(),
+    };
+
+    if (newPassword) {
+      userPayload.password = newPassword;
+    }
+
+    const [updatedUser] = await db
+      .update(users)
+      .set(userPayload)
+      .where(eq(users.id_user, userId))
+      .returning({
+        id_user: users.id_user,
+        email: users.email,
+        nama_lengkap: users.nama_lengkap,
+        no_hp: users.no_hp,
+        role: users.role,
+      });
+
+    if (!updatedUser) {
+      throw new Error("Gagal memperbarui profil akun Anda.");
+    }
+
+    return {
+      success: true,
+      message: "Setelan operasional dan profil owner berhasil diperbarui!",
+      data: {
+        barbershop: {
+          id_barbershop: updatedShop.id_barbershop,
+          nama_barbershop: updatedShop.nama_barbershop,
+          slug: updatedShop.slug || undefined,
+          alamat: updatedShop.alamat || "",
+          no_hp: updatedShop.no_hp || "",
+          jam_buka: updatedShop.jam_buka || "08:00",
+          jam_tutup: updatedShop.jam_tutup || "21:00",
+        },
+        owner: {
+          id_user: updatedUser.id_user,
+          email: updatedUser.email,
+          nama_lengkap: updatedUser.nama_lengkap,
+          no_hp: updatedUser.no_hp || "",
+          role: updatedUser.role,
+        },
+      },
+    };
   });
+

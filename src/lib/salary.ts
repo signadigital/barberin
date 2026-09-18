@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  barbershop,
   booking,
   capster,
   detailBooking,
@@ -14,6 +15,7 @@ import {
   users,
 } from "@/db/schema";
 import { formatTransactionId } from "@/lib/format";
+import { requireOwnerTenant } from "@/lib/auth-session";
 
 export type SalaryPeriod = "today" | "7d" | "30d" | "month" | "all" | "custom";
 
@@ -155,16 +157,48 @@ export const getOwnerSalaryData = createServerFn({
             period?: SalaryPeriod;
             startDate?: string;
             endDate?: string;
+            barbershopSlug?: string;
           }
         | undefined,
     ) => data,
   )
   .handler(async ({ data }): Promise<LiveSalarySummary> => {
+    let barbershopId: string | null = null;
+    try {
+      const tenant = requireOwnerTenant();
+      barbershopId = tenant.barbershopId;
+    } catch {
+      // Direct access or fallback from URL slug
+    }
+
+    if (!barbershopId && data?.barbershopSlug) {
+      const [found] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+      if (found) {
+        barbershopId = found.id_barbershop;
+      }
+    }
+
     const period = data?.period || "month";
     const { startDate, endDate, periodLabel, dateRangeText } =
       getSalaryDateRange(period, data?.startDate, data?.endDate);
 
-    // Fetch active capsters from DB
+    if (!barbershopId) {
+      return {
+        period,
+        periodLabel,
+        dateRangeText,
+        totalCapsters: 0,
+        totalTransactions: 0,
+        totalRevenue: 0,
+        capsters: [],
+      };
+    }
+
+    // Fetch active capsters strictly from current owner's barbershop
     const capsterRows = await db
       .select({
         id_capster: capster.id_capster,
@@ -175,11 +209,19 @@ export const getOwnerSalaryData = createServerFn({
       })
       .from(capster)
       .innerJoin(users, eq(capster.id_user, users.id_user))
-      .where(eq(capster.status, "active"))
+      .where(
+        and(
+          eq(capster.status, "active"),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      )
       .orderBy(capster.no_pegawai);
 
-    // Build conditions for transactions
-    const txConditions = [eq(transaksi.status_transaksi, "paid")];
+    // Build conditions for transactions strictly scoped to current owner's barbershop
+    const txConditions = [
+      eq(transaksi.status_transaksi, "paid"),
+      eq(transaksi.id_barbershop, barbershopId),
+    ];
     if (startDate) {
       txConditions.push(gte(transaksi.created_at, startDate));
     }
@@ -277,9 +319,33 @@ export const getOwnerCapsterBaseTransactions = createServerFn({
       period?: SalaryPeriod;
       startDate?: string;
       endDate?: string;
+      barbershopSlug?: string;
     }) => data,
   )
   .handler(async ({ data }): Promise<LiveCapsterBaseTransaction[]> => {
+    let barbershopId: string | null = null;
+    try {
+      const tenant = requireOwnerTenant();
+      barbershopId = tenant.barbershopId;
+    } catch {
+      // Fallback from slug
+    }
+
+    if (!barbershopId && data?.barbershopSlug) {
+      const [found] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+      if (found) {
+        barbershopId = found.id_barbershop;
+      }
+    }
+
+    if (!barbershopId) {
+      return [];
+    }
+
     const { capsterId, period = "all", startDate: customStart, endDate: customEnd } = data;
     const { startDate, endDate } = getSalaryDateRange(
       period,
@@ -287,8 +353,24 @@ export const getOwnerCapsterBaseTransactions = createServerFn({
       customEnd,
     );
 
-    // Match transactions for this capster (either through shift or booking)
-    const txConditions = [];
+    // Verify capster belongs to this tenant
+    const [capsterCheck] = await db
+      .select({ id_capster: capster.id_capster })
+      .from(capster)
+      .where(
+        and(
+          eq(capster.id_capster, capsterId),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      )
+      .limit(1);
+
+    if (!capsterCheck) {
+      throw new Error("Capster tidak ditemukan atau bukan staf dari toko Anda.");
+    }
+
+    // Match transactions for this capster strictly for this barbershop
+    const txConditions = [eq(transaksi.id_barbershop, barbershopId)];
     if (startDate) {
       txConditions.push(gte(transaksi.created_at, startDate));
     }

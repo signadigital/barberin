@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { barbershop } from "@/db/schema";
 
@@ -15,39 +16,62 @@ import { isBarbershopOpen, type PublicBarbershopInfo } from "./operating-hours";
  */
 export const getPublicBarbershopInfo = createServerFn({
   method: "GET",
-}).handler(async (): Promise<PublicBarbershopInfo> => {
-  try {
-    const [shop] = await db.select().from(barbershop).limit(1);
+})
+  .validator((data?: { barbershopId?: string; slug?: string }) => data)
+  .handler(async ({ data }): Promise<PublicBarbershopInfo> => {
+    try {
+      let shop;
+      if (data?.barbershopId) {
+        const [found] = await db
+          .select()
+          .from(barbershop)
+          .where(
+            and(
+              eq(barbershop.id_barbershop, data.barbershopId),
+              eq(barbershop.status, "active"),
+            ),
+          )
+          .limit(1);
+        shop = found;
+      } else if (data?.slug) {
+        const [found] = await db
+          .select()
+          .from(barbershop)
+          .where(
+            and(
+              eq(barbershop.slug, data.slug),
+              eq(barbershop.status, "active"),
+            ),
+          )
+          .limit(1);
+        shop = found;
+      }
 
-    const nama = shop?.nama_barbershop || "BARBERIN Headquarter";
-    const alamat = shop?.alamat || "Jl. Jenderal Soedirman No. 123, Purbalingga";
-    const noHp = shop?.no_hp || "0812-3456-7890";
-    const jamBuka = shop?.jam_buka || "08:00 WIB";
-    const jamTutup = shop?.jam_tutup || "21:00 WIB";
+      if (!shop) {
+        throw new Error("Barbershop tidak ditemukan.");
+      }
 
-    const { isOpen, currentWibTime } = isBarbershopOpen(jamBuka, jamTutup);
+      const nama = shop.nama_barbershop;
+      const alamat = shop.alamat || "";
+      const noHp = shop.no_hp || "";
+      const jamBuka = shop.jam_buka || "08:00 WIB";
+      const jamTutup = shop.jam_tutup || "21:00 WIB";
 
-    return {
-      id_barbershop: shop?.id_barbershop,
-      nama_barbershop: nama,
-      alamat,
-      no_hp: noHp,
-      jam_buka: jamBuka,
-      jam_tutup: jamTutup,
-      isOpen,
-      currentWibTime,
-    };
-  } catch (err) {
-    console.error("Gagal mengambil profil publik barbershop:", err);
-    const { isOpen, currentWibTime } = isBarbershopOpen("08:00", "21:00");
-    return {
-      nama_barbershop: "BARBERIN Headquarter",
-      alamat: "Jl. Jenderal Soedirman No. 123, Purbalingga",
-      no_hp: "0812-3456-7890",
-      jam_buka: "08:00 WIB",
-      jam_tutup: "21:00 WIB",
-      isOpen,
-      currentWibTime,
-    };
-  }
-});
+      const { isOpen, currentWibTime } = isBarbershopOpen(jamBuka, jamTutup);
+
+      return {
+        id_barbershop: shop.id_barbershop,
+        slug: shop.slug ?? undefined,
+        nama_barbershop: nama,
+        alamat,
+        no_hp: noHp,
+        jam_buka: jamBuka,
+        jam_tutup: jamTutup,
+        isOpen,
+        currentWibTime,
+      };
+    } catch (err: any) {
+      console.error("Gagal mengambil profil publik barbershop:", err);
+      throw new Error(err?.message || "Barbershop tidak ditemukan.");
+    }
+  });

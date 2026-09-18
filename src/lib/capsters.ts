@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, eq, ne, count } from "drizzle-orm";
 import { db } from "@/db";
 import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/db/schema";
+import { requireOwnerTenant } from "@/lib/auth-session";
 
 export type CapsterView = {
   id: string;
@@ -18,8 +19,51 @@ export type CapsterView = {
 export const getCapsters = createServerFn({
   method: "GET",
 })
-  .validator((data: { onlyCheckedIn?: boolean } | undefined) => data)
+  .validator(
+    (
+      data:
+        | {
+            barbershopId?: string | undefined;
+            slug?: string | undefined;
+            onlyCheckedIn?: boolean | undefined;
+          }
+        | undefined,
+    ) => data,
+  )
   .handler(async ({ data }) => {
+    let targetShopId = data?.barbershopId;
+
+    if (targetShopId) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.id_barbershop, targetShopId),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    } else if (data?.slug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(
+          and(
+            eq(barbershop.slug, data.slug),
+            eq(barbershop.status, "active"),
+          ),
+        )
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    } else {
+      // Tidak ada tenant context yang diberikan: jangan tampilkan data capster barbershop lain
+      return [];
+    }
+
     const capsterRows = await db
       .select({
         id_capster: capster.id_capster,
@@ -27,55 +71,54 @@ export const getCapsters = createServerFn({
         id_barbershop: capster.id_barbershop,
         nama_lengkap: users.nama_lengkap,
         no_hp: users.no_hp,
-        no_pegawai: capster.no_pegawai,
         status: capster.status,
+        no_pegawai: capster.no_pegawai,
       })
       .from(capster)
       .innerJoin(users, eq(capster.id_user, users.id_user))
-      .where(and(eq(capster.status, "active"), eq(users.status, "active")));
+      .where(
+        and(
+          eq(users.role, "capster"),
+          eq(capster.status, "active"),
+          targetShopId ? eq(capster.id_barbershop, targetShopId) : undefined,
+        ),
+      );
 
-    // Check ongoing shifts to determine availability
-    const results: CapsterView[] = [];
+    const shiftRows = await db
+      .select()
+      .from(shiftCapster)
+      .where(eq(shiftCapster.status, "ongoing"));
 
-    for (const c of capsterRows) {
-      const shifts = await db
-        .select()
-        .from(shiftCapster)
-        .where(
-          and(
-            eq(shiftCapster.id_capster, c.id_capster),
-            eq(shiftCapster.status, "ongoing"),
-          ),
-        )
-        .limit(1);
+    return capsterRows.map((c) => {
+      const activeShift = shiftRows.find((s) => s.id_capster === c.id_capster);
+      const isAvailable = !!activeShift;
 
-      const isCheckedIn = shifts.length > 0;
-
-      // Jika hanya ingin capster yang sudah check-in, lewati yang belum
-      if (data?.onlyCheckedIn && !isCheckedIn) {
-        continue;
-      }
-
-      results.push({
+      return {
         id: c.id_capster,
         id_capster: c.id_capster,
         id_user: c.id_user,
         id_barbershop: c.id_barbershop,
         name: c.nama_lengkap,
+        nama_lengkap: c.nama_lengkap,
         role: c.no_pegawai === "CAP-001" ? "Senior Barber" : "Barber",
-        status: isCheckedIn ? "AVAILABLE" : "OFFLINE",
-        phone: c.no_hp,
+        status: (isAvailable ? "AVAILABLE" : "BUSY") as "AVAILABLE" | "BUSY" | "OFFLINE",
         no_pegawai: c.no_pegawai,
-      });
-    }
-
-    return results;
+        phone: c.no_hp,
+      };
+    });
   });
 
 export const loginCapster = createServerFn({
   method: "POST",
 })
-  .validator((data: { emailOrName: string; password?: string }) => data)
+  .validator(
+    (data: {
+      emailOrName: string;
+      password?: string;
+      barbershopSlug?: string;
+      barbershopId?: string;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     const term = (data.emailOrName || "").trim().toLowerCase();
     const inputPassword = data.password || "";
@@ -85,6 +128,43 @@ export const loginCapster = createServerFn({
     }
     if (!inputPassword) {
       throw new Error("Password wajib diisi.");
+    }
+
+    let targetShop: { id_barbershop: string; slug: string; status: string } | null = null;
+    if (data.barbershopSlug) {
+      const [shop] = await db
+        .select({
+          id_barbershop: barbershop.id_barbershop,
+          slug: barbershop.slug,
+          status: barbershop.status,
+        })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+
+      if (!shop) {
+        throw new Error("Barbershop tidak ditemukan.");
+      }
+      targetShop = shop;
+    } else if (data.barbershopId) {
+      const [shop] = await db
+        .select({
+          id_barbershop: barbershop.id_barbershop,
+          slug: barbershop.slug,
+          status: barbershop.status,
+        })
+        .from(barbershop)
+        .where(eq(barbershop.id_barbershop, data.barbershopId))
+        .limit(1);
+
+      if (!shop) {
+        throw new Error("Barbershop tidak ditemukan.");
+      }
+      targetShop = shop;
+    }
+
+    if (targetShop && (targetShop.status === "suspended" || targetShop.status === "inactive")) {
+      throw new Error("Akun toko Anda sedang dinonaktifkan, hubungi admin.");
     }
 
     // Query active capsters
@@ -115,15 +195,20 @@ export const loginCapster = createServerFn({
       throw new Error("Akun capster dengan email atau username tersebut tidak ditemukan.");
     }
 
+    // Validasi Tenant: capster harus milik target barbershop
+    if (targetShop && matched.id_barbershop !== targetShop.id_barbershop) {
+      throw new Error("Anda tidak memiliki akses ke barbershop ini.");
+    }
+
     const expectedPassword = matched.password || "password";
     if (inputPassword !== expectedPassword) {
       throw new Error("Password yang Anda masukkan salah.");
     }
 
-    // Cek apakah toko capster sedang dinonaktifkan (suspended)
-    if (matched.id_barbershop) {
+    // Cek apakah toko capster sedang dinonaktifkan (suspended) jika belum dicek
+    if (matched.id_barbershop && !targetShop) {
       const [shop] = await db
-        .select({ status: barbershop.status })
+        .select({ status: barbershop.status, slug: barbershop.slug })
         .from(barbershop)
         .where(eq(barbershop.id_barbershop, matched.id_barbershop))
         .limit(1);
@@ -131,12 +216,16 @@ export const loginCapster = createServerFn({
       if (shop && (shop.status === "suspended" || shop.status === "inactive")) {
         throw new Error("Akun toko Anda sedang dinonaktifkan, hubungi admin.");
       }
+      if (shop) {
+        targetShop = { id_barbershop: matched.id_barbershop, slug: shop.slug, status: shop.status };
+      }
     }
 
     return {
       id_capster: matched.id_capster,
       id_user: matched.id_user,
       id_barbershop: matched.id_barbershop,
+      barbershopSlug: targetShop?.slug ?? "",
       nama_lengkap: matched.nama_lengkap,
       role: matched.no_pegawai === "CAP-001" ? "Senior Barber" : "Barber",
     };
@@ -192,10 +281,13 @@ export type DeleteCapsterInput = {
   id_capster: string;
 };
 
-// 1. READ: Get all capsters for Owner Management
+// 1. READ: Get all capsters for Owner Management (strictly scoped to current owner's barbershop)
 export const getOwnerCapsters = createServerFn({
   method: "GET",
 }).handler(async (): Promise<OwnerCapsterItem[]> => {
+  const tenant = requireOwnerTenant();
+  const barbershopId = tenant.barbershopId;
+
   const capsterRows = await db
     .select({
       id_capster: capster.id_capster,
@@ -210,6 +302,7 @@ export const getOwnerCapsters = createServerFn({
     })
     .from(capster)
     .innerJoin(users, eq(capster.id_user, users.id_user))
+    .where(eq(capster.id_barbershop, barbershopId))
     .orderBy(capster.no_pegawai);
 
   const results: OwnerCapsterItem[] = [];
@@ -234,7 +327,7 @@ export const getOwnerCapsters = createServerFn({
     const isShiftActive = shifts.length > 0;
     const shiftTime = isShiftActive && shifts[0] ? shifts[0].waktu_mulai : null;
 
-    // Calculate transaction stats for this capster
+    // Calculate transaction stats for this capster (strictly isolated to this barbershop)
     const capsterTxs = await db
       .select({
         total: transaksi.total,
@@ -245,6 +338,7 @@ export const getOwnerCapsters = createServerFn({
         and(
           eq(shiftCapster.id_capster, c.id_capster),
           eq(transaksi.status_transaksi, "paid"),
+          eq(transaksi.id_barbershop, barbershopId),
         ),
       );
 
@@ -309,41 +403,33 @@ export const createOwnerCapster = createServerFn({
       throw new Error("Email sudah digunakan oleh akun lain. Silakan gunakan email berbeda.");
     }
 
-    // Resolve no_pegawai (auto generate if empty e.g. CAP-003)
+    // Resolve no_pegawai (auto generate if empty e.g. CAP-001 within this barbershop)
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     let noPegawai = data.no_pegawai?.trim().toUpperCase();
     if (!noPegawai) {
-      const allCapsters = await db.select({ no_pegawai: capster.no_pegawai }).from(capster);
-      const nextNum = allCapsters.length + 1;
+      const shopCapsters = await db
+        .select({ no_pegawai: capster.no_pegawai })
+        .from(capster)
+        .where(eq(capster.id_barbershop, barbershopId));
+      const nextNum = shopCapsters.length + 1;
       noPegawai = `CAP-${String(nextNum).padStart(3, "0")}`;
     } else {
-      // Check if no_pegawai is duplicate
+      // Check if no_pegawai is duplicate in this barbershop
       const [existingNo] = await db
         .select({ id_capster: capster.id_capster })
         .from(capster)
-        .where(eq(capster.no_pegawai, noPegawai))
+        .where(
+          and(
+            eq(capster.no_pegawai, noPegawai),
+            eq(capster.id_barbershop, barbershopId),
+          ),
+        )
         .limit(1);
       if (existingNo) {
-        throw new Error(`Nomor pegawai "${noPegawai}" sudah digunakan oleh capster lain.`);
+        throw new Error(`Nomor pegawai "${noPegawai}" sudah digunakan oleh capster lain di toko ini.`);
       }
-    }
-
-    // Resolve barbershop
-    let [shop] = await db
-      .select({ id_barbershop: barbershop.id_barbershop })
-      .from(barbershop)
-      .where(eq(barbershop.status, "active"))
-      .limit(1);
-
-    if (!shop) {
-      const [anyShop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .limit(1);
-      shop = anyShop;
-    }
-
-    if (!shop) {
-      throw new Error("Barbershop tidak ditemukan dalam sistem.");
     }
 
     const password = data.password?.trim() || "password123";
@@ -359,6 +445,7 @@ export const createOwnerCapster = createServerFn({
         no_hp: data.no_hp?.trim() || null,
         role: "capster",
         status,
+        id_barbershop: barbershopId,
       })
       .returning();
 
@@ -366,12 +453,12 @@ export const createOwnerCapster = createServerFn({
       throw new Error("Gagal membuat data pengguna untuk capster.");
     }
 
-    // 2. Create Capster
+    // 2. Create Capster linked to current tenant
     const [newCapster] = await db
       .insert(capster)
       .values({
         id_user: newUser.id_user,
-        id_barbershop: shop.id_barbershop,
+        id_barbershop: barbershopId,
         no_pegawai: noPegawai,
         tanggal_bergabung: new Date(),
         status,
@@ -400,6 +487,9 @@ export const updateOwnerCapster = createServerFn({
 })
   .validator((data: UpdateCapsterInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_capster) {
       throw new Error("ID capster tidak valid.");
     }
@@ -412,7 +502,7 @@ export const updateOwnerCapster = createServerFn({
       throw new Error("Email wajib diisi.");
     }
 
-    // Find capster
+    // Find capster strictly within current owner's barbershop
     const [target] = await db
       .select({
         id_capster: capster.id_capster,
@@ -420,11 +510,16 @@ export const updateOwnerCapster = createServerFn({
         no_pegawai: capster.no_pegawai,
       })
       .from(capster)
-      .where(eq(capster.id_capster, data.id_capster))
+      .where(
+        and(
+          eq(capster.id_capster, data.id_capster),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      )
       .limit(1);
 
     if (!target) {
-      throw new Error("Data capster tidak ditemukan.");
+      throw new Error("Data capster tidak ditemukan atau Anda tidak memiliki akses.");
     }
 
     // Check if email taken by another user
@@ -512,6 +607,9 @@ export const toggleOwnerCapsterStatus = createServerFn({
 })
   .validator((data: ToggleCapsterStatusInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_capster) {
       throw new Error("ID capster tidak valid.");
     }
@@ -523,11 +621,16 @@ export const toggleOwnerCapsterStatus = createServerFn({
         status: capster.status,
       })
       .from(capster)
-      .where(eq(capster.id_capster, data.id_capster))
+      .where(
+        and(
+          eq(capster.id_capster, data.id_capster),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      )
       .limit(1);
 
     if (!target) {
-      throw new Error("Data capster tidak ditemukan.");
+      throw new Error("Data capster tidak ditemukan atau Anda tidak memiliki akses.");
     }
 
     const newStatus = target.status === "active" ? "inactive" : "active";
@@ -570,6 +673,9 @@ export const deleteOwnerCapster = createServerFn({
 })
   .validator((data: DeleteCapsterInput) => data)
   .handler(async ({ data }) => {
+    const tenant = requireOwnerTenant();
+    const barbershopId = tenant.barbershopId;
+
     if (!data.id_capster) {
       throw new Error("ID capster tidak valid.");
     }
@@ -582,11 +688,16 @@ export const deleteOwnerCapster = createServerFn({
       })
       .from(capster)
       .innerJoin(users, eq(capster.id_user, users.id_user))
-      .where(eq(capster.id_capster, data.id_capster))
+      .where(
+        and(
+          eq(capster.id_capster, data.id_capster),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      )
       .limit(1);
 
     if (!target) {
-      throw new Error("Data capster tidak ditemukan.");
+      throw new Error("Data capster tidak ditemukan atau Anda tidak memiliki akses.");
     }
 
     // Check if capster has shifts or bookings

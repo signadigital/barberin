@@ -1,5 +1,6 @@
 export type PublicBarbershopInfo = {
   id_barbershop?: string | undefined;
+  slug?: string | undefined;
   nama_barbershop: string;
   alamat: string;
   no_hp: string;

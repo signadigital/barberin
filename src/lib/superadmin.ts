@@ -8,6 +8,7 @@ import {
   superadminAuditLogs,
   users,
 } from "@/db/schema";
+import { generateUniqueBarbershopSlug } from "./slug";
 
 // ============================================================================
 // TYPES
@@ -15,6 +16,7 @@ import {
 
 export type SuperadminTenantItem = {
   id_barbershop: string;
+  slug: string;
   nama_barbershop: string;
   alamat: string | null;
   no_hp: string | null;
@@ -149,6 +151,7 @@ export const getSuperadminTenants = createServerFn({
     const allShops = await db
       .select({
         id_barbershop: barbershop.id_barbershop,
+        slug: barbershop.slug,
         nama_barbershop: barbershop.nama_barbershop,
         alamat: barbershop.alamat,
         no_hp: barbershop.no_hp,
@@ -166,7 +169,7 @@ export const getSuperadminTenants = createServerFn({
               : desc(barbershop.created_at),
       );
 
-    // 2. Ambil seluruh Owner users
+    // 2. Ambil seluruh owner
     const allOwners = await db
       .select({
         id_user: users.id_user,
@@ -205,17 +208,13 @@ export const getSuperadminTenants = createServerFn({
       }
     }
 
-    // 4. Petakan setiap barbershop dengan Owner-nya
+    // 4. Petakan setiap barbershop dengan Owner-nya (hanya match ID barbershop)
     let mappedTenants: SuperadminTenantItem[] = allShops.map((shop) => {
-      // Cari owner dengan id_barbershop yang cocok
-      let ownerUser = allOwners.find((o) => o.id_barbershop === shop.id_barbershop);
-      // Fallback jika hanya 1 toko dan owner belum ter-link
-      if (!ownerUser && allShops.length === 1 && allOwners.length > 0) {
-        ownerUser = allOwners[0];
-      }
+      const ownerUser = allOwners.find((o) => o.id_barbershop === shop.id_barbershop);
 
       return {
         id_barbershop: shop.id_barbershop,
+        slug: shop.slug,
         nama_barbershop: shop.nama_barbershop,
         alamat: shop.alamat,
         no_hp: shop.no_hp,
@@ -329,11 +328,14 @@ export const createTenantWithTransaction = createServerFn({
     // JALANKAN DATABASE TRANSACTION
     try {
       const result = await db.transaction(async (tx) => {
-        // STEP 1: Simpan Tenant ke tabel barbershop (status = Active)
+        // STEP 1: Generate slug unik dan Simpan Tenant ke tabel barbershop (status = Active)
+        const finalSlug = await generateUniqueBarbershopSlug(tx, namaBarbershop);
+
         const [newShop] = await tx
           .insert(barbershop)
           .values({
             nama_barbershop: namaBarbershop,
+            slug: finalSlug,
             alamat: alamat || "Alamat belum diatur",
             no_hp: noHpBarbershop || "0812-0000-0000",
             status: "active",
@@ -364,33 +366,8 @@ export const createTenantWithTransaction = createServerFn({
           throw new Error("Gagal membuat akun Owner untuk toko.");
         }
 
-        // STEP 3: Buat layanan dasar default untuk toko baru
-        await tx.insert(layanan).values([
-          {
-            id_barbershop: newShop.id_barbershop,
-            nama_layanan: "Gentleman Haircut & Styling",
-            deskripsi: "Potong rambut presisi, cuci rambut, dan penataan pomade premium.",
-            durasi_menit: 45,
-            harga: "45000",
-            status: "active",
-          },
-          {
-            id_barbershop: newShop.id_barbershop,
-            nama_layanan: "Hair Spa & Scalp Treatment",
-            deskripsi: "Perawatan kulit kepala mendalam dan relaksasi pijat.",
-            durasi_menit: 30,
-            harga: "35000",
-            status: "active",
-          },
-          {
-            id_barbershop: newShop.id_barbershop,
-            nama_layanan: "Beard Shaving & Hot Towel",
-            deskripsi: "Cukur jenggot rapi dengan handuk hangat aromaterapi.",
-            durasi_menit: 20,
-            harga: "25000",
-            status: "active",
-          },
-        ]);
+        // STEP 3: Toko baru dimulai dalam kondisi bersih (0 layanan, 0 capster, 0 transaksi)
+        // Jangan menyalin data apa pun dari owner lain!
 
         // STEP 4: Catat ke audit log platform
         await tx.insert(superadminAuditLogs).values({
@@ -398,7 +375,7 @@ export const createTenantWithTransaction = createServerFn({
           actor_email: actorEmail,
           target_tenant_id: newShop.id_barbershop,
           target_tenant_name: newShop.nama_barbershop,
-          details: `Toko '${newShop.nama_barbershop}' dan akun Owner '${newOwner.nama_lengkap}' (${newOwner.email}) berhasil dibuat via DB Transaction.`,
+          details: `Toko '${newShop.nama_barbershop}' (slug: '${newShop.slug}') dan akun Owner '${newOwner.nama_lengkap}' (${newOwner.email}) berhasil dibuat via DB Transaction. Toko baru dimulai bersih/kosong.`,
         });
 
         return {
@@ -507,8 +484,8 @@ export const getTenantDetail = createServerFn({
       throw new Error("Toko tidak ditemukan.");
     }
 
-    // Ambil Owner
-    let [ownerUser] = await db
+    // Ambil Owner (strictly for this barbershop)
+    const [ownerUser] = await db
       .select({
         id_user: users.id_user,
         nama_lengkap: users.nama_lengkap,
@@ -520,23 +497,6 @@ export const getTenantDetail = createServerFn({
       .from(users)
       .where(and(eq(users.role, "owner"), eq(users.id_barbershop, id_barbershop)))
       .limit(1);
-
-    // Fallback jika belum ter-link
-    if (!ownerUser) {
-      const [firstOwner] = await db
-        .select({
-          id_user: users.id_user,
-          nama_lengkap: users.nama_lengkap,
-          email: users.email,
-          no_hp: users.no_hp,
-          status: users.status,
-          created_at: users.created_at,
-        })
-        .from(users)
-        .where(eq(users.role, "owner"))
-        .limit(1);
-      ownerUser = firstOwner;
-    }
 
     // Ambil Capsters
     const capsters = await db
