@@ -35,7 +35,7 @@ function CapsterServicesPage() {
 
   useEffect(() => {
     let mounted = true;
-    getServices()
+    getServices({ data: { slug: barbershopSlug } })
       .then((data) => {
         if (!mounted) return;
         const mapped: CapsterServiceItem[] = data.map((d) => ({

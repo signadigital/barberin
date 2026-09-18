@@ -46,7 +46,7 @@ function ManualSelectServicesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getServices()
+    getServices({ data: { slug: barbershopSlug } })
       .then((data) => {
         const mapped: Service[] = data.map((d) => ({
           id: d.id,
