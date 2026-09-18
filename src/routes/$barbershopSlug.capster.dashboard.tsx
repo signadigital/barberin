@@ -22,7 +22,7 @@ import {
   getCapsterTransactions,
   getDashboardMetrics,
 } from "@/lib/capster-transactions";
-import { endShift } from "@/lib/shifts";
+import { endShift, getActiveShift } from "@/lib/shifts";
 
 export const Route = createFileRoute("/$barbershopSlug/capster/dashboard")({
   head: () => ({
@@ -40,6 +40,34 @@ function CapsterDashboardPage() {
   const { capsterId, userId, capsterName, dashboardMetrics, shiftId, transactions } =
     useCapster();
   const [showEndShiftModal, setShowEndShiftModal] = useState(false);
+
+  // Verifikasi shift aktif: jika belum check in, alihkan ke halaman check-in
+  useEffect(() => {
+    if (!capsterId) return;
+    let mounted = true;
+
+    getActiveShift({
+      data: {
+        capsterId,
+        capsterName,
+      },
+    })
+      .then((active) => {
+        if (!mounted) return;
+        if (active) {
+          capsterActions.checkIn(active.id_shift);
+        } else {
+          navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memeriksa status shift aktif di dashboard:", err);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [capsterId, capsterName, barbershopSlug, navigate]);
 
   const currentMetrics = dashboardMetrics;
   const currentTransactions = transactions;

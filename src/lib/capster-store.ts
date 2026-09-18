@@ -354,7 +354,13 @@ export const capsterActions = {
         userId: payload.userId ?? state.userId,
         barbershopId: payload.barbershopId ?? state.barbershopId,
         barbershopSlug: payload.barbershopSlug ?? state.barbershopSlug,
-        shiftId: payload.shiftId ?? (isSwitchingCapster ? null : state.shiftId),
+        shiftId: payload.shiftId ?? null,
+        shiftInfo: {
+          ...initialCapsterState.shiftInfo,
+          isCheckedIn: Boolean(payload.shiftId),
+          checkedInAt: payload.shiftId ? new Date().toLocaleTimeString("id-ID") : null,
+          isShiftEnded: false,
+        },
         dashboardMetrics: EMPTY_METRICS,
         transactions: [],
         manualDraft: {

@@ -20,11 +20,6 @@ export const Route = createFileRoute("/$barbershopSlug/capster/login")({
       { name: "description", content: "Masuk ke akun Capster BARBERIN." },
     ],
   }),
-  beforeLoad: ({ params }: { params: { barbershopSlug: string } }) => {
-    if (typeof window !== "undefined" && getCapsterAuth(params.barbershopSlug)) {
-      throw redirect({ to: `/${params.barbershopSlug}/capster/dashboard` as any });
-    }
-  },
   component: CapsterLoginPage,
 });
 
@@ -40,7 +35,7 @@ function CapsterLoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const isAuthed = isLoggedIn || (typeof window !== "undefined" && getCapsterAuth());
+    const isAuthed = isLoggedIn || (typeof window !== "undefined" && getCapsterAuth(barbershopSlug));
     if (isAuthed) {
       if (shiftInfo.isCheckedIn && !shiftInfo.isShiftEnded) {
         navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
@@ -56,20 +51,20 @@ function CapsterLoginPage() {
               capsterActions.checkIn(active.id_shift);
               navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
             } else {
-              navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
+              navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
             }
           })
           .catch(() => {
-            navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
+            navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
           });
       } else {
-        navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
+        navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
       }
       return;
     }
-  }, [isLoggedIn, shiftInfo.isCheckedIn, shiftInfo.isShiftEnded, capsterId, capsterName, navigate]);
+  }, [isLoggedIn, shiftInfo.isCheckedIn, shiftInfo.isShiftEnded, capsterId, capsterName, barbershopSlug, navigate]);
 
-  if (isLoggedIn || (typeof window !== "undefined" && getCapsterAuth())) {
+  if (isLoggedIn || (typeof window !== "undefined" && getCapsterAuth(barbershopSlug))) {
     return null;
   }
 
@@ -87,6 +82,7 @@ function CapsterLoginPage() {
         name: res.nama_lengkap,
         role: res.role,
         barbershopId: res.id_barbershop,
+        barbershopSlug,
       });
 
       // Cek apakah capster ini sudah punya active shift di database
