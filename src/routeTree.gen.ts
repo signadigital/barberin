@@ -14,6 +14,7 @@ import { Route as BarbershopSlugRouteImport } from './routes/$barbershopSlug'
 import { Route as DbTestRouteImport } from './routes/db-test'
 import { Route as ServicesTestRouteImport } from './routes/services-test'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
+import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
 import { Route as OwnerVerifyEmailRouteImport } from './routes/owner.verify-email'
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
@@ -84,6 +85,11 @@ const ServicesTestRoute = ServicesTestRouteImport.update({
 const BSlugRoute = BSlugRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/owner/login',
+  path: '/owner/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
@@ -469,6 +477,7 @@ export interface FileRoutesById {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
@@ -524,6 +533,7 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/login'
     | '/owner/register'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
@@ -577,6 +587,7 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/login'
     | '/owner/register'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/login'
     | '/owner/register'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
@@ -684,6 +696,7 @@ export interface RootRouteChildren {
   DbTestRoute: typeof DbTestRoute
   ServicesTestRoute: typeof ServicesTestRoute
   BSlugRoute: typeof BSlugRoute
+  OwnerLoginRoute: typeof OwnerLoginRoute
   OwnerRegisterRoute: typeof OwnerRegisterRoute
   OwnerVerifyEmailRoute: typeof OwnerVerifyEmailRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/b/$slug'
       fullPath: '/b/$slug'
       preLoaderRoute: typeof BSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/login': {
+      id: '/owner/login'
+      path: '/owner/login'
+      fullPath: '/owner/login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner/register': {
@@ -1229,6 +1249,7 @@ const rootRouteChildren: RootRouteChildren = {
   DbTestRoute: DbTestRoute,
   ServicesTestRoute: ServicesTestRoute,
   BSlugRoute: BSlugRoute,
+  OwnerLoginRoute: OwnerLoginRoute,
   OwnerRegisterRoute: OwnerRegisterRoute,
   OwnerVerifyEmailRoute: OwnerVerifyEmailRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,

@@ -456,7 +456,7 @@ function OwnerRegisterPage() {
 
             <div className="pt-1">
               <Link
-                to={successData?.barbershopSlug ? (`/${successData.barbershopSlug}/owner/login` as any) : ("/" as any)}
+                to={"/owner/login" as any}
                 className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-800 transition-colors"
               >
                 <span>Kembali ke Halaman Login</span>
@@ -652,9 +652,9 @@ function OwnerRegisterPage() {
               </button>
 
               <div className="text-center text-xs text-slate-400">
-                Sudah memiliki akun Owner?{" "}
-                <Link to={"/" as any} className="text-blue-400 hover:text-blue-300 font-semibold">
-                  Masuk di sini
+                Sudah punya akun?{" "}
+                <Link to={"/owner/login" as any} className="text-blue-400 hover:text-blue-300 font-semibold">
+                  Masuk
                 </Link>
               </div>
             </div>

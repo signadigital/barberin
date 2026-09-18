@@ -379,18 +379,50 @@ export const getDashboardMetrics = createServerFn({
       totalLayanan = dbRows.reduce((s, d) => s + (d.qty || 1), 0);
     }
 
-    const activeShift = await db
-      .select({ id: shiftCapster.id_shift })
-      .from(shiftCapster)
-      .where(
-        and(
-          eq(shiftCapster.id_capster, targetCapsterId),
-          eq(shiftCapster.status, "ongoing"),
-        ),
-      )
+    // Dapatkan data barbershop dari capster yang sedang login
+    const [currentCapsterRecord] = await db
+      .select({
+        id_capster: capster.id_capster,
+        id_barbershop: capster.id_barbershop,
+      })
+      .from(capster)
+      .where(eq(capster.id_capster, targetCapsterId))
       .limit(1);
 
-    const capsterAktif = activeShift.length > 0 ? 1 : 0;
+    let capsterAktif = 0;
+    let isSelfActive = false;
+
+    if (currentCapsterRecord?.id_barbershop) {
+      // Hitung seluruh capster yang sedang aktif (shift status 'ongoing') di barbershop ini
+      const activeShiftsInShop = await db
+        .select({ id_capster: shiftCapster.id_capster })
+        .from(shiftCapster)
+        .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
+        .where(
+          and(
+            eq(capster.id_barbershop, currentCapsterRecord.id_barbershop),
+            eq(shiftCapster.status, "ongoing"),
+          ),
+        );
+
+      const uniqueActiveCapsterIds = new Set(activeShiftsInShop.map((s) => s.id_capster));
+      capsterAktif = uniqueActiveCapsterIds.size;
+      isSelfActive = uniqueActiveCapsterIds.has(targetCapsterId);
+    } else {
+      const activeShift = await db
+        .select({ id: shiftCapster.id_shift })
+        .from(shiftCapster)
+        .where(
+          and(
+            eq(shiftCapster.id_capster, targetCapsterId),
+            eq(shiftCapster.status, "ongoing"),
+          ),
+        )
+        .limit(1);
+
+      capsterAktif = activeShift.length > 0 ? 1 : 0;
+      isSelfActive = activeShift.length > 0;
+    }
 
     return {
       totalTransaksi,
@@ -400,7 +432,7 @@ export const getDashboardMetrics = createServerFn({
       totalLayanan,
       deltaLayanan: `Hari ini`,
       capsterAktif,
-      deltaCapster: capsterAktif > 0 ? `Shift Aktif` : `Belum Check In`,
+      deltaCapster: isSelfActive ? `Shift Aktif` : `Belum Check In`,
       statusLayanan: {
         selesai,
         sedangDikerjakan: 0,

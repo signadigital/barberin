@@ -217,8 +217,7 @@ export function useOwnerGuard() {
     if (typeof window !== "undefined") {
       const hasAuth = state.isLoggedIn || getOwnerAuth();
       if (!hasAuth) {
-        const target = state.user.barbershopSlug ? `/${state.user.barbershopSlug}/owner/login` : "/";
-        navigate({ to: target as any, replace: true });
+        navigate({ to: "/owner/login" as any, replace: true });
       }
     }
   }, [state.isLoggedIn, navigate]);

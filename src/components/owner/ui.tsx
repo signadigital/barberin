@@ -96,7 +96,7 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
     if (!hasAuth) {
-      navigate({ to: getTenantPath(slug, "/owner/login") as any, replace: true });
+      navigate({ to: "/owner/login" as any, replace: true });
     }
   }, [mounted, isLoggedIn, slug, navigate]);
 
@@ -149,7 +149,7 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
 
   const handleLogout = () => {
     ownerActions.logout();
-    navigate({ to: getTenantPath(slug, "/owner/login") as any });
+    navigate({ to: "/owner/login" as any });
   };
 
   return (
@@ -802,7 +802,7 @@ export function OwnerMobileHeader({
   const handleLogout = () => {
     ownerActions.logout();
     setDrawerOpen(false);
-    navigate({ to: getTenantPath(slug, "/owner/login") as any });
+    navigate({ to: "/owner/login" as any });
   };
 
   return (
