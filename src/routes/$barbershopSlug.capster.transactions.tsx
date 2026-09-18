@@ -75,7 +75,10 @@ function CapsterTransactionsPage() {
     };
   }, [capsterId]);
 
-  if (location.pathname !== "/capster/transactions") {
+  const currentPath = location.pathname.replace(/\/$/, "");
+  const targetPath = `/${barbershopSlug}/capster/transactions`;
+
+  if (currentPath !== targetPath) {
     return <Outlet />;
   }
 
