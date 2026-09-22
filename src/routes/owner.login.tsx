@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, redirect, isRedirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Lock,
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/owner/login")({
           }
         }
       } catch (e) {
-        if (e && typeof e === "object" && "to" in e) throw e;
+        if (isRedirect(e)) throw e;
       }
     }
   },

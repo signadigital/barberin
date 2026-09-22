@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   Calendar,
@@ -25,6 +25,7 @@ import {
   CapsterPerformanceTable,
   RecentCancellationsTable,
   TransactionDetailModal,
+  useTenantSlug,
 } from "@/components/owner/ui";
 import { formatRupiah, formatWibClock, useLiveClock } from "@/lib/format";
 import {
@@ -34,6 +35,51 @@ import {
   type OwnerRecentTransaction,
 } from "@/lib/owner";
 import { ownerActions, useOwner, getOwnerAuth } from "@/lib/owner-store";
+
+function OwnerDashboardError({ error, reset }: { error: Error; reset: () => void }) {
+  const navigate = useNavigate();
+  const router = useRouter();
+
+  return (
+    <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4 antialiased">
+      <div className="max-w-md w-full bg-[#0F1D33] border border-slate-800 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
+        <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-white tracking-tight">
+            Dashboard Tidak Dapat Dimuat
+          </h2>
+          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            {error?.message || "Terjadi kendala saat memuat data dashboard Owner. Sesi mungkin telah berakhir atau belum terverifikasi."}
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors shadow-xs"
+          >
+            Muat Ulang
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              ownerActions.logout();
+              navigate({ to: "/owner/login" as any });
+            }}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-md shadow-blue-600/30"
+          >
+            Login Ulang
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/$barbershopSlug/owner/dashboard")({
   head: () => ({
@@ -45,11 +91,14 @@ export const Route = createFileRoute("/$barbershopSlug/owner/dashboard")({
       },
     ],
   }),
+  errorComponent: OwnerDashboardError,
   component: OwnerDashboardPage,
 });
 
 function OwnerDashboardPage() {
-  const { barbershopSlug } = (Route as any).useParams();
+  const routeParams = (Route as any).useParams ? (Route as any).useParams() : {};
+  const tenantSlug = useTenantSlug();
+  const barbershopSlug = routeParams?.barbershopSlug || tenantSlug;
   const navigate = useNavigate();
   const { activePeriod, searchKeyword, isLoggedIn } = useOwner();
   const liveClock = useLiveClock(1000);
@@ -112,10 +161,10 @@ function OwnerDashboardPage() {
     if (!searchKeyword.trim()) return true;
     const kw = searchKeyword.toLowerCase();
     return (
-      tx.shortId.toLowerCase().includes(kw) ||
-      tx.customerName.toLowerCase().includes(kw) ||
-      tx.capsterName.toLowerCase().includes(kw) ||
-      tx.serviceNames.toLowerCase().includes(kw)
+      (tx.shortId || "").toLowerCase().includes(kw) ||
+      (tx.customerName || "").toLowerCase().includes(kw) ||
+      (tx.capsterName || "").toLowerCase().includes(kw) ||
+      (tx.serviceNames || "").toLowerCase().includes(kw)
     );
   });
 
@@ -123,8 +172,8 @@ function OwnerDashboardPage() {
     if (!searchKeyword.trim()) return true;
     const kw = searchKeyword.toLowerCase();
     return (
-      c.name.toLowerCase().includes(kw) ||
-      c.noPegawai.toLowerCase().includes(kw)
+      (c.name || "").toLowerCase().includes(kw) ||
+      (c.noPegawai || "").toLowerCase().includes(kw)
     );
   });
 
@@ -159,7 +208,7 @@ function OwnerDashboardPage() {
               </h1>
               <p className="text-sm text-slate-400 mt-1">
                 <span className="text-slate-200 font-medium">Selamat datang, Owner 👋</span>{" "}
-                — Berikut ringkasan kondisi barbershop Anda {metrics?.periodLabel.toLowerCase() || "hari ini"}.
+                — Berikut ringkasan kondisi barbershop Anda {metrics?.periodLabel?.toLowerCase() ?? "hari ini"}.
               </p>
             </div>
 

@@ -740,7 +740,7 @@ export function OwnerHeader({
           }`}
         >
           <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
-            {user.nama_lengkap.charAt(0) || "O"}
+            {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
           </div>
           <div className="text-left">
             <div
@@ -860,7 +860,7 @@ export function OwnerMobileHeader({
           <OwnerNotificationBell variant={variant} isMobile />
 
           <div className="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-blue-500/20">
-            {user.nama_lengkap.charAt(0) || "O"}
+            {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
           </div>
         </div>
       </header>
@@ -1062,7 +1062,7 @@ export function RevenueChartCard({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const total = data.reduce((sum, d) => sum + d.revenue, 0);
+  const total = (data || []).reduce((sum, d) => sum + (Number(d?.revenue) || 0), 0);
 
   return (
     <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
@@ -1082,10 +1082,10 @@ export function RevenueChartCard({
       </div>
 
       <div className="h-56 md:h-64 w-full">
-        {mounted && data.length > 0 ? (
+        {mounted && (data || []).length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={data}
+              data={data || []}
               margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
             >
               <defs>
@@ -1175,13 +1175,13 @@ export function PaymentMethodsDonutCard({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const chartData = methods.map((m) => ({
-    name: m.label,
-    value: m.count,
-    color: m.color,
+  const chartData = (methods || []).map((m) => ({
+    name: m?.label || "",
+    value: m?.count || 0,
+    color: m?.color || "#3B82F6",
   }));
 
-  const hasData = methods.some((m) => m.count > 0);
+  const hasData = (methods || []).some((m) => (m?.count || 0) > 0);
 
   return (
     <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
@@ -1297,14 +1297,14 @@ export function RecentTransactionsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {transactions.length === 0 ? (
+            {(transactions || []).length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-slate-500 text-xs">
                   Belum ada transaksi pada periode ini
                 </td>
               </tr>
             ) : (
-              transactions.map((tx) => {
+              (transactions || []).map((tx) => {
                 const isPaid = tx.status === "Selesai";
                 const isCancelled = tx.status === "Batal";
                 const isPending = tx.status === "Menunggu" || tx.status === "Diproses";
@@ -1402,14 +1402,14 @@ export function CapsterPerformanceTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {performance.length === 0 ? (
+            {(performance || []).length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-slate-500 text-xs">
                   Belum ada data performa capster
                 </td>
               </tr>
             ) : (
-              performance.map((c) => (
+              (performance || []).map((c) => (
                 <tr key={c.capsterId} className="hover:bg-slate-800/40 transition-colors">
                   <td className="py-3.5">
                     <div className="flex items-center gap-2.5">
@@ -1484,14 +1484,14 @@ export function RecentCancellationsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {cancellations.length === 0 ? (
+            {(cancellations || []).length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
                   Tidak ada transaksi yang dibatalkan
                 </td>
               </tr>
             ) : (
-              cancellations.map((c) => (
+              (cancellations || []).map((c) => (
                 <tr key={c.id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="py-3 font-mono text-slate-300 font-semibold">
                     {c.shortId}
