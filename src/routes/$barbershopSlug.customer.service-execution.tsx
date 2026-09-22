@@ -21,7 +21,8 @@ import {
   MobileShell,
   StatusBadge,
 } from "@/components/barberin/ui";
-import { formatRupiah } from "@/lib/format";
+import { WaitingVisual } from "@/components/customer/waiting-visual";
+import { formatRupiah, formatTransactionId } from "@/lib/format";
 import {
   actions,
   useBarberin,
@@ -125,7 +126,83 @@ function ServiceExecutionPage() {
   const [cancelling, setCancelling] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
+  // Real-time Countdown untuk State 2 (Sudah Dikonfirmasi Capster)
+  const [countdown, setCountdown] = useState<{
+    number: string;
+    unit: string;
+    progressPercent: number;
+  }>({
+    number: "24",
+    unit: "MENIT",
+    progressPercent: 100,
+  });
+
   const hasNavigatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!txDetail) return;
+    const isWaiting =
+      txDetail.bookingStatus === "waiting" ||
+      txDetail.bookingStatus === "confirmed";
+    if (!isWaiting) return;
+
+    const estMinutes =
+      txDetail.estimation?.estimasiTungguMenit ??
+      txDetail.estimation?.waitTimeMinutes ??
+      24;
+
+    let targetTime: number;
+    if (txDetail.estimation?.estimasiMulai) {
+      targetTime = new Date(txDetail.estimation.estimasiMulai).getTime();
+    } else {
+      const baseTime = txDetail.waktuKonfirmasi
+        ? new Date(txDetail.waktuKonfirmasi).getTime()
+        : Date.now();
+      targetTime = baseTime + estMinutes * 60 * 1000;
+    }
+
+    const totalDurationMs = Math.max(estMinutes * 60 * 1000, 60 * 1000);
+
+    const tick = () => {
+      const diffMs = targetTime - Date.now();
+      if (diffMs <= 0) {
+        setCountdown({
+          number: "00:00",
+          unit: "GILIRAN ANDA",
+          progressPercent: 0,
+        });
+        return;
+      }
+
+      const totalSecs = Math.floor(diffMs / 1000);
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      const pct = Math.min(100, Math.max(0, (diffMs / totalDurationMs) * 100));
+
+      if (mins >= 1) {
+        setCountdown({
+          number: String(mins),
+          unit: "MENIT",
+          progressPercent: pct,
+        });
+      } else {
+        setCountdown({
+          number: `00:${String(secs).padStart(2, "0")}`,
+          unit: "DETIK",
+          progressPercent: pct,
+        });
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [
+    txDetail?.bookingStatus,
+    txDetail?.estimation?.estimasiMulai,
+    txDetail?.estimation?.estimasiTungguMenit,
+    txDetail?.waktuKonfirmasi,
+  ]);
 
   useEffect(() => {
     if (!transactionId) {
@@ -255,21 +332,133 @@ function ServiceExecutionPage() {
       {/* Header tanpa tombol kembali */}
       <CustomerHeader
         title="Layanan Sedang Diproses"
-        subtitle={transactionId ?? "Langkah 5 dari 5"}
+        subtitle={transactionId ? `#${formatTransactionId(transactionId, txDetail?.createdAt)}` : "Langkah 5 dari 5"}
         showBack={false}
       />
 
-      <main className="flex-1 space-y-3 px-4 pb-28 pt-4">
-        {/* Status Lifecycle Alerts */}
+      <main className="flex-1 space-y-3.5 px-4 pb-28 pt-3">
+        {/* Top Media Visual Area (Video-ready architecture, currently displays BARBERIN Logo) */}
+        <WaitingVisual
+          badgeText={
+            txDetail?.bookingStatus === "pending_confirmation"
+              ? "Menunggu Konfirmasi"
+              : txDetail?.bookingStatus === "waiting" || txDetail?.bookingStatus === "confirmed"
+              ? "Terkonfirmasi"
+              : txDetail?.bookingStatus === "in_service"
+              ? "Sedang Dilayani"
+              : txDetail?.bookingStatus === "awaiting_payment"
+              ? "Menunggu Pembayaran"
+              : undefined
+          }
+        />
+
+        {/* ================================================== */}
+        {/* STATE 1 — MENUNGGU KONFIRMASI CAPSTER              */}
+        {/* ================================================== */}
         {txDetail?.bookingStatus === "pending_confirmation" && (
-          <GlassCard className="space-y-2 border-warning/40 bg-warning/10">
-            <div className="flex items-center gap-2 text-warning font-semibold text-[14px]">
-              <Clock className="h-4 w-4 animate-pulse" />
-              <span>Menunggu Konfirmasi Capster</span>
+          <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-3.5 border-amber-500/25 bg-amber-500/5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              <span>Menghubungi Capster...</span>
             </div>
-            <p className="text-[12px] text-muted-foreground leading-relaxed">
-              Pesanan Anda menunggu konfirmasi capster. Batas waktu konfirmasi otomatis adalah 5 menit.
-            </p>
+            <div className="space-y-1.5">
+              <h2 className="text-[18px] font-bold text-foreground">
+                Menunggu Konfirmasi Capster
+              </h2>
+              <p className="text-[13px] text-muted-foreground max-w-[290px] leading-relaxed mx-auto">
+                Permintaan layanan kamu sedang menunggu konfirmasi dari Capster.
+              </p>
+            </div>
+          </GlassCard>
+        )}
+
+        {/* ================================================== */}
+        {/* STATE 2 — SUDAH DIKONFIRMASI CAPSTER               */}
+        {/* ================================================== */}
+        {(txDetail?.bookingStatus === "waiting" || txDetail?.bookingStatus === "confirmed") && (
+          <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-4 border-primary/25 bg-gradient-to-b from-primary/10 via-slate-900/60 to-slate-950">
+            {/* Visual Countdown Badge Ring (inspired by reference image, adapted to BARBERIN) */}
+            <div className="relative flex flex-col items-center justify-center my-1">
+              <div className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-white/10 bg-slate-950/90 shadow-[0_0_35px_rgba(56,189,248,0.22)]">
+                {/* SVG Progress Arc */}
+                <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.06)"
+                    strokeWidth="5"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    stroke="url(#barberin-countdown-grad)"
+                    strokeWidth="5"
+                    strokeDasharray="276"
+                    strokeDashoffset={((100 - countdown.progressPercent) / 100) * 276}
+                    strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                  <defs>
+                    <linearGradient id="barberin-countdown-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#38bdf8" />
+                      <stop offset="100%" stopColor="#818cf8" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Angka & Unit Countdown */}
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  <span className="text-[34px] sm:text-[38px] font-black tracking-tight text-foreground leading-none font-mono">
+                    {countdown.number}
+                  </span>
+                  <span className="text-[11px] font-extrabold tracking-widest text-primary-soft uppercase mt-1">
+                    {countdown.unit}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Teks Status */}
+            <div className="space-y-1.5">
+              <h2 className="text-[18px] font-bold text-foreground">
+                Menunggu Estimasi Waktu Habis
+              </h2>
+              <p className="text-[13px] text-muted-foreground max-w-[310px] leading-relaxed mx-auto">
+                Capster sudah mengonfirmasi layanan kamu. Silakan tunggu sampai estimasi waktu selesai.
+              </p>
+            </div>
+
+            {/* Info Antrean & Estimasi Mulai */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3 text-[12px] text-muted-foreground w-full px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-primary-soft animate-ping" />
+                <span className="font-semibold text-foreground">
+                  Antrean Ke-{txDetail?.estimation?.antreanKe ?? txDetail?.estimation?.positionInQueue ?? 1}
+                </span>
+              </div>
+              {txDetail?.estimation?.estimasiMulai && (
+                <span>
+                  Estimasi Mulai:{" "}
+                  <strong className="text-primary-soft font-semibold">
+                    {new Date(txDetail.estimation.estimasiMulai).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Jakarta",
+                    })}{" "}
+                    WIB
+                  </strong>
+                </span>
+              )}
+            </div>
+            {txDetail?.estimation?.totalAntreanSebelumnya > 0 && (
+              <p className="text-[11px] text-muted-foreground/80 w-full text-left px-1">
+                Terdapat {txDetail.estimation.totalAntreanSebelumnya} pelanggan dalam antrean sebelum Anda.
+              </p>
+            )}
           </GlassCard>
         )}
 
@@ -301,53 +490,6 @@ function ServiceExecutionPage() {
                 </span>
               </div>
             </div>
-          </GlassCard>
-        )}
-
-        {/* Live Estimation for Waiting / Confirmed / Pending Confirmation */}
-        {txDetail?.estimation && (txDetail.bookingStatus === "waiting" || txDetail.bookingStatus === "confirmed" || txDetail.bookingStatus === "pending_confirmation") && (
-          <GlassCard className="space-y-3 border-primary/30 bg-primary/5">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-primary-soft">
-                Estimasi Waktu Tunggu
-              </span>
-              <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary-soft ring-1 ring-primary/40">
-                {txDetail.bookingStatus === "pending_confirmation"
-                  ? "Menunggu Konfirmasi"
-                  : `Antrean Ke-${txDetail.estimation.antreanKe ?? txDetail.estimation.positionInQueue ?? 1}`}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
-                <span className="text-[11px] text-muted-foreground block">Waktu Tunggu</span>
-                <span className="text-[20px] font-extrabold text-foreground">
-                  ~{txDetail.estimation.estimasiTungguMenit ?? txDetail.estimation.waitTimeMinutes ?? 0}{" "}
-                  <span className="text-[12px] font-medium text-muted-foreground">menit</span>
-                </span>
-              </div>
-              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
-                <span className="text-[11px] text-muted-foreground block">Estimasi Mulai</span>
-                <span className="text-[20px] font-extrabold text-foreground">
-                  {new Date(txDetail.estimation.estimasiMulai ?? txDetail.estimation.estimatedStartTime).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Asia/Jakarta",
-                  })}
-                  <span className="text-[11px] font-normal text-muted-foreground ml-1">WIB</span>
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[12px] text-muted-foreground">
-              <span>Durasi Layanan Anda:</span>
-              <span className="font-semibold text-foreground">
-                {txDetail.estimation.durasiLayanan ?? txDetail.totalDurationMinutes ?? 30} menit
-              </span>
-            </div>
-            {txDetail.estimation.totalAntreanSebelumnya > 0 && (
-              <p className="text-[11px] text-muted-foreground">
-                Terdapat {txDetail.estimation.totalAntreanSebelumnya} pelanggan dalam antrean sebelum Anda.
-              </p>
-            )}
           </GlassCard>
         )}
 
