@@ -878,7 +878,7 @@ export function UnconfirmedTransactionsSection({
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-2.5 py-0.5 text-[10px] font-bold text-warning ring-1 ring-warning/30 shadow-sm mt-0.5">
                   <Clock className="h-3 w-3" strokeWidth={2.5} />
-                  <span>Menunggu</span>
+                  <span>Batas: 5 menit</span>
                 </span>
               </div>
 
@@ -900,7 +900,7 @@ export function UnconfirmedTransactionsSection({
                     {formatRupiah(trx.total)}
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-[8px] bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-bold shadow-[0_2px_8px_rgba(78,120,255,0.35)] group-hover:bg-primary/90 transition-all">
-                    <span>Konfirmasi</span>
+                    <span>KONFIRMASI LAYANAN</span>
                     <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
                   </span>
                 </div>
@@ -1087,17 +1087,37 @@ export function CapsterTransactionCard({
           )}
 
           {trx.status === "Menunggu" && (
-            <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-[8px] border border-warning/20">
+            trx.bookingStatus === "pending_confirmation" ? (
+              <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-[8px] border border-warning/20">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Batas konfirmasi: 5 menit</span>
+                </span>
+                <span className="font-bold text-[10px] bg-warning/20 px-2 py-0.5 rounded text-warning">
+                  KONFIRMASI LAYANAN
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-[8px] border border-warning/20">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Antrean #{trx.positionInQueue ?? 1}</span>
+                </span>
+                <span className="font-bold">
+                  Estimasi Tunggu: ~{trx.waitTimeMinutes ?? 0} menit
+                </span>
+              </div>
+            )
+          )}
+
+          {trx.bookingStatus === "awaiting_payment" && (
+            <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-primary-soft bg-primary/10 px-2.5 py-1 rounded-[8px] border border-primary/20">
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                <span>
-                  {trx.bookingStatus === "pending_confirmation"
-                    ? "Menunggu Konfirmasi"
-                    : `Antrean #${trx.positionInQueue ?? 1}`}
-                </span>
+                <span>Batas konfirmasi: 2 jam</span>
               </span>
-              <span className="font-bold">
-                Estimasi Tunggu: ~{trx.waitTimeMinutes ?? 0} menit
+              <span className="font-bold text-[10px] bg-primary/20 px-2 py-0.5 rounded text-primary-soft">
+                KONFIRMASI PEMBAYARAN
               </span>
             </div>
           )}

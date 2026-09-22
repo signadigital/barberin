@@ -167,7 +167,7 @@ function CapsterTransactionDetailPage() {
     setConfirmingBooking(true);
     try {
       await capsterConfirmBooking({ data: { bookingId: trx.bookingId } });
-      toast.success("Booking berhasil dikonfirmasi!");
+      toast.success("Layanan berhasil dikonfirmasi!");
       await fetchDetail(false);
     } catch (err: any) {
       toast.error(err?.message || "Gagal mengonfirmasi booking");
@@ -321,13 +321,16 @@ function CapsterTransactionDetailPage() {
             <div className="flex flex-col gap-1 rounded-[10px] bg-warning/10 border border-warning/30 p-2.5 text-[12px] text-warning font-medium">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span className="font-bold">Menunggu Konfirmasi Capster (Batas 5 menit)</span>
+                <span className="font-bold">Menunggu Konfirmasi Layanan</span>
               </div>
-              {trx.waitTimeMinutes !== undefined && (
-                <span className="text-[11px] text-muted-foreground pl-6">
-                  Perkiraan waktu tunggu jika dikonfirmasi: ~{trx.waitTimeMinutes} menit (Total durasi: {trx.totalDurationMinutes ?? 30}m)
-                </span>
-              )}
+              <div className="text-[11px] text-slate-300 pl-6 flex items-center justify-between">
+                <span>Batas konfirmasi: 5 menit</span>
+                {trx.waitTimeMinutes !== undefined && (
+                  <span className="text-muted-foreground">
+                    Perkiraan waktu tunggu: ~{trx.waitTimeMinutes}m
+                  </span>
+                )}
+              </div>
             </div>
           )}
           {(trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed") && (
@@ -349,9 +352,14 @@ function CapsterTransactionDetailPage() {
             </div>
           )}
           {trx.bookingStatus === "awaiting_payment" && (
-            <div className="flex items-center gap-2 rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span>Pelayanan selesai — Menunggu pembayaran kasir (Batas 2 jam)</span>
+            <div className="flex flex-col gap-1 rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span className="font-bold">Pelayanan Selesai — Menunggu Konfirmasi Pembayaran</span>
+              </div>
+              <span className="text-[11px] text-slate-300 pl-6">
+                Batas konfirmasi pembayaran: 2 jam setelah pelayanan selesai
+              </span>
             </div>
           )}
         </GlassCard>
@@ -462,12 +470,15 @@ function CapsterTransactionDetailPage() {
       <BottomActionBar>
         {trx.bookingStatus === "pending_confirmation" ? (
           <div className="flex flex-col gap-2 w-full">
+            <div className="text-[11px] font-semibold text-warning text-center">
+              Batas konfirmasi: 5 menit
+            </div>
             <PrimaryButton
               loading={confirmingBooking}
               onClick={handleConfirmBooking}
             >
               <CheckCircle className="h-4 w-4" strokeWidth={2} />
-              KONFIRMASI BOOKING
+              KONFIRMASI LAYANAN
             </PrimaryButton>
             <button
               type="button"
@@ -503,11 +514,14 @@ function CapsterTransactionDetailPage() {
               onClick={handleFinishService}
             >
               <CheckSquare className="h-4 w-4" strokeWidth={2} />
-              SELESAI PELAYANAN
+              SELESAI LAYANAN
             </PrimaryButton>
           </div>
-        ) : trx.bookingStatus === "awaiting_payment" || trx.status === "Menunggu" ? (
+        ) : trx.bookingStatus === "awaiting_payment" ? (
           <div className="flex flex-col gap-2 w-full">
+            <div className="text-[11px] font-semibold text-primary-soft text-center">
+              Batas konfirmasi pembayaran: 2 jam setelah pelayanan selesai
+            </div>
             <PrimaryButton
               loading={confirming}
               onClick={handleConfirmPayment}

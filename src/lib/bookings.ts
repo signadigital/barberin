@@ -373,8 +373,18 @@ export const capsterConfirmBooking = createServerFn({
       throw new Error("Permintaan layanan tidak ditemukan.");
     }
 
-    if (data.capsterId && b.id_capster && b.id_capster !== data.capsterId) {
-      throw new Error("Akses ditolak. Permintaan layanan ini milik capster lain.");
+    if (data.capsterId) {
+      const [cap] = await db
+        .select({ id_capster: capster.id_capster, id_barbershop: capster.id_barbershop })
+        .from(capster)
+        .where(eq(capster.id_capster, data.capsterId))
+        .limit(1);
+      if (cap && cap.id_barbershop !== b.id_barbershop) {
+        throw new Error("Akses ditolak. Permintaan layanan bukan milik barbershop Anda.");
+      }
+      if (b.id_capster && b.id_capster !== data.capsterId) {
+        throw new Error("Akses ditolak. Permintaan layanan ini milik capster lain.");
+      }
     }
 
     const now = new Date();
@@ -633,11 +643,39 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
       throw new Error("Transaksi tidak ditemukan.");
     }
 
-    // Validasi isolasi Capster
-    if (data.capsterId && txRecord.id_capster && txRecord.id_capster !== data.capsterId) {
-      throw new Error(
-        "Akses ditolak. Anda tidak berhak mengonfirmasi transaksi milik capster lain.",
-      );
+    // Validasi isolasi Capster & Barbershop
+    let confirmedByUserId: string | null = null;
+    if (data.capsterId) {
+      const [cUser] = await db
+        .select({ id_user: capster.id_user, id_barbershop: capster.id_barbershop })
+        .from(capster)
+        .where(eq(capster.id_capster, data.capsterId))
+        .limit(1);
+      if (cUser) {
+        if (cUser.id_barbershop !== txRecord.id_barbershop) {
+          throw new Error("Akses ditolak. Transaksi bukan milik barbershop Anda.");
+        }
+        confirmedByUserId = cUser.id_user;
+      }
+      if (txRecord.id_capster && txRecord.id_capster !== data.capsterId) {
+        throw new Error(
+          "Akses ditolak. Anda tidak berhak mengonfirmasi transaksi milik capster lain.",
+        );
+      }
+    }
+
+    // Validasi tahap transaksi / booking
+    if (txRecord.id_booking) {
+      const [bRecord] = await db
+        .select({ status: booking.status })
+        .from(booking)
+        .where(eq(booking.id_booking, txRecord.id_booking))
+        .limit(1);
+      if (bRecord && bRecord.status !== "awaiting_payment" && bRecord.status !== "in_service") {
+        throw new Error(
+          `Transaksi tidak dapat dikonfirmasi pembayaran karena status saat ini: ${bRecord.status}. Menunggu tahap pelayanan selesai.`,
+        );
+      }
     }
 
     const now = new Date();
@@ -683,16 +721,6 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
     }
 
     // 2. Update Pembayaran -> SUCCESS
-    let confirmedByUserId: string | null = null;
-    if (data.capsterId) {
-      const [cUser] = await db
-        .select({ id_user: capster.id_user })
-        .from(capster)
-        .where(eq(capster.id_capster, data.capsterId))
-        .limit(1);
-      if (cUser) confirmedByUserId = cUser.id_user;
-    }
-
     await db
       .update(pembayaran)
       .set({
