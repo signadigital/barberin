@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { UserRound } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   BottomActionBar,
   CapsterCard,
@@ -51,12 +51,29 @@ export const Route = createFileRoute("/$barbershopSlug/customer/capster")({
 function CapsterPage() {
   const navigate = useNavigate();
   const { barbershopSlug } = (Route as any).useParams();
+  const loaderData = Route.useLoaderData();
   const { selectedCapster } = useBarberin();
   const shopSlug = barbershopSlug;
-  const [capsters, setCapsters] = useState<Capster[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [capsters, setCapsters] = useState<Capster[]>(() => {
+    if (loaderData && Array.isArray(loaderData) && loaderData.length > 0) {
+      return loaderData.map((c: any) => ({
+        id: c.id_capster,
+        name: c.name,
+        role: c.role,
+        status: c.status,
+      }));
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(capsters.length === 0);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (capsters.length > 0) return;
+    }
+
     let mounted = true;
     getCapsters({ data: { onlyCheckedIn: true, slug: shopSlug ?? undefined } })
       .then((data) => {

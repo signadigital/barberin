@@ -342,6 +342,7 @@ export function CapsterHeader({
     let mounted = true;
 
     const fetchPending = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const data = await getCapsterTransactions({ data: { capsterId } });
         if (!mounted || !data) return;
@@ -353,10 +354,19 @@ export function CapsterHeader({
     };
 
     fetchPending();
-    const interval = setInterval(fetchPending, 10000);
+    const interval = setInterval(fetchPending, 15000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchPending();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       mounted = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [allowNotifications, capsterId]);
 

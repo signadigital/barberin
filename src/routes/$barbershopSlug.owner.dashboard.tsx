@@ -137,11 +137,23 @@ function OwnerDashboardPage() {
   useEffect(() => {
     if (!isLoggedIn && !getOwnerAuth()) return;
     fetchMetrics();
-    // Auto refresh periodically every 30 seconds for live updates
+    // Auto refresh periodically every 30 seconds for live updates (active tab only)
     const timer = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       fetchMetrics(true);
     }, 30000);
-    return () => clearInterval(timer);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchMetrics(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [activePeriod, isLoggedIn]);
 
   const handlePeriodChange = (p: OwnerPeriodFilter) => {

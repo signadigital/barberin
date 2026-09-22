@@ -12,7 +12,7 @@ import {
   Lock,
   ExternalLink,
 } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 
 import {
   BarberinLogo,
@@ -112,6 +112,7 @@ function ServicesPage() {
 
   // Live Current Time & Open/Closed Status
   const [currentTime, setCurrentTime] = useState(new Date());
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -128,8 +129,15 @@ function ServicesPage() {
     }
   }, [shopInfo?.id_barbershop, shopInfo?.slug, shopSlug]);
 
-  // Load latest shop info & services from database
+  // Load latest shop info & services from database (only when slug changes or not preloaded)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (loaderData?.services && loaderData.services.length > 0 && shopSlug === barbershopSlug) {
+        return;
+      }
+    }
+
     let mounted = true;
 
     // Fetch Barbershop Profile

@@ -212,6 +212,7 @@ function ServiceExecutionPage() {
 
     let mounted = true;
     const check = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
         if (!mounted || !detail) return;
@@ -260,10 +261,19 @@ function ServiceExecutionPage() {
     };
 
     check();
-    const interval = setInterval(check, 4000);
+    const interval = setInterval(check, 5000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        check();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       mounted = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [transactionId, navigate, barbershopSlug]);
 

@@ -84,6 +84,7 @@ function CapsterDashboardPage() {
     let mounted = true;
 
     const fetchAllData = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const [metrics, txs] = await Promise.all([
           getDashboardMetrics({
@@ -107,11 +108,19 @@ function CapsterDashboardPage() {
     };
 
     fetchAllData();
-    const intervalId = setInterval(fetchAllData, 8000);
+    const intervalId = setInterval(fetchAllData, 10000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchAllData();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       mounted = false;
       clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [capsterId, userId]);
 

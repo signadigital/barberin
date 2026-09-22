@@ -41,6 +41,7 @@ function TodayTransactionsPage() {
     let mounted = true;
 
     const fetchToday = async (isInitial = false) => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       if (isInitial) setLoading(true);
       try {
         const data = await getCapsterTransactions({
@@ -64,11 +65,19 @@ function TodayTransactionsPage() {
     fetchToday(true);
     const intervalId = setInterval(() => {
       fetchToday(false);
-    }, 8000);
+    }, 10000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchToday(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       mounted = false;
       clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [capsterId]);
 

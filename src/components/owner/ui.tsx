@@ -273,9 +273,21 @@ export function OwnerNotificationBell({
   useEffect(() => {
     fetchNotifs();
     const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       fetchNotifs();
     }, 30000);
-    return () => clearInterval(interval);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifs();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   const saveReadIds = (newSet: Set<string>) => {

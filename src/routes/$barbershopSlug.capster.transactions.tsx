@@ -44,14 +44,19 @@ function CapsterTransactionsPage() {
     "Semua" | "Selesai" | "Menunggu" | "Batal"
   >("Semua");
 
+  const currentPath = location.pathname.replace(/\/$/, "");
+  const targetPath = `/${barbershopSlug}/capster/transactions`;
+  const isExactRoute = currentPath === targetPath;
+
   useEffect(() => {
-    if (!capsterId) {
+    if (!capsterId || !isExactRoute) {
       setLoading(false);
       return;
     }
     let mounted = true;
 
     const fetchTransactions = async (isInitial = false) => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       if (isInitial) setLoading(true);
       try {
         const data = await getCapsterTransactions({ data: { capsterId } });
@@ -67,18 +72,23 @@ function CapsterTransactionsPage() {
     fetchTransactions(true);
     const intervalId = setInterval(() => {
       fetchTransactions(false);
-    }, 8000);
+    }, 10000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchTransactions(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       mounted = false;
       clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [capsterId]);
+  }, [capsterId, isExactRoute]);
 
-  const currentPath = location.pathname.replace(/\/$/, "");
-  const targetPath = `/${barbershopSlug}/capster/transactions`;
-
-  if (currentPath !== targetPath) {
+  if (!isExactRoute) {
     return <Outlet />;
   }
 

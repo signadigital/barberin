@@ -70,6 +70,7 @@ function CapsterTransactionDetailPage() {
   const [cancelReason, setCancelReason] = useState("");
 
   const fetchDetail = async (isInitial = false) => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     if (isInitial && !storeTrx) setLoading(true);
     try {
       const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
@@ -154,13 +155,21 @@ function CapsterTransactionDetailPage() {
     fetchDetail(true);
     const intervalId = setInterval(() => {
       if (mounted) fetchDetail(false);
-    }, 6000);
+    }, 8000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && mounted) {
+        fetchDetail(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       mounted = false;
       clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [transactionId, storeTrx]);
+  }, [transactionId]);
 
   const handleConfirmBooking = async () => {
     if (!trx?.bookingId) return;

@@ -3,6 +3,7 @@ import { eq, desc, asc, count, and } from "drizzle-orm";
 import { db } from "@/db";
 import { layanan, barbershop, detailBooking, booking } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
+import { resolveBarbershopBySlug } from "./tenant-resolver";
 
 export type OwnerServiceItem = {
   id: string;
@@ -69,17 +70,8 @@ export const getServices = createServerFn({
       if (!shop) return [];
       targetShopId = shop.id_barbershop;
     } else if (data?.slug) {
-      const [shop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .where(
-          and(
-            eq(barbershop.slug, data.slug),
-            eq(barbershop.status, "active"),
-          ),
-        )
-        .limit(1);
-      if (!shop) return [];
+      const shop = await resolveBarbershopBySlug({ data: data.slug });
+      if (!shop || shop.status !== "active") return [];
       targetShopId = shop.id_barbershop;
     } else {
       // Tidak ada tenant context yang diberikan: jangan tampilkan data barbershop lain

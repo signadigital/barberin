@@ -18,6 +18,7 @@ import { getWibTimeString } from "@/lib/format";
 import { logAudit } from "./audit";
 import { sweepExpiredRequestsAndPayments } from "./expiration";
 import { calculateQueueEstimations } from "./estimation";
+import { resolveBarbershopBySlug } from "./tenant-resolver";
 
 type CreateManualTransactionInput = {
   customerName: string;
@@ -58,11 +59,7 @@ export const getCapsterTransactions = createServerFn({
   .handler(async ({ data }) => {
     let targetShopId = data?.barbershopId;
     if (data?.barbershopSlug) {
-      const [shop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .where(eq(barbershop.slug, data.barbershopSlug))
-        .limit(1);
+      const shop = await resolveBarbershopBySlug({ data: data.barbershopSlug });
       if (!shop) return [];
       targetShopId = shop.id_barbershop;
     }
@@ -327,11 +324,7 @@ export const getDashboardMetrics = createServerFn({
   .handler(async ({ data }) => {
     let targetShopId = data?.barbershopId;
     if (data?.barbershopSlug) {
-      const [shop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .where(eq(barbershop.slug, data.barbershopSlug))
-        .limit(1);
+      const shop = await resolveBarbershopBySlug({ data: data.barbershopSlug });
       if (shop) targetShopId = shop.id_barbershop;
     }
 

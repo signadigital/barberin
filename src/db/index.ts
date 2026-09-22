@@ -28,12 +28,16 @@ export function getClient(): ReturnType<typeof postgres> {
     ? rawUrl.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543")
     : rawUrl;
 
+  const isServerless = Boolean(
+    process.env["VERCEL"] || process.env["NETLIFY"] || process.env["AWS_LAMBDA_FUNCTION_NAME"],
+  );
+
   const conn = postgres(connectionString, {
     prepare: false,
-    max: 10,
-    idle_timeout: 20,
-    max_lifetime: 60 * 30,
-    connect_timeout: 15,
+    max: isServerless ? 2 : 10,
+    idle_timeout: 10,
+    max_lifetime: 60 * 10,
+    connect_timeout: 10,
   });
 
   globalForDb.conn = conn;

@@ -3,6 +3,7 @@ import { resolveBarbershopBySlug } from "@/lib/tenant-resolver";
 import { BarbershopNotFound } from "@/components/barberin/barbershop-not-found";
 
 export const Route = createFileRoute("/$barbershopSlug")({
+  staleTime: 60_000,
   loader: async ({ params }) => {
     const shop = await resolveBarbershopBySlug({
       data: params.barbershopSlug,

@@ -3,6 +3,7 @@ import { and, eq, ne, count } from "drizzle-orm";
 import { db } from "@/db";
 import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
+import { resolveBarbershopBySlug } from "./tenant-resolver";
 
 export type CapsterView = {
   id: string;
@@ -47,17 +48,8 @@ export const getCapsters = createServerFn({
       if (!shop) return [];
       targetShopId = shop.id_barbershop;
     } else if (data?.slug) {
-      const [shop] = await db
-        .select({ id_barbershop: barbershop.id_barbershop })
-        .from(barbershop)
-        .where(
-          and(
-            eq(barbershop.slug, data.slug),
-            eq(barbershop.status, "active"),
-          ),
-        )
-        .limit(1);
-      if (!shop) return [];
+      const shop = await resolveBarbershopBySlug({ data: data.slug });
+      if (!shop || shop.status !== "active") return [];
       targetShopId = shop.id_barbershop;
     } else {
       // Tidak ada tenant context yang diberikan: jangan tampilkan data capster barbershop lain
