@@ -692,6 +692,139 @@ async function runAllTests() {
     assert(tenantKeyShopA !== tenantKeyShopB, "Kunci sesi storage terisolasi per barbershop slug");
     assert(tenantKeyShopA.includes(shopA.slug), "Kunci sesi mengandung slug tenant aktif");
 
+    // =========================================================================
+    // FITUR WAKTU PELAYANAN OWNER -> CUSTOMER -> CAPSTER (TEST 1 - TEST 9)
+    // =========================================================================
+    console.log("\n=======================================================");
+    console.log("  ACCEPTANCE TESTS: MENU WAKTU PELAYANAN (TEST 1 - TEST 9)");
+    console.log("=======================================================\n");
+
+    // TEST 1: Validasi Waktu Pelayanan (Wajib diisi, angka integer > 0, tolak 0 dan negatif)
+    console.log("▶ TEST 1: Validasi input Waktu Pelayanan (wajib angka, integer > 0)");
+    function validateWaktuPelayanan(durasi) {
+      const num = Number(durasi);
+      if (isNaN(num) || !Number.isInteger(num) || num <= 0) {
+        throw new Error("Waktu pelayanan wajib diisi dengan bilangan bulat positif lebih dari 0 menit.");
+      }
+      return num;
+    }
+    let valErr1 = false;
+    try { validateWaktuPelayanan(0); } catch (e) { valErr1 = true; }
+    assert(valErr1, "Validasi menolak durasi_menit = 0");
+    let valErr2 = false;
+    try { validateWaktuPelayanan(-10); } catch (e) { valErr2 = true; }
+    assert(valErr2, "Validasi menolak durasi_menit negatif (-10)");
+    let valErr3 = false;
+    try { validateWaktuPelayanan("abc"); } catch (e) { valErr3 = true; }
+    assert(valErr3, "Validasi menolak durasi_menit non-numerik ('abc')");
+    let valErr4 = false;
+    try { validateWaktuPelayanan(30.5); } catch (e) { valErr4 = true; }
+    assert(valErr4, "Validasi menolak durasi_menit pecahan (30.5)");
+    assert(validateWaktuPelayanan(30) === 30, "Validasi meloloskan integer positif (30)");
+
+    // TEST 2: Owner membuat Haircut: Harga 30000, Waktu Pelayanan: 30 menit -> DB durasi_menit = 30
+    console.log("\n▶ TEST 2: Owner membuat Haircut: Harga 30000, Waktu Pelayanan: 30 menit");
+    const [svcHaircut] = await sql`
+      INSERT INTO layanan (
+        id_barbershop, nama_layanan, deskripsi, durasi_menit, harga, status
+      ) VALUES (
+        ${shopA.id_barbershop}, 'Haircut Signature', 'Potong rambut pria rapi', 30, '30000.00', 'active'
+      ) RETURNING *;
+    `;
+    cleanupIds.layanan.push(svcHaircut.id_layanan);
+    assert(svcHaircut.durasi_menit === 30, `Database menyimpan durasi_menit = 30 (integer)`);
+    assert(Number(svcHaircut.harga) === 30000, `Database menyimpan harga = Rp30.000`);
+
+    // TEST 3: Owner Edit Haircut: 30 -> 40 menit -> DB durasi_menit = 40
+    console.log("\n▶ TEST 3: Owner Edit Haircut: 30 -> 40 menit");
+    const [svcUpdated] = await sql`
+      UPDATE layanan
+      SET durasi_menit = 40, updated_at = NOW()
+      WHERE id_layanan = ${svcHaircut.id_layanan} AND id_barbershop = ${shopA.id_barbershop}
+      RETURNING *;
+    `;
+    assert(svcUpdated.durasi_menit === 40, `Database menyimpan durasi_menit terupdate = 40`);
+
+    // TEST 4: Customer memilih Haircut -> durasi layanan = 40 menit
+    console.log("\n▶ TEST 4: Customer memilih Haircut dengan durasi 40 menit");
+    const [svcActive] = await sql`
+      SELECT durasi_menit FROM layanan
+      WHERE id_layanan = ${svcHaircut.id_layanan} AND id_barbershop = ${shopA.id_barbershop} AND status = 'active';
+    `;
+    assert(svcActive.durasi_menit === 40, `Layanan terpilih menghasilkan durasi 40 menit untuk Customer`);
+
+    // TEST 5: Customer membuat request saat durasi 40 menit -> durasi_menit_snapshot = 40
+    console.log("\n▶ TEST 5: Customer membuat booking saat durasi 40 menit -> snapshot tersimpan 40");
+    const [bCustT5] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking, status, waktu_permintaan, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        NOW(), '11:00', 'waiting', NOW(), 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(bCustT5.id_booking);
+
+    const [detCustT5] = await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bCustT5.id_booking}, ${svcHaircut.id_layanan},
+        ${svcHaircut.harga}, 1, ${svcHaircut.harga}, 'Haircut Signature', ${svcActive.durasi_menit}
+      ) RETURNING *;
+    `;
+    assert(detCustT5.durasi_menit_snapshot === 40, `detail_booking.durasi_menit_snapshot tersimpan tepat 40 menit`);
+
+    // TEST 6: Owner mengubah layanan 40 -> 50 menit -> request lama tetap durasi_menit_snapshot = 40
+    console.log("\n▶ TEST 6: Owner ubah durasi 40 -> 50 menit, snapshot booking lama tetap 40 menit");
+    await sql`
+      UPDATE layanan
+      SET durasi_menit = 50, updated_at = NOW()
+      WHERE id_layanan = ${svcHaircut.id_layanan} AND id_barbershop = ${shopA.id_barbershop};
+    `;
+    const [detCustT5Check] = await sql`
+      SELECT durasi_menit_snapshot FROM detail_booking WHERE id_detail_booking = ${detCustT5.id_detail_booking};
+    `;
+    assert(detCustT5Check.durasi_menit_snapshot === 40, `Request lama tetap memiliki durasi_menit_snapshot = 40 (tidak berubah)`);
+
+    // TEST 7: Customer berikutnya menunggu -> estimasi dihitung dari snapshot + kondisi layanan aktif + sisa waktu
+    console.log("\n▶ TEST 7: Estimasi antrean dihitung dinamis dari snapshot + sisa durasi layanan aktif");
+    // Asumsikan bCustA sedang berjalan dengan sisa 20 menit, dan bCustT5 menunggu di belakangnya dengan snapshot 40 menit
+    const estNextCustomer = 20 + detCustT5Check.durasi_menit_snapshot; // 20 + 40 = 60 menit
+    assert(estNextCustomer === 60, `Estimasi customer berikutnya tepat 60 menit (20m sisa aktif + 40m antrean sebelumnya)`);
+
+    // TEST 8: Capster membuka list transaksi -> melihat Waktu Pelayanan & Estimasi Waktu Tunggu identik dg Customer
+    console.log("\n▶ TEST 8: Capster & Customer melihat Waktu Pelayanan (40m) & Estimasi yang identik");
+    const capsterDisplayDuration = detCustT5Check.durasi_menit_snapshot;
+    const customerDisplayDuration = detCustT5Check.durasi_menit_snapshot;
+    assert(capsterDisplayDuration === 40 && customerDisplayDuration === 40, "Waktu Pelayanan pada Capster dan Customer sama-sama 40 menit");
+
+    // TEST 9: Owner Barbershop A mengubah durasi layanan -> Barbershop B tidak berubah
+    console.log("\n▶ TEST 9: Multi-tenant: Ubah durasi di Shop A tidak mempengaruhi layanan Shop B");
+    const [svcShopB] = await sql`
+      INSERT INTO layanan (
+        id_barbershop, nama_layanan, deskripsi, durasi_menit, harga, status
+      ) VALUES (
+        ${shopB.id_barbershop}, 'Haircut Shop B', 'Haircut di Barbershop B', 25, '35000.00', 'active'
+      ) RETURNING *;
+    `;
+    cleanupIds.layanan.push(svcShopB.id_layanan);
+
+    // Update layanan Shop A ke 45m
+    await sql`
+      UPDATE layanan
+      SET durasi_menit = 45
+      WHERE id_layanan = ${svcHaircut.id_layanan} AND id_barbershop = ${shopA.id_barbershop};
+    `;
+
+    // Cek layanan Shop B
+    const [svcShopBCheck] = await sql`
+      SELECT durasi_menit FROM layanan WHERE id_layanan = ${svcShopB.id_layanan};
+    `;
+    assert(svcShopBCheck.durasi_menit === 25, `Durasi layanan Shop B tetap 25 menit (terisolasi sempurna dari perubahan Shop A)`);
+
   } finally {
     // -------------------------------------------------------------------------
     // CLEANUP

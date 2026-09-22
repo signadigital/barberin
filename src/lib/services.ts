@@ -188,8 +188,8 @@ export const createOwnerService = createServerFn({
       throw new Error("Tarif layanan tidak valid.");
     }
     const durasi = Number(data.durasi_menit);
-    if (isNaN(durasi) || durasi <= 0) {
-      throw new Error("Durasi pengerjaan harus lebih dari 0 menit.");
+    if (isNaN(durasi) || !Number.isInteger(durasi) || durasi <= 0) {
+      throw new Error("Waktu pelayanan wajib diisi dengan bilangan bulat positif lebih dari 0 menit.");
     }
 
     const [created] = await db
@@ -243,8 +243,8 @@ export const updateOwnerService = createServerFn({
       throw new Error("Tarif layanan tidak valid.");
     }
     const durasi = Number(data.durasi_menit);
-    if (isNaN(durasi) || durasi <= 0) {
-      throw new Error("Durasi pengerjaan harus lebih dari 0 menit.");
+    if (isNaN(durasi) || !Number.isInteger(durasi) || durasi <= 0) {
+      throw new Error("Waktu pelayanan wajib diisi dengan bilangan bulat positif lebih dari 0 menit.");
     }
 
     const [updated] = await db

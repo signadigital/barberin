@@ -28,6 +28,7 @@ import {
   PowerOff,
   Power,
   FolderTree,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -236,13 +237,19 @@ function OwnerServicesPage() {
       return;
     }
 
+    const durasi = Number(formDuration);
+    if (isNaN(durasi) || !Number.isInteger(durasi) || durasi <= 0) {
+      toast.error("Waktu pelayanan harus berupa angka bulat positif (lebih dari 0 menit).");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await createOwnerService({
         data: {
           nama_layanan: name,
           deskripsi: formDesc.trim() || undefined,
-          durasi_menit: Number(formDuration) || 30,
+          durasi_menit: durasi,
           harga: numPrice,
           status: formStatus,
         },
@@ -273,6 +280,12 @@ function OwnerServicesPage() {
       return;
     }
 
+    const durasi = Number(formDuration);
+    if (isNaN(durasi) || !Number.isInteger(durasi) || durasi <= 0) {
+      toast.error("Waktu pelayanan harus berupa angka bulat positif (lebih dari 0 menit).");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await updateOwnerService({
@@ -280,7 +293,7 @@ function OwnerServicesPage() {
           id_layanan: editingService.id_layanan,
           nama_layanan: name,
           deskripsi: formDesc.trim() || undefined,
-          durasi_menit: Number(formDuration) || 30,
+          durasi_menit: durasi,
           harga: numPrice,
           status: formStatus,
         },
@@ -581,6 +594,7 @@ function OwnerServicesPage() {
                         <th className="py-3.5 px-4">Nama Layanan</th>
                         <th className="py-3.5 px-4 w-28">Kategori</th>
                         <th className="py-3.5 px-4 max-w-xs">Deskripsi</th>
+                        <th className="py-3.5 px-4 w-36">Waktu Pelayanan</th>
                         <th className="py-3.5 px-4 w-32">Harga</th>
                         <th className="py-3.5 px-4 w-28 text-center">Status</th>
                         <th className="py-3.5 px-4 w-24 text-center">Digunakan</th>
@@ -622,6 +636,14 @@ function OwnerServicesPage() {
                               <span className="line-clamp-2">
                                 {service.deskripsi || "—"}
                               </span>
+                            </td>
+
+                            {/* Waktu Pelayanan */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+                                <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                                <span>{service.durasi_menit} menit</span>
+                              </div>
                             </td>
 
                             {/* Harga */}
@@ -744,9 +766,13 @@ function OwnerServicesPage() {
                           <h4 className="font-bold text-white text-sm leading-snug truncate">
                             {service.nama_layanan}
                           </h4>
-                          <div className="mt-1 flex items-center gap-2">
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
                             <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
                               {category}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-300 font-medium">
+                              <Clock className="h-3 w-3 text-slate-400" />
+                              <span>{service.durasi_menit} menit</span>
                             </span>
                           </div>
                           <div className="font-bold text-white text-sm mt-1.5">
@@ -1021,6 +1047,35 @@ function OwnerServicesPage() {
                 </p>
               </div>
 
+              {/* Waktu Pelayanan * */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Waktu Pelayanan <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    placeholder="30"
+                    value={formDuration || ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setFormDuration(isNaN(val) ? 0 : val);
+                    }}
+                    className="w-full pl-3.5 pr-20 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Menit</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Durasi fisik pengerjaan layanan dalam satuan menit (contoh: 30 menit).
+                </p>
+              </div>
+
               {/* Deskripsi * */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -1200,6 +1255,35 @@ function OwnerServicesPage() {
                 </p>
               </div>
 
+              {/* Waktu Pelayanan * */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Waktu Pelayanan <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    placeholder="30"
+                    value={formDuration || ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setFormDuration(isNaN(val) ? 0 : val);
+                    }}
+                    className="w-full pl-3.5 pr-20 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Menit</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Durasi fisik pengerjaan layanan dalam satuan menit (contoh: 30 menit).
+                </p>
+              </div>
+
               {/* Deskripsi * */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -1362,6 +1446,16 @@ function OwnerServicesPage() {
                     </span>
                     <span className="font-bold text-white text-sm">
                       {formatRupiah(detailService.harga)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-blue-400" />
+                      Waktu Pelayanan
+                    </span>
+                    <span className="font-bold text-white text-sm">
+                      {detailService.durasi_menit} menit
                     </span>
                   </div>
 
