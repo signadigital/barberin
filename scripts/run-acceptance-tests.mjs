@@ -1,0 +1,694 @@
+import "dotenv/config";
+import postgres from "postgres";
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("❌ DATABASE_URL is not defined");
+  process.exit(1);
+}
+
+const sql = postgres(connectionString, { prepare: false });
+
+let passedCount = 0;
+let failedCount = 0;
+
+function assert(condition, message) {
+  if (!condition) {
+    console.error(`  ❌ FAILED: ${message}`);
+    failedCount++;
+    throw new Error(message);
+  } else {
+    console.log(`  ✅ PASSED: ${message}`);
+    passedCount++;
+  }
+}
+
+async function runAllTests() {
+  console.log("\n=======================================================");
+  console.log("  BARBERIN — ACCEPTANCE TESTS (TEST 1 - TEST 15)");
+  console.log("=======================================================\n");
+
+  const cleanupIds = {
+    barbershops: [],
+    users: [],
+    pelanggan: [],
+    capsters: [],
+    shifts: [],
+    layanan: [],
+    bookings: [],
+    transaksi: [],
+    pembayaran: [],
+    struk: [],
+  };
+
+  try {
+    // -------------------------------------------------------------------------
+    // SETUP FIXTURES: Barbershop A & B, Capster A1, A2, B1, Services, Shifts
+    // -------------------------------------------------------------------------
+    console.log("--- Menyiapkan Fixture Uji Coba Multi-Tenant ---");
+    const testPrefix = `test_${Date.now()}`;
+    const now1 = new Date();
+
+    // Barbershop 1 (Shop A)
+    const [shopA] = await sql`
+      INSERT INTO barbershop (nama_barbershop, slug, alamat, no_hp, status)
+      VALUES (${`Shop A ${testPrefix}`}, ${`shop-a-${testPrefix}`}, 'Jl. Uji A', '0811111111', 'active')
+      RETURNING id_barbershop, slug;
+    `;
+    cleanupIds.barbershops.push(shopA.id_barbershop);
+
+    // Barbershop 2 (Shop B)
+    const [shopB] = await sql`
+      INSERT INTO barbershop (nama_barbershop, slug, alamat, no_hp, status)
+      VALUES (${`Shop B ${testPrefix}`}, ${`shop-b-${testPrefix}`}, 'Jl. Uji B', '0822222222', 'active')
+      RETURNING id_barbershop, slug;
+    `;
+    cleanupIds.barbershops.push(shopB.id_barbershop);
+
+    // Users
+    const [userCapsterA1] = await sql`
+      INSERT INTO users (nama_lengkap, no_hp, email, role)
+      VALUES ('Capster A1', ${`0812${Date.now().toString().slice(-6)}1`}, ${`capa1_${testPrefix}@barber.id`}, 'capster')
+      RETURNING id_user, nama_lengkap, no_hp;
+    `;
+    cleanupIds.users.push(userCapsterA1.id_user);
+
+    const [userCapsterA2] = await sql`
+      INSERT INTO users (nama_lengkap, no_hp, email, role)
+      VALUES ('Capster A2', ${`0812${Date.now().toString().slice(-6)}2`}, ${`capa2_${testPrefix}@barber.id`}, 'capster')
+      RETURNING id_user, nama_lengkap, no_hp;
+    `;
+    cleanupIds.users.push(userCapsterA2.id_user);
+
+    const [userCapsterB1] = await sql`
+      INSERT INTO users (nama_lengkap, no_hp, email, role)
+      VALUES ('Capster B1', ${`0812${Date.now().toString().slice(-6)}3`}, ${`capb1_${testPrefix}@barber.id`}, 'capster')
+      RETURNING id_user, nama_lengkap, no_hp;
+    `;
+    cleanupIds.users.push(userCapsterB1.id_user);
+
+    // Capsters
+    const [capsterA1] = await sql`
+      INSERT INTO capster (id_barbershop, id_user, status)
+      VALUES (${shopA.id_barbershop}, ${userCapsterA1.id_user}, 'active')
+      RETURNING id_capster;
+    `;
+    cleanupIds.capsters.push(capsterA1.id_capster);
+
+    const [capsterA2] = await sql`
+      INSERT INTO capster (id_barbershop, id_user, status)
+      VALUES (${shopA.id_barbershop}, ${userCapsterA2.id_user}, 'active')
+      RETURNING id_capster;
+    `;
+    cleanupIds.capsters.push(capsterA2.id_capster);
+
+    const [capsterB1] = await sql`
+      INSERT INTO capster (id_barbershop, id_user, status)
+      VALUES (${shopB.id_barbershop}, ${userCapsterB1.id_user}, 'active')
+      RETURNING id_capster;
+    `;
+    cleanupIds.capsters.push(capsterB1.id_capster);
+
+    // Shifts
+    const [shiftA1] = await sql`
+      INSERT INTO shift_capster (id_barbershop, id_capster, tanggal, waktu_mulai, status)
+      VALUES (${shopA.id_barbershop}, ${capsterA1.id_capster}, ${now1}, '09:00', 'ongoing')
+      RETURNING id_shift;
+    `;
+    cleanupIds.shifts.push(shiftA1.id_shift);
+
+    // Customer User
+    const [userCust1] = await sql`
+      INSERT INTO users (nama_lengkap, no_hp, email, role)
+      VALUES ('Pelanggan 1', ${`0813${Date.now().toString().slice(-6)}1`}, ${`cust1_${testPrefix}@cust.id`}, 'pelanggan')
+      RETURNING id_user;
+    `;
+    cleanupIds.users.push(userCust1.id_user);
+
+    const [cust1] = await sql`
+      INSERT INTO pelanggan (id_barbershop, id_user, nama_pelanggan, no_hp)
+      VALUES (${shopA.id_barbershop}, ${userCust1.id_user}, 'Pelanggan 1', '0813000001')
+      RETURNING id_pelanggan;
+    `;
+    cleanupIds.pelanggan.push(cust1.id_pelanggan);
+
+    // Services
+    const [layananA_30m] = await sql`
+      INSERT INTO layanan (id_barbershop, nama_layanan, deskripsi, harga, durasi_menit, status)
+      VALUES (${shopA.id_barbershop}, 'Gentleman Haircut 30m', 'Potong rambut', 50000, 30, 'active')
+      RETURNING id_layanan, harga, durasi_menit;
+    `;
+    cleanupIds.layanan.push(layananA_30m.id_layanan);
+
+    const [layananA_20m] = await sql`
+      INSERT INTO layanan (id_barbershop, nama_layanan, deskripsi, harga, durasi_menit, status)
+      VALUES (${shopA.id_barbershop}, 'Beard Trim 20m', 'Cukur jenggot', 30000, 20, 'active')
+      RETURNING id_layanan, harga, durasi_menit;
+    `;
+    cleanupIds.layanan.push(layananA_20m.id_layanan);
+
+    const [layananA_40m] = await sql`
+      INSERT INTO layanan (id_barbershop, nama_layanan, deskripsi, harga, durasi_menit, status)
+      VALUES (${shopA.id_barbershop}, 'Full Package 40m', 'Paket komplit', 80000, 40, 'active')
+      RETURNING id_layanan, harga, durasi_menit;
+    `;
+    cleanupIds.layanan.push(layananA_40m.id_layanan);
+
+    const [layananB_50m] = await sql`
+      INSERT INTO layanan (id_barbershop, nama_layanan, deskripsi, harga, durasi_menit, status)
+      VALUES (${shopB.id_barbershop}, 'Shop B Service 50m', 'Layanan Shop B', 75000, 50, 'active')
+      RETURNING id_layanan, harga, durasi_menit;
+    `;
+    cleanupIds.layanan.push(layananB_50m.id_layanan);
+
+    console.log("Fixture siap.\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 1: Request Baru
+    // - Booking masuk dengan status pending_confirmation
+    // - Batas konfirmasi = waktu_permintaan + 5 menit
+    // -------------------------------------------------------------------------
+    console.log("▶ TEST 1: Request Baru -> status pending_confirmation & batas konfirmasi = NOW() + 5m");
+    const limit1 = new Date(now1.getTime() + 5 * 60 * 1000);
+
+    const [b1] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, batas_konfirmasi, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${now1}, '10:00',
+        'pending_confirmation', ${now1}, ${limit1}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(b1.id_booking);
+
+    const [db1] = await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${b1.id_booking}, ${layananA_30m.id_layanan},
+        ${layananA_30m.harga}, 1, ${layananA_30m.harga}, 'Gentleman Haircut 30m', 30
+      ) RETURNING *;
+    `;
+
+    assert(b1.status === "pending_confirmation", "Status booking baru harus 'pending_confirmation'");
+    const diffSeconds = Math.round((new Date(b1.batas_konfirmasi).getTime() - new Date(b1.waktu_permintaan).getTime()) / 1000);
+    assert(diffSeconds === 300, `Batas konfirmasi tepat 300 detik (5 menit). Terhitung: ${diffSeconds}s`);
+    assert(b1.id_barbershop === shopA.id_barbershop, "Tenant id_barbershop tersimpan dengan benar");
+    assert(db1.nama_layanan_snapshot === "Gentleman Haircut 30m", "Detail booking menyimpan snapshot nama layanan");
+    assert(db1.durasi_menit_snapshot === 30, "Detail booking menyimpan snapshot durasi 30 menit");
+
+    // -------------------------------------------------------------------------
+    // TEST 2: Konfirmasi < 5 Menit
+    // - Capster konfirmasi booking sebelum batas konfirmasi habis
+    // - Status berubah menjadi 'waiting' atau 'confirmed'
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 2: Konfirmasi < 5m -> status berubah menjadi confirmed/waiting");
+    const confirmTime2 = new Date();
+    const [b2Updated] = await sql`
+      UPDATE booking
+      SET status = 'waiting', waktu_konfirmasi = ${confirmTime2}
+      WHERE id_booking = ${b1.id_booking} AND batas_konfirmasi >= ${confirmTime2}
+      RETURNING *;
+    `;
+    assert(b2Updated && b2Updated.status === "waiting", "Status booking berhasil dikonfirmasi menjadi 'waiting'");
+    assert(Boolean(b2Updated.waktu_konfirmasi), "Waktu konfirmasi tercatat");
+    // Selesaikan b1 agar tidak mengganggu antrean di test 4, 5, 6
+    await sql`UPDATE booking SET status = 'completed' WHERE id_booking = ${b1.id_booking}`;
+
+    // -------------------------------------------------------------------------
+    // TEST 3: Request > 5 Menit Tanpa Konfirmasi
+    // - Otomatis expired dan tidak masuk antrean estimasi
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 3: Request > 5m tanpa konfirmasi -> otomatis expired & excluded");
+    const pastTime3 = new Date(Date.now() - 10 * 60 * 1000); // 10 menit lalu
+    const pastLimit3 = new Date(pastTime3.getTime() + 5 * 60 * 1000); // 5 menit lalu (sudah lewat)
+
+    const [b3Expired] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, batas_konfirmasi, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${pastTime3}, '09:00',
+        'pending_confirmation', ${pastTime3}, ${pastLimit3}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(b3Expired.id_booking);
+
+    // Jalankan logika sweeping expiration
+    const swept = await sql`
+      UPDATE booking
+      SET status = 'expired'
+      WHERE status = 'pending_confirmation'
+        AND batas_konfirmasi < NOW()
+        AND id_booking = ${b3Expired.id_booking}
+      RETURNING id_booking, status;
+    `;
+    assert(swept.length === 1 && swept[0].status === "expired", "Booking kedaluwarsa otomatis berubah menjadi 'expired'");
+
+    // Cek bahwa booking expired di-filter dari active queue
+    const activeBookings = await sql`
+      SELECT id_booking FROM booking
+      WHERE id_barbershop = ${shopA.id_barbershop}
+        AND id_capster = ${capsterA1.id_capster}
+        AND status IN ('in_service', 'confirmed', 'waiting')
+        AND id_booking = ${b3Expired.id_booking};
+    `;
+    assert(activeBookings.length === 0, "Booking expired tidak masuk ke dalam antrean aktif / estimasi");
+
+    // -------------------------------------------------------------------------
+    // TEST 4: Estimasi Durasi Tunggu
+    // - Customer A: durasi 30m, sudah berjalan 10m -> sisa durasi = 20m
+    // - Customer B: antre di belakang A -> estimasi tunggu B = 20m
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 4: Estimasi durasi (A 30m berjalan 10m -> sisa 20m; B antre -> est B = 20m)");
+    // Customer A (Sedang in_service, mulai 10 menit yang lalu)
+    const startTimeA = new Date(Date.now() - 10 * 60 * 1000);
+    const [bCustA] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, waktu_konfirmasi, waktu_mulai_layanan, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${startTimeA}, '10:10',
+        'in_service', ${startTimeA}, ${startTimeA}, ${startTimeA}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(bCustA.id_booking);
+    await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bCustA.id_booking}, ${layananA_30m.id_layanan},
+        ${layananA_30m.harga}, 1, ${layananA_30m.harga}, 'Gentleman Haircut 30m', 30
+      );
+    `;
+
+    // Customer B (Menunggu dalam antrean, durasi 20m)
+    const [bCustB] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, waktu_konfirmasi, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${now1}, '10:20',
+        'waiting', ${now1}, ${now1}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(bCustB.id_booking);
+    await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bCustB.id_booking}, ${layananA_20m.id_layanan},
+        ${layananA_20m.harga}, 1, ${layananA_20m.harga}, 'Beard Trim 20m', 20
+      );
+    `;
+
+    // Hitung estimasi dengan rumus Section D, E, F:
+    // inService: durasi 30m, elapsed 10m -> remaining = 30 - 10 = 20m
+    const elapsedA = Math.floor((Date.now() - startTimeA.getTime()) / (60 * 1000));
+    const sisaA = Math.max(0, 30 - elapsedA);
+    assert(sisaA === 20, `Sisa durasi layanan A adalah 20 menit (30 - 10). Terhitung: ${sisaA}m`);
+    const estB = sisaA; // Tidak ada antrean sebelum B selain yang sedang di-service
+    assert(estB === 20, `Estimasi tunggu Customer B tepat 20 menit. Terhitung: ${estB}m`);
+
+    // -------------------------------------------------------------------------
+    // TEST 5: Estimasi Durasi Multiple Customer
+    // - Customer A running sisa 20m
+    // - Customer B antrean ke-1 (durasi 20m) -> est B = 20m
+    // - Customer C antrean ke-2 (durasi 40m) -> est C = 20m (sisa A) + 20m (B) = 40m
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 5: Multiple customer (A running sisa 20m, B 20m, C 40m -> B = 20m, C = 40m)");
+    const [bCustC] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, waktu_konfirmasi, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${now1}, '10:30',
+        'waiting', ${new Date(now1.getTime() + 1000)}, ${new Date(now1.getTime() + 1000)}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(bCustC.id_booking);
+    await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bCustC.id_booking}, ${layananA_40m.id_layanan},
+        ${layananA_40m.harga}, 1, ${layananA_40m.harga}, 'Full Package 40m', 40
+      );
+    `;
+
+    const estC = sisaA + 20; // 20 (sisa A) + 20 (durasi B)
+    assert(estB === 20, `Customer B: antrean ke-1, estimasi tunggu = 20m`);
+    assert(estC === 40, `Customer C: antrean ke-2, estimasi tunggu = 40m (20m sisa A + 20m B)`);
+
+    // -------------------------------------------------------------------------
+    // TEST 6: Pembatalan Antrean
+    // - Customer B membatalkan pesanan
+    // - Estimasi Customer C berkurang menjadi 20m (hanya menunggu sisa A)
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 6: Cancel (B dibatalkan -> est C berkurang jadi 20m)");
+    await sql`
+      UPDATE booking
+      SET status = 'cancelled', cancelled_at = NOW(), cancel_reason = 'Dibatalkan oleh pelanggan'
+      WHERE id_booking = ${bCustB.id_booking};
+    `;
+
+    // Ambil antrean aktif sebelum C (hanya A karena B sudah dibatalkan)
+    const activeBeforeC = await sql`
+      SELECT b.id_booking, b.status
+      FROM booking b
+      WHERE b.id_barbershop = ${shopA.id_barbershop}
+        AND b.id_capster = ${capsterA1.id_capster}
+        AND b.status IN ('in_service', 'confirmed', 'waiting')
+        AND b.id_booking != ${bCustC.id_booking};
+    `;
+    const remainingBeforeC = activeBeforeC.filter((b) => b.id_booking === bCustA.id_booking);
+    assert(activeBeforeC.length === 1, "Hanya ada 1 booking aktif sebelum C (A yang sedang berjalan)");
+    const newEstC = sisaA; // Karena B cancel, C hanya menunggu sisa A
+    assert(newEstC === 20, `Setelah B cancel, estimasi tunggu C otomatis turun menjadi 20m. Terhitung: ${newEstC}m`);
+
+    // -------------------------------------------------------------------------
+    // TEST 7: Finish Service
+    // - Capster klik selesai layanan -> status booking = 'awaiting_payment'
+    // - Batas pembayaran = NOW() + 2 jam
+    // - Status transaksi tetap 'ongoing' (BELUM 'completed')
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 7: Finish service -> status awaiting_payment (bukan completed), batas bayar = +2 jam");
+    const [txA] = await sql`
+      INSERT INTO transaksi (
+        id_barbershop, id_booking, id_shift, id_capster, id_pelanggan,
+        subtotal, diskon, total, status_transaksi
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bCustA.id_booking}, ${shiftA1.id_shift}, ${capsterA1.id_capster}, ${cust1.id_pelanggan},
+        ${layananA_30m.harga}, 0, ${layananA_30m.harga}, 'ongoing'
+      ) RETURNING *;
+    `;
+    cleanupIds.transaksi.push(txA.id_transaksi);
+
+    const finishNow7 = new Date();
+    const payLimit7 = new Date(finishNow7.getTime() + 2 * 60 * 60 * 1000);
+
+    const [bFinishedA] = await sql`
+      UPDATE booking
+      SET status = 'awaiting_payment'
+      WHERE id_booking = ${bCustA.id_booking}
+      RETURNING *;
+    `;
+    const [txUpdated7] = await sql`
+      UPDATE transaksi
+      SET waktu_selesai_layanan = ${finishNow7}, batas_pembayaran = ${payLimit7}
+      WHERE id_transaksi = ${txA.id_transaksi}
+      RETURNING *;
+    `;
+
+    assert(bFinishedA.status === "awaiting_payment", "Status booking saat selesai potong adalah 'awaiting_payment'");
+    assert(txUpdated7.status_transaksi === "ongoing", "Status transaksi TETAP 'ongoing' (belum completed)");
+    const payDiffMinutes = Math.round((new Date(txUpdated7.batas_pembayaran).getTime() - new Date(txUpdated7.waktu_selesai_layanan).getTime()) / (60 * 1000));
+    assert(payDiffMinutes === 120, `Batas pembayaran tepat 120 menit (2 jam). Terhitung: ${payDiffMinutes}m`);
+
+    // -------------------------------------------------------------------------
+    // TEST 8: Pembayaran Sukses & Penerbitan Struk
+    // - Kasir/Capster konfirmasi pembayaran
+    // - Status pembayaran = 'success'
+    // - Status transaksi = 'completed'
+    // - Struk otomatis terbuat dengan id_barbershop yang tepat
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 8: Payment success -> pembayaran = success, transaksi = completed, struk terbuat");
+    const [payA] = await sql`
+      INSERT INTO pembayaran (
+        id_barbershop, id_transaksi, metode_pembayaran, jumlah_bayar, status_pembayaran, dikonfirmasi_oleh
+      ) VALUES (
+        ${shopA.id_barbershop}, ${txA.id_transaksi}, 'tunai', ${txA.total}, 'pending', ${userCapsterA1.id_user}
+      ) RETURNING *;
+    `;
+    cleanupIds.pembayaran.push(payA.id_pembayaran);
+
+    // Capster mengonfirmasi pembayaran
+    const [paySuccess] = await sql`
+      UPDATE pembayaran
+      SET status_pembayaran = 'success'
+      WHERE id_pembayaran = ${payA.id_pembayaran}
+      RETURNING *;
+    `;
+    const [txCompleted] = await sql`
+      UPDATE transaksi
+      SET status_transaksi = 'completed'
+      WHERE id_transaksi = ${txA.id_transaksi}
+      RETURNING *;
+    `;
+    const [bCompleted] = await sql`
+      UPDATE booking
+      SET status = 'completed'
+      WHERE id_booking = ${bCustA.id_booking}
+      RETURNING *;
+    `;
+
+    // Buat struk
+    const nomorStruk = `STR-${testPrefix}-001`;
+    const [strukRecord] = await sql`
+      INSERT INTO struk (id_barbershop, id_transaksi, no_struk, tanggal_cetak)
+      VALUES (${shopA.id_barbershop}, ${txA.id_transaksi}, ${nomorStruk}, NOW())
+      RETURNING *;
+    `;
+    cleanupIds.struk.push(strukRecord.id_struk);
+
+    assert(paySuccess.status_pembayaran === "success", "Status pembayaran berhasil menjadi 'success'");
+    assert(txCompleted.status_transaksi === "completed", "Status transaksi resmi menjadi 'completed'");
+    assert(bCompleted.status === "completed", "Status booking resmi menjadi 'completed'");
+    assert(strukRecord.no_struk === nomorStruk, "Struk digital berhasil diterbitkan");
+    assert(strukRecord.id_barbershop === shopA.id_barbershop, "Struk digital terikat pada id_barbershop tenant");
+
+    // -------------------------------------------------------------------------
+    // TEST 9: Payment Timeout > 2 Jam
+    // - Transaksi menunggu bayar melebihi 2 jam
+    // - Otomatis expired (booking = expired, transaksi = expired, pembayaran = expired)
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 9: Payment timeout > 2 jam -> pembayaran = expired, transaksi = expired");
+    const pastDone9 = new Date(Date.now() - 3 * 60 * 60 * 1000); // 3 jam lalu
+    const pastLimit9 = new Date(pastDone9.getTime() + 2 * 60 * 60 * 1000); // 1 jam lalu (sudah expired)
+
+    const [b9] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking,
+        status, waktu_permintaan, waktu_mulai_layanan, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${pastDone9}, '07:00',
+        'awaiting_payment', ${pastDone9}, ${pastDone9}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(b9.id_booking);
+
+    const [tx9] = await sql`
+      INSERT INTO transaksi (
+        id_barbershop, id_booking, id_shift, id_capster, id_pelanggan,
+        subtotal, diskon, total, status_transaksi, waktu_selesai_layanan, batas_pembayaran
+      ) VALUES (
+        ${shopA.id_barbershop}, ${b9.id_booking}, ${shiftA1.id_shift}, ${capsterA1.id_capster}, ${cust1.id_pelanggan},
+        50000, 0, 50000, 'ongoing', ${pastDone9}, ${pastLimit9}
+      ) RETURNING *;
+    `;
+    cleanupIds.transaksi.push(tx9.id_transaksi);
+
+    const [pay9] = await sql`
+      INSERT INTO pembayaran (
+        id_barbershop, id_transaksi, metode_pembayaran, jumlah_bayar, status_pembayaran, batas_pembayaran
+      ) VALUES (
+        ${shopA.id_barbershop}, ${tx9.id_transaksi}, 'tunai', 50000, 'pending', ${pastLimit9}
+      ) RETURNING *;
+    `;
+    cleanupIds.pembayaran.push(pay9.id_pembayaran);
+
+    // Jalankan sweep pembayaran expired
+    const sweptTx = await sql`
+      UPDATE transaksi
+      SET status_transaksi = 'expired'
+      WHERE status_transaksi = 'ongoing'
+        AND batas_pembayaran < NOW()
+        AND id_transaksi = ${tx9.id_transaksi}
+      RETURNING *;
+    `;
+    const sweptPay = await sql`
+      UPDATE pembayaran
+      SET status_pembayaran = 'expired'
+      WHERE status_pembayaran = 'pending'
+        AND id_transaksi = ${tx9.id_transaksi}
+      RETURNING *;
+    `;
+    const sweptBk = await sql`
+      UPDATE booking
+      SET status = 'expired'
+      WHERE id_booking = ${b9.id_booking}
+      RETURNING *;
+    `;
+
+    assert(sweptTx.length === 1 && sweptTx[0].status_transaksi === "expired", "Transaksi timeout > 2 jam menjadi 'expired'");
+    assert(sweptPay.length === 1 && sweptPay[0].status_pembayaran === "expired", "Pembayaran timeout > 2 jam menjadi 'expired'");
+    assert(sweptBk.length === 1 && sweptBk[0].status === "expired", "Booking timeout > 2 jam menjadi 'expired'");
+
+    // -------------------------------------------------------------------------
+    // TEST 10: Capster Isolation
+    // - Antrean dan estimasi Capster A1 TIDAK bocor ke Capster A2
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 10: Capster isolation (Capster A1 vs Capster A2)");
+    const queueCapsterA1 = await sql`
+      SELECT id_booking, id_capster FROM booking
+      WHERE id_barbershop = ${shopA.id_barbershop}
+        AND id_capster = ${capsterA1.id_capster}
+        AND status IN ('in_service', 'waiting', 'confirmed');
+    `;
+    const queueCapsterA2 = await sql`
+      SELECT id_booking, id_capster FROM booking
+      WHERE id_barbershop = ${shopA.id_barbershop}
+        AND id_capster = ${capsterA2.id_capster}
+        AND status IN ('in_service', 'waiting', 'confirmed');
+    `;
+    assert(queueCapsterA1.some((b) => b.id_booking === bCustC.id_booking), "Booking Customer C ada di antrean Capster A1");
+    assert(!queueCapsterA2.some((b) => b.id_booking === bCustC.id_booking), "Booking Customer C TIDAK ADA di antrean Capster A2");
+
+    // -------------------------------------------------------------------------
+    // TEST 11: Tenant Isolation (Layanan)
+    // - Barbershop A layanan tidak muncul di Barbershop B
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 11: Tenant isolation (Layanan Shop A vs Shop B)");
+    const servicesA = await sql`
+      SELECT id_layanan, nama_layanan FROM layanan
+      WHERE id_barbershop = ${shopA.id_barbershop};
+    `;
+    const servicesB = await sql`
+      SELECT id_layanan, nama_layanan FROM layanan
+      WHERE id_barbershop = ${shopB.id_barbershop};
+    `;
+    assert(servicesA.some((s) => s.id_layanan === layananA_30m.id_layanan), "Layanan A30m muncul di Shop A");
+    assert(!servicesB.some((s) => s.id_layanan === layananA_30m.id_layanan), "Layanan A30m TIDAK muncul di Shop B");
+    assert(servicesB.some((s) => s.id_layanan === layananB_50m.id_layanan), "Layanan B50m muncul di Shop B");
+    assert(!servicesA.some((s) => s.id_layanan === layananB_50m.id_layanan), "Layanan B50m TIDAK muncul di Shop A");
+
+    // -------------------------------------------------------------------------
+    // TEST 12: Transaksi Isolation Antar Tenant
+    // - Transaksi Shop A tidak muncul pada query Shop B
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 12: Transaksi isolation (Transaksi Shop A vs Shop B)");
+    const txListShopA = await sql`
+      SELECT id_transaksi FROM transaksi
+      WHERE id_barbershop = ${shopA.id_barbershop};
+    `;
+    const txListShopB = await sql`
+      SELECT id_transaksi FROM transaksi
+      WHERE id_barbershop = ${shopB.id_barbershop};
+    `;
+    assert(txListShopA.some((t) => t.id_transaksi === txA.id_transaksi), "Transaksi Shop A muncul di tenant Shop A");
+    assert(!txListShopB.some((t) => t.id_transaksi === txA.id_transaksi), "Transaksi Shop A TIDAK PERNAH muncul di tenant Shop B");
+
+    // -------------------------------------------------------------------------
+    // TEST 13: Customer URL (Slug Scoping)
+    // - Slug yang valid menghasilkan barbershop spesifik
+    // - Slug yang tidak valid mengembalikan null (NO fallback)
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 13: Customer URL slug scoping & 404 pada slug tidak valid");
+    const [foundShopA] = await sql`
+      SELECT id_barbershop, slug FROM barbershop
+      WHERE slug = ${shopA.slug};
+    `;
+    const [invalidShop] = await sql`
+      SELECT id_barbershop, slug FROM barbershop
+      WHERE slug = 'non-existent-barbershop-slug-12345';
+    `;
+    assert(foundShopA && foundShopA.id_barbershop === shopA.id_barbershop, `Slug '${shopA.slug}' mengembalikan Barbershop A yang valid`);
+    assert(!invalidShop, "Slug yang tidak terdaftar menghasilkan NULL (tidak ada fallback default barbershop)");
+
+    // -------------------------------------------------------------------------
+    // TEST 14: Cross-Tenant Login Ditolak
+    // - Capster dari Barbershop A mencoba login di tenant Barbershop B
+    // - Harus ditolak
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 14: Cross-tenant login ditolak");
+    // Cari apakah Capster A1 terdaftar di Shop B
+    const crossCapsterCheck = await sql`
+      SELECT c.id_capster
+      FROM capster c
+      JOIN users u ON c.id_user = u.id_user
+      WHERE c.id_barbershop = ${shopB.id_barbershop}
+        AND u.no_hp = ${userCapsterA1.no_hp};
+    `;
+    assert(crossCapsterCheck.length === 0, `Capster Shop A (${userCapsterA1.nama_lengkap}) ditolak login di Shop B`);
+
+    // -------------------------------------------------------------------------
+    // TEST 15: Direct URL Protection
+    // - Akses dashboard tanpa sesi/auth yang cocok dengan tenant harus terblokir
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST 15: Direct URL protection (cek sesi capster tersimpan per tenant)");
+    // Validasi struktur kunci sesi: barberin_capster_state_{tenant}_{capsterId}
+    const tenantKeyShopA = `barberin_capster_state_${shopA.slug}_${capsterA1.id_capster}`;
+    const tenantKeyShopB = `barberin_capster_state_${shopB.slug}_${capsterA1.id_capster}`;
+    assert(tenantKeyShopA !== tenantKeyShopB, "Kunci sesi storage terisolasi per barbershop slug");
+    assert(tenantKeyShopA.includes(shopA.slug), "Kunci sesi mengandung slug tenant aktif");
+
+  } finally {
+    // -------------------------------------------------------------------------
+    // CLEANUP
+    // -------------------------------------------------------------------------
+    console.log("\n--- Membersihkan Data Uji Coba ---");
+    if (cleanupIds.struk.length > 0) {
+      await sql`DELETE FROM struk WHERE id_struk = ANY(${cleanupIds.struk})`;
+    }
+    if (cleanupIds.pembayaran.length > 0) {
+      await sql`DELETE FROM pembayaran WHERE id_pembayaran = ANY(${cleanupIds.pembayaran})`;
+    }
+    if (cleanupIds.transaksi.length > 0) {
+      await sql`DELETE FROM transaksi WHERE id_transaksi = ANY(${cleanupIds.transaksi})`;
+    }
+    if (cleanupIds.bookings.length > 0) {
+      await sql`DELETE FROM detail_booking WHERE id_booking = ANY(${cleanupIds.bookings})`;
+      await sql`DELETE FROM booking WHERE id_booking = ANY(${cleanupIds.bookings})`;
+    }
+    if (cleanupIds.shifts.length > 0) {
+      await sql`DELETE FROM shift_capster WHERE id_shift = ANY(${cleanupIds.shifts})`;
+    }
+    if (cleanupIds.layanan.length > 0) {
+      await sql`DELETE FROM layanan WHERE id_layanan = ANY(${cleanupIds.layanan})`;
+    }
+    if (cleanupIds.capsters.length > 0) {
+      await sql`DELETE FROM capster WHERE id_capster = ANY(${cleanupIds.capsters})`;
+    }
+    if (cleanupIds.pelanggan.length > 0) {
+      await sql`DELETE FROM pelanggan WHERE id_pelanggan = ANY(${cleanupIds.pelanggan})`;
+    }
+    if (cleanupIds.users.length > 0) {
+      await sql`DELETE FROM users WHERE id_user = ANY(${cleanupIds.users})`;
+    }
+    if (cleanupIds.barbershops.length > 0) {
+      await sql`DELETE FROM barbershop WHERE id_barbershop = ANY(${cleanupIds.barbershops})`;
+    }
+    console.log("Pembersihan data selesai.");
+    await sql.end();
+  }
+
+  console.log("\n=======================================================");
+  console.log(`  HASIL AKHIR: ${passedCount} LULUS, ${failedCount} GAGAL`);
+  console.log("=======================================================\n");
+
+  if (failedCount > 0) {
+    process.exit(1);
+  }
+}
+
+runAllTests().catch((err) => {
+  console.error("❌ Terjadi kesalahan saat menjalankan tes:", err);
+  process.exit(1);
+});

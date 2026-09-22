@@ -66,10 +66,17 @@ export const checkInShift = createServerFn({
     const now = new Date();
     const timeStr = getWibTimeString(now);
 
+    const [c] = await db
+      .select({ id_barbershop: capster.id_barbershop })
+      .from(capster)
+      .where(eq(capster.id_capster, data.capsterId))
+      .limit(1);
+
     const [newShift] = await db
       .insert(shiftCapster)
       .values({
         id_capster: data.capsterId,
+        id_barbershop: c?.id_barbershop ?? null,
         tanggal: now,
         waktu_mulai: timeStr,
         status: "ongoing",
@@ -96,7 +103,8 @@ export const endShift = createServerFn({
 
     const totalTransaksi = shiftTx.length;
     const totalPendapatan = shiftTx.reduce((sum, t) => {
-      return sum + (t.status_transaksi === "paid" ? Number(t.total) : 0);
+      const isPaid = t.status_transaksi === "paid" || t.status_transaksi === "completed";
+      return sum + (isPaid ? Number(t.total) : 0);
     }, 0);
 
     const now = new Date();

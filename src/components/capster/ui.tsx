@@ -96,7 +96,7 @@ export function CapsterAuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const hasAuth = isLoggedIn || getCapsterAuth();
+  const hasAuth = isLoggedIn || getCapsterAuth(slug || undefined);
   if (!hasAuth) {
     return (
       <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
@@ -993,10 +993,16 @@ export function DailySummaryCard({
 export function TransactionStatusBadge({ status }: { status: TransactionStatus | string }) {
   const map: Record<string, { bg: string; text: string; icon: LucideIcon; label: string }> = {
     Selesai: { bg: "bg-success/20 ring-success/40", text: "text-success", icon: CheckCircle2, label: "Selesai" },
+    completed: { bg: "bg-success/20 ring-success/40", text: "text-success", icon: CheckCircle2, label: "Selesai" },
     Menunggu: { bg: "bg-warning/20 ring-warning/40", text: "text-warning", icon: Clock, label: "Menunggu" },
+    waiting: { bg: "bg-warning/20 ring-warning/40", text: "text-warning", icon: Clock, label: "Menunggu" },
+    "Sedang Dilayani": { bg: "bg-primary/20 ring-primary/40", text: "text-primary-soft", icon: Scissors, label: "Sedang Dilayani" },
+    in_service: { bg: "bg-primary/20 ring-primary/40", text: "text-primary-soft", icon: Scissors, label: "Sedang Dilayani" },
     Batal: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
     cancelled: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
     Dibatalkan: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
+    Kedaluwarsa: { bg: "bg-rose-900/30 ring-rose-500/40", text: "text-rose-400", icon: Clock, label: "Kedaluwarsa" },
+    expired: { bg: "bg-rose-900/30 ring-rose-500/40", text: "text-rose-400", icon: Clock, label: "Kedaluwarsa" },
   };
 
   const fallback = { bg: "bg-warning/20 ring-warning/40", text: "text-warning", icon: Clock, label: "Menunggu" };

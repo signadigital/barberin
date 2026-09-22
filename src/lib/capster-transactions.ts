@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
@@ -15,11 +15,9 @@ import {
   users,
 } from "@/db/schema";
 import { getWibTimeString } from "@/lib/format";
-import {
-  autoCancelExpiredPendingTransactions,
-  isTransactionExpired,
-  CANCEL_REASON_DETAIL,
-} from "@/lib/auto-cancel";
+import { logAudit } from "./audit";
+import { sweepExpiredRequestsAndPayments } from "./expiration";
+import { calculateQueueEstimations } from "./estimation";
 
 type CreateManualTransactionInput = {
   customerName: string;
@@ -29,6 +27,7 @@ type CreateManualTransactionInput = {
   serviceIds: string[];
   paymentMethod: "tunai" | "qris" | "transfer";
   cashReceived?: number;
+  isQueueOnly?: boolean; // Jika true, hanya dimasukkan ke antrean (waiting)
 };
 
 function generateStrukNumber() {
@@ -38,6 +37,9 @@ function generateStrukNumber() {
   return `STR-${ymd}-${rand}`;
 }
 
+/**
+ * 1. GET CAPSTER TRANSACTIONS (TENANT & CAPSTER SCOPED)
+ */
 export const getCapsterTransactions = createServerFn({
   method: "GET",
 })
@@ -46,14 +48,27 @@ export const getCapsterTransactions = createServerFn({
       data:
         | {
             capsterId?: string;
+            barbershopSlug?: string;
+            barbershopId?: string;
             todayOnly?: boolean;
           }
         | undefined,
     ) => data,
   )
   .handler(async ({ data }) => {
-    // 0. Auto-cancel seluruh transaksi pending yang telah melebihi 2 jam
-    await autoCancelExpiredPendingTransactions();
+    let targetShopId = data?.barbershopId;
+    if (data?.barbershopSlug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+      if (!shop) return [];
+      targetShopId = shop.id_barbershop;
+    }
+
+    // Jalankan background expiration sweeper untuk barbershop ini
+    await sweepExpiredRequestsAndPayments(targetShopId);
 
     const targetCapsterId = data?.capsterId?.trim();
     if (!targetCapsterId) {
@@ -62,11 +77,16 @@ export const getCapsterTransactions = createServerFn({
 
     const conditions = [
       or(
+        eq(transaksi.id_capster, targetCapsterId),
         eq(booking.id_capster, targetCapsterId),
         and(isNull(transaksi.id_booking), eq(shiftCapster.id_capster, targetCapsterId)),
         eq(shiftCapster.id_capster, targetCapsterId),
       ),
     ];
+
+    if (targetShopId) {
+      conditions.push(eq(transaksi.id_barbershop, targetShopId));
+    }
 
     if (data?.todayOnly) {
       const jakartaDateStr = new Date().toLocaleDateString("en-CA", {
@@ -81,8 +101,10 @@ export const getCapsterTransactions = createServerFn({
     const rows = await db
       .select({
         id: transaksi.id_transaksi,
+        id_barbershop: transaksi.id_barbershop,
         id_booking: transaksi.id_booking,
         id_shift: transaksi.id_shift,
+        id_capster: transaksi.id_capster,
         id_pelanggan: transaksi.id_pelanggan,
         subtotal: transaksi.subtotal,
         discount: transaksi.diskon,
@@ -102,8 +124,7 @@ export const getCapsterTransactions = createServerFn({
 
     if (rows.length === 0) return [];
 
-    const filteredRows = rows;
-    const bookingIds = filteredRows
+    const bookingIds = rows
       .map((r) => r.id_booking)
       .filter((b): b is string => Boolean(b));
 
@@ -115,6 +136,10 @@ export const getCapsterTransactions = createServerFn({
               id_capster: booking.id_capster,
               status: booking.status,
               catatan: booking.catatan,
+              cancel_reason: booking.cancel_reason,
+              waktu_permintaan: booking.waktu_permintaan,
+              batas_konfirmasi: booking.batas_konfirmasi,
+              source: booking.source,
               capsterName: users.nama_lengkap,
             })
             .from(booking)
@@ -128,16 +153,17 @@ export const getCapsterTransactions = createServerFn({
             .select({
               id_booking: detailBooking.id_booking,
               id_layanan: detailBooking.id_layanan,
+              nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
               nama_layanan: layanan.nama_layanan,
               harga_satuan: detailBooking.harga_satuan,
               qty: detailBooking.qty,
             })
             .from(detailBooking)
-            .innerJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
+            .leftJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
             .where(inArray(detailBooking.id_booking, bookingIds))
         : Promise.resolve([]),
 
-      filteredRows.length > 0
+      rows.length > 0
         ? db
             .select({
               id_transaksi: pembayaran.id_transaksi,
@@ -149,16 +175,18 @@ export const getCapsterTransactions = createServerFn({
             .where(
               inArray(
                 pembayaran.id_transaksi,
-                filteredRows.map((r) => r.id),
+                rows.map((r) => r.id),
               ),
             )
         : Promise.resolve([]),
     ]);
 
     const bookingMap = new Map(bookingsWithCapster.map((b) => [b.id_booking, b]));
+    const paymentMap = new Map(allPayments.map((p) => [p.id_transaksi, p]));
+
     const detailsMap = new Map<
       string,
-      Array<{
+      {
         service: {
           id: string;
           name: string;
@@ -166,59 +194,56 @@ export const getCapsterTransactions = createServerFn({
           category: string;
         };
         quantity: number;
-      }>
+      }[]
     >();
 
     allDetails.forEach((d) => {
-      const list = detailsMap.get(d.id_booking) ?? [];
+      const list = detailsMap.get(d.id_booking) || [];
       list.push({
         service: {
           id: d.id_layanan,
-          name: d.nama_layanan,
+          name: d.nama_layanan_snapshot || d.nama_layanan || "Layanan",
           price: Number(d.harga_satuan),
-          category: "Barbershop",
+          category: "Layanan",
         },
         quantity: d.qty,
       });
       detailsMap.set(d.id_booking, list);
     });
 
-    const paymentMap = new Map(allPayments.map((p) => [p.id_transaksi, p]));
-
-    return filteredRows.map((r) => {
+    return rows.map((r) => {
       const bInfo = r.id_booking ? bookingMap.get(r.id_booking) : null;
-      const capsterName = bInfo?.capsterName ?? "Capster";
-      const capsterId = bInfo?.id_capster ?? targetCapsterId;
-
-      const items = r.id_booking ? (detailsMap.get(r.id_booking) ?? []) : [];
-      const serviceNames =
-        items.length > 0
-          ? items.map((i) => i.service.name).join(" + ")
-          : "Layanan Barbershop";
-
       const pay = paymentMap.get(r.id);
+      const items = r.id_booking ? detailsMap.get(r.id_booking) || [] : [];
+      const serviceNames = items.map((i) => i.service.name).join(" + ") || "Layanan Barbershop";
+
+      const capsterId = r.id_capster || bInfo?.id_capster || targetCapsterId;
+      const capsterName = bInfo?.capsterName || "Capster";
+
       const cashReceived = pay?.referensi?.startsWith("Tunai: ")
         ? Number(pay.referensi.replace("Tunai: ", ""))
         : Number(r.total);
 
       const change = Math.max(0, cashReceived - Number(r.total));
 
-      const isExpired = isTransactionExpired(r.created_at, r.status_transaksi);
-
-      let displayStatus: "Selesai" | "Menunggu" | "Batal" = "Menunggu";
-      if (r.status_transaksi === "paid") {
+      let displayStatus: "Selesai" | "Menunggu" | "Sedang Dilayani" | "Batal" | "Kedaluwarsa" = "Menunggu";
+      if (r.status_transaksi === "completed" || r.status_transaksi === "paid") {
         displayStatus = "Selesai";
-      } else if (
-        r.status_transaksi === "cancelled" ||
-        bInfo?.status === "cancelled" ||
-        pay?.status_pembayaran === "failed" ||
-        isExpired
-      ) {
+      } else if (r.status_transaksi === "ongoing" || bInfo?.status === "in_service") {
+        displayStatus = "Sedang Dilayani";
+      } else if (r.status_transaksi === "expired" || bInfo?.status === "expired" || pay?.status_pembayaran === "expired") {
+        displayStatus = "Kedaluwarsa";
+      } else if (r.status_transaksi === "cancelled" || bInfo?.status === "cancelled" || pay?.status_pembayaran === "failed") {
         displayStatus = "Batal";
+      } else {
+        displayStatus = "Menunggu";
       }
 
       return {
         id: r.id,
+        bookingId: r.id_booking,
+        bookingStatus: bInfo?.status ?? "waiting",
+        source: bInfo?.source ?? "scan",
         date: r.created_at.toLocaleDateString("id-ID", {
           day: "2-digit",
           month: "long",
@@ -238,22 +263,20 @@ export const getCapsterTransactions = createServerFn({
         subtotal: Number(r.subtotal),
         discount: Number(r.discount),
         total: Number(r.total),
-        paymentMethod: (pay?.metode_pembayaran ?? "tunai") as
-          | "tunai"
-          | "qris"
-          | "transfer",
+        paymentMethod: (pay?.metode_pembayaran ?? "tunai") as "tunai" | "qris" | "transfer",
         cashReceived,
         change,
         status: displayStatus,
-        notes: isExpired || displayStatus === "Batal"
-          ? (bInfo?.catatan || CANCEL_REASON_DETAIL)
-          : (bInfo?.catatan ?? undefined),
+        notes: bInfo?.cancel_reason ? `Batal: ${bInfo.cancel_reason}` : (bInfo?.catatan ?? undefined),
         capsterId,
         capsterName,
       };
     });
   });
 
+/**
+ * 2. GET DASHBOARD METRICS (TENANT & CAPSTER SCOPED)
+ */
 export const getDashboardMetrics = createServerFn({
   method: "GET",
 })
@@ -263,23 +286,37 @@ export const getDashboardMetrics = createServerFn({
         | {
             capsterId?: string;
             userId?: string;
+            barbershopSlug?: string;
+            barbershopId?: string;
           }
         | undefined,
     ) => data,
   )
   .handler(async ({ data }) => {
-    // 0. Auto-cancel seluruh transaksi pending yang telah melebihi 2 jam
-    await autoCancelExpiredPendingTransactions();
+    let targetShopId = data?.barbershopId;
+    if (data?.barbershopSlug) {
+      const [shop] = await db
+        .select({ id_barbershop: barbershop.id_barbershop })
+        .from(barbershop)
+        .where(eq(barbershop.slug, data.barbershopSlug))
+        .limit(1);
+      if (shop) targetShopId = shop.id_barbershop;
+    }
+
+    await sweepExpiredRequestsAndPayments(targetShopId);
 
     let targetCapsterId = data?.capsterId?.trim();
 
     if (!targetCapsterId && data?.userId) {
       const [c] = await db
-        .select({ id_capster: capster.id_capster })
+        .select({ id_capster: capster.id_capster, id_barbershop: capster.id_barbershop })
         .from(capster)
         .where(eq(capster.id_user, data.userId))
         .limit(1);
-      if (c) targetCapsterId = c.id_capster;
+      if (c) {
+        targetCapsterId = c.id_capster;
+        if (!targetShopId) targetShopId = c.id_barbershop;
+      }
     }
 
     if (!targetCapsterId) {
@@ -314,6 +351,21 @@ export const getDashboardMetrics = createServerFn({
     const startOfToday = new Date(`${jakartaDateStr}T00:00:00+07:00`);
     const endOfToday = new Date(`${jakartaDateStr}T23:59:59.999+07:00`);
 
+    const conditions = [
+      or(
+        eq(transaksi.id_capster, targetCapsterId),
+        eq(booking.id_capster, targetCapsterId),
+        and(isNull(transaksi.id_booking), eq(shiftCapster.id_capster, targetCapsterId)),
+        eq(shiftCapster.id_capster, targetCapsterId),
+      ),
+      gte(transaksi.created_at, startOfToday),
+      lte(transaksi.created_at, endOfToday),
+    ];
+
+    if (targetShopId) {
+      conditions.push(eq(transaksi.id_barbershop, targetShopId));
+    }
+
     const txs = await db
       .select({
         id_transaksi: transaksi.id_transaksi,
@@ -321,40 +373,35 @@ export const getDashboardMetrics = createServerFn({
         total: transaksi.total,
         status_transaksi: transaksi.status_transaksi,
         created_at: transaksi.created_at,
+        bookingStatus: booking.status,
       })
       .from(transaksi)
       .leftJoin(booking, eq(transaksi.id_booking, booking.id_booking))
       .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
-      .where(
-        and(
-          or(
-            eq(booking.id_capster, targetCapsterId),
-            and(isNull(transaksi.id_booking), eq(shiftCapster.id_capster, targetCapsterId)),
-            eq(shiftCapster.id_capster, targetCapsterId),
-          ),
-          gte(transaksi.created_at, startOfToday),
-          lte(transaksi.created_at, endOfToday),
-        ),
-      );
+      .where(and(...conditions));
 
     const totalTransaksi = txs.length;
     const totalPendapatan = txs.reduce((sum, t) => {
-      return sum + (t.status_transaksi === "paid" ? Number(t.total) : 0);
+      const isPaid = t.status_transaksi === "completed" || t.status_transaksi === "paid";
+      return sum + (isPaid ? Number(t.total) : 0);
     }, 0);
 
     let totalLayanan = 0;
     let selesai = 0;
+    let sedangDikerjakan = 0;
     let menunggu = 0;
     let dibatalkan = 0;
 
     for (const t of txs) {
-      const isExpired = isTransactionExpired(t.created_at, t.status_transaksi);
-      if (t.status_transaksi === "paid") {
+      if (t.status_transaksi === "completed" || t.status_transaksi === "paid") {
         selesai++;
+      } else if (t.status_transaksi === "ongoing" || t.bookingStatus === "in_service") {
+        sedangDikerjakan++;
       } else if (
         t.status_transaksi === "cancelled" ||
-        t.status_transaksi === "refunded" ||
-        isExpired
+        t.status_transaksi === "expired" ||
+        t.bookingStatus === "cancelled" ||
+        t.bookingStatus === "expired"
       ) {
         dibatalkan++;
       } else {
@@ -367,7 +414,7 @@ export const getDashboardMetrics = createServerFn({
         (t) =>
           t.id_booking &&
           t.status_transaksi !== "cancelled" &&
-          t.status_transaksi !== "refunded",
+          t.status_transaksi !== "expired",
       )
       .map((t) => t.id_booking as string);
 
@@ -393,7 +440,6 @@ export const getDashboardMetrics = createServerFn({
     let isSelfActive = false;
 
     if (currentCapsterRecord?.id_barbershop) {
-      // Hitung seluruh capster yang sedang aktif (shift status 'ongoing') di barbershop ini
       const activeShiftsInShop = await db
         .select({ id_capster: shiftCapster.id_capster })
         .from(shiftCapster)
@@ -408,20 +454,6 @@ export const getDashboardMetrics = createServerFn({
       const uniqueActiveCapsterIds = new Set(activeShiftsInShop.map((s) => s.id_capster));
       capsterAktif = uniqueActiveCapsterIds.size;
       isSelfActive = uniqueActiveCapsterIds.has(targetCapsterId);
-    } else {
-      const activeShift = await db
-        .select({ id: shiftCapster.id_shift })
-        .from(shiftCapster)
-        .where(
-          and(
-            eq(shiftCapster.id_capster, targetCapsterId),
-            eq(shiftCapster.status, "ongoing"),
-          ),
-        )
-        .limit(1);
-
-      capsterAktif = activeShift.length > 0 ? 1 : 0;
-      isSelfActive = activeShift.length > 0;
     }
 
     return {
@@ -435,7 +467,7 @@ export const getDashboardMetrics = createServerFn({
       deltaCapster: isSelfActive ? `Shift Aktif` : `Belum Check In`,
       statusLayanan: {
         selesai,
-        sedangDikerjakan: 0,
+        sedangDikerjakan,
         menunggu,
         dibatalkan,
       },
@@ -444,11 +476,17 @@ export const getDashboardMetrics = createServerFn({
         totalTransaksi,
         totalLayanan,
         selesai,
-        belumSelesai: menunggu,
+        belumSelesai: menunggu + sedangDikerjakan,
       },
     };
   });
 
+/**
+ * 3. CREATE MANUAL TRANSACTION (BPMN SECTION N)
+ * Pesanan manual Capster HARUS menggunakan mesin estimasi yang sama.
+ * Source = 'manual'
+ * Snapshot layanan tersimpan permanen.
+ */
 export const createManualTransaction = createServerFn({
   method: "POST",
 })
@@ -502,6 +540,7 @@ export const createManualTransaction = createServerFn({
           no_hp: customerPhone,
           role: "pelanggan",
           status: "active",
+          id_barbershop: targetShopId,
         })
         .returning();
       userRow = newUser;
@@ -522,6 +561,9 @@ export const createManualTransaction = createServerFn({
         .insert(pelanggan)
         .values({
           id_user: userRow.id_user,
+          id_barbershop: targetShopId,
+          nama_pelanggan: customerName,
+          no_hp: customerPhone,
         })
         .returning();
     }
@@ -549,6 +591,7 @@ export const createManualTransaction = createServerFn({
         .insert(shiftCapster)
         .values({
           id_capster: data.capsterId,
+          id_barbershop: targetShopId,
           tanggal: now,
           waktu_mulai: timeStr,
           status: "ongoing",
@@ -598,7 +641,10 @@ export const createManualTransaction = createServerFn({
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-    // 5. Create Booking
+    // Tentukan apakah transaksi manual langsung selesai atau masuk antrean
+    const isCompletedImmediately = !data.isQueueOnly;
+
+    // 5. Create Booking dengan source: 'manual'
     const [bookingRow] = await db
       .insert(booking)
       .values({
@@ -607,8 +653,12 @@ export const createManualTransaction = createServerFn({
         id_capster: data.capsterId,
         tanggal_booking: now,
         waktu_booking: timeStr,
-        status: "completed",
+        status: isCompletedImmediately ? "completed" : "waiting",
         catatan: notes,
+        waktu_permintaan: now,
+        waktu_konfirmasi: now,
+        waktu_mulai_layanan: isCompletedImmediately ? now : null,
+        source: "manual",
       })
       .returning();
 
@@ -616,11 +666,14 @@ export const createManualTransaction = createServerFn({
       throw new Error("Gagal membuat data booking.");
     }
 
-    // 6. Create Detail Booking
+    // 6. Create Detail Booking dengan SNAPSHOT
     for (const s of serviceRows) {
       await db.insert(detailBooking).values({
         id_booking: bookingRow.id_booking,
+        id_barbershop: targetShopId,
         id_layanan: s.id_layanan,
+        nama_layanan_snapshot: s.nama_layanan,
+        durasi_menit_snapshot: s.durasi_menit || 30,
         harga_satuan: String(s.harga),
         qty: 1,
         subtotal: String(s.harga),
@@ -634,11 +687,13 @@ export const createManualTransaction = createServerFn({
         id_barbershop: targetShopId,
         id_booking: bookingRow.id_booking,
         id_shift: activeShift.id_shift,
+        id_capster: data.capsterId,
         id_pelanggan: pelangganRow.id_pelanggan,
         subtotal: String(subtotal),
         diskon: String(discount),
         total: String(total),
-        status_transaksi: "paid",
+        status_transaksi: isCompletedImmediately ? "completed" : "pending",
+        waktu_selesai_layanan: isCompletedImmediately ? now : null,
       })
       .returning();
 
@@ -648,22 +703,43 @@ export const createManualTransaction = createServerFn({
 
     // 8. Create Pembayaran
     await db.insert(pembayaran).values({
+      id_barbershop: targetShopId,
       id_transaksi: transaksiRow.id_transaksi,
       metode_pembayaran: data.paymentMethod,
       jumlah_bayar: String(total),
-      status_pembayaran: "success",
-      waktu_bayar: now,
+      status_pembayaran: isCompletedImmediately ? "success" : "pending",
+      waktu_bayar: isCompletedImmediately ? now : null,
       referensi:
         data.paymentMethod === "tunai" ? `Tunai: ${cashReceived}` : "Non-tunai",
     });
 
-    // 9. Create Struk
-    const no_struk = generateStrukNumber();
-    await db.insert(struk).values({
-      id_transaksi: transaksiRow.id_transaksi,
-      no_struk,
-      tanggal_cetak: now,
-    });
+    // 9. Create Struk jika transaksi selesai
+    let no_struk = null;
+    if (isCompletedImmediately) {
+      no_struk = generateStrukNumber();
+      await db.insert(struk).values({
+        id_barbershop: targetShopId,
+        id_transaksi: transaksiRow.id_transaksi,
+        no_struk,
+        tanggal_cetak: now,
+      });
+
+      await logAudit({
+        barbershopId: targetShopId,
+        aksi: "transaction completion",
+        entityType: "transaksi",
+        entityId: transaksiRow.id_transaksi,
+        alasan: "Pesanan manual capster",
+      });
+    } else {
+      await logAudit({
+        barbershopId: targetShopId,
+        aksi: "create request",
+        entityType: "permintaan_layanan",
+        entityId: bookingRow.id_booking,
+        alasan: "Pesanan manual capster dimasukkan ke antrean",
+      });
+    }
 
     // Fetch capster name
     const [capsterUser] = await db
@@ -676,6 +752,7 @@ export const createManualTransaction = createServerFn({
     return {
       success: true,
       transactionId: transaksiRow.id_transaksi,
+      bookingId: bookingRow.id_booking,
       noStruk: no_struk,
       customerId: pelangganRow.id_pelanggan,
       customerName: userRow.nama_lengkap,

@@ -4,12 +4,16 @@ import {
   AlertCircle,
   ArrowLeft,
   CheckCircle,
+  CheckSquare,
+  Clock,
   FileText,
   Phone,
   Receipt,
   Scissors,
   User,
   Wallet,
+  X,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +34,10 @@ import {
 } from "@/lib/capster-store";
 import {
   confirmPaymentAndGenerateStruk,
+  capsterConfirmBooking,
+  capsterStartService,
+  capsterFinishService,
+  cancelBookingOrTransaction,
   getTransactionDetail,
 } from "@/lib/bookings";
 import { cn } from "@/lib/utils";
@@ -54,74 +62,94 @@ function CapsterTransactionDetailPage() {
   const [trx, setTrx] = useState<CapsterTransaction | null>(storeTrx ?? null);
   const [loading, setLoading] = useState(!storeTrx);
   const [confirming, setConfirming] = useState(false);
+  const [startingService, setStartingService] = useState(false);
+  const [finishingService, setFinishingService] = useState(false);
+  const [confirmingBooking, setConfirmingBooking] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const fetchDetail = async (isInitial = false) => {
+    if (isInitial && !storeTrx) setLoading(true);
+    try {
+      const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
+      if (!detail) return;
+      let mappedStatus: TransactionStatus = "Menunggu";
+      if (detail.status === "completed" || detail.status === "paid") {
+        mappedStatus = "Selesai";
+      } else if (
+        detail.status === "expired" ||
+        detail.bookingStatus === "expired" ||
+        detail.paymentStatus === "expired"
+      ) {
+        mappedStatus = "Kedaluwarsa";
+      } else if (
+        detail.status === "cancelled" ||
+        detail.bookingStatus === "cancelled" ||
+        detail.paymentStatus === "failed"
+      ) {
+        mappedStatus = "Batal";
+      } else if (detail.bookingStatus === "in_service" || detail.status === "ongoing") {
+        mappedStatus = "Sedang Dilayani";
+      } else {
+        mappedStatus = "Menunggu";
+      }
+
+      const mapped: CapsterTransaction = {
+        id: detail.id || (detail as any).transactionId,
+        bookingId: detail.bookingId ?? undefined,
+        bookingStatus: detail.bookingStatus ?? undefined,
+        source: (detail as any).source ?? undefined,
+        batasKonfirmasi: detail.batasKonfirmasi ?? undefined,
+        batasPembayaran: detail.batasPembayaran ?? undefined,
+        date: new Date(detail.createdAt).toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          timeZone: "Asia/Jakarta",
+        }),
+        time: new Date(detail.createdAt).toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Asia/Jakarta",
+        }),
+        customerName: detail.customerName,
+        customerId: detail.customerId ?? storeTrx?.customerId,
+        ...(detail.customerPhone ? { customerPhone: detail.customerPhone } : {}),
+        items: (detail.items || []).map((i: any) => ({
+          service: {
+            id: i.id || i.serviceId || "service",
+            name: i.namaLayanan || i.name || "Layanan",
+            category: "Barbershop",
+            price: i.hargaSnapshot ?? i.price ?? 0,
+          },
+          quantity: i.jumlah ?? i.quantity ?? 1,
+        })),
+        serviceNames: (detail.items || []).map((i: any) => i.namaLayanan || i.name).join(" + "),
+        subtotal: detail.totalHarga ?? detail.subtotal ?? 0,
+        discount: 0,
+        total: detail.totalHarga ?? detail.total ?? 0,
+        paymentMethod: (detail.paymentMethod ?? "tunai") as "tunai" | "qris" | "transfer",
+        cashReceived: detail.totalHarga ?? detail.total ?? 0,
+        change: 0,
+        status: mappedStatus,
+        notes: detail.notes ?? storeTrx?.notes ?? undefined,
+        capsterId: detail.capsterId ?? storeTrx?.capsterId ?? "",
+        capsterName: detail.capsterName,
+      };
+      setTrx(mapped);
+    } catch (err) {
+      console.error("Gagal mengambil detail transaksi:", err);
+    } finally {
+      if (isInitial) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
-
-    const fetchDetail = async (isInitial = false) => {
-      if (isInitial && !storeTrx) setLoading(true);
-      try {
-        const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
-        if (!mounted || !detail) return;
-        let mappedStatus: TransactionStatus = "Menunggu";
-        if (detail.status === "paid") {
-          mappedStatus = "Selesai";
-        } else if (
-          detail.status === "cancelled" ||
-          detail.bookingStatus === "cancelled" ||
-          detail.paymentStatus === "failed"
-        ) {
-          mappedStatus = "Batal";
-        }
-
-        const mapped: CapsterTransaction = {
-          id: detail.transactionId,
-          date: new Date(detail.createdAt).toLocaleDateString("id-ID", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-            timeZone: "Asia/Jakarta",
-          }),
-          time: new Date(detail.createdAt).toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Jakarta",
-          }),
-          customerName: detail.customerName,
-          customerId: detail.customerId ?? storeTrx?.customerId,
-          ...(detail.customerPhone ? { customerPhone: detail.customerPhone } : {}),
-          items: detail.items.map((i) => ({
-            service: {
-              id: i.serviceId,
-              name: i.name,
-              category: "Barbershop",
-              price: i.price,
-            },
-            quantity: i.quantity,
-          })),
-          serviceNames: detail.items.map((i) => i.name).join(" + "),
-          subtotal: detail.subtotal,
-          discount: detail.discount,
-          total: detail.total,
-          paymentMethod: detail.paymentMethod as "tunai" | "qris" | "transfer",
-          cashReceived: detail.total,
-          change: 0,
-          status: mappedStatus,
-          notes: detail.notes ?? storeTrx?.notes ?? undefined,
-          capsterId: detail.capsterId ?? storeTrx?.capsterId ?? "",
-          capsterName: detail.capsterName,
-        };
-        setTrx(mapped);
-      } catch (err) {
-        console.error("Gagal mengambil detail transaksi:", err);
-      } finally {
-        if (mounted && isInitial) setLoading(false);
-      }
-    };
-
     fetchDetail(true);
     const intervalId = setInterval(() => {
-      fetchDetail(false);
+      if (mounted) fetchDetail(false);
     }, 3000);
 
     return () => {
@@ -129,6 +157,53 @@ function CapsterTransactionDetailPage() {
       clearInterval(intervalId);
     };
   }, [transactionId, storeTrx]);
+
+  const handleConfirmBooking = async () => {
+    if (!trx?.bookingId) return;
+    setConfirmingBooking(true);
+    try {
+      await capsterConfirmBooking({ data: { bookingId: trx.bookingId } });
+      toast.success("Booking berhasil dikonfirmasi!");
+      await fetchDetail(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengonfirmasi booking");
+    } finally {
+      setConfirmingBooking(false);
+    }
+  };
+
+  const handleStartService = async () => {
+    if (!trx?.bookingId) return;
+    setStartingService(true);
+    try {
+      await capsterStartService({
+        data: {
+          bookingId: trx.bookingId,
+          ...(loggedInCapsterId ? { capsterId: loggedInCapsterId } : {}),
+        },
+      });
+      toast.success("Layanan dimulai!");
+      await fetchDetail(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal memulai layanan");
+    } finally {
+      setStartingService(false);
+    }
+  };
+
+  const handleFinishService = async () => {
+    if (!trx?.bookingId) return;
+    setFinishingService(true);
+    try {
+      await capsterFinishService({ data: { bookingId: trx.bookingId } });
+      toast.success("Pelayanan selesai! Menunggu pembayaran.");
+      await fetchDetail(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal menyelesaikan layanan");
+    } finally {
+      setFinishingService(false);
+    }
+  };
 
   const handleConfirmPayment = async () => {
     setConfirming(true);
@@ -139,15 +214,38 @@ function CapsterTransactionDetailPage() {
           ...(loggedInCapsterId ? { capsterId: loggedInCapsterId } : {}),
         },
       });
-      if (trx) {
-        setTrx({ ...trx, status: "Selesai" });
-      }
-      toast.success("Pembayaran berhasil dikonfirmasi!");
+      toast.success("Pembayaran berhasil dikonfirmasi & struk terbit!");
+      await fetchDetail(false);
     } catch (err: any) {
       console.error("Gagal mengonfirmasi pembayaran:", err);
       toast.error(err?.message || "Gagal mengonfirmasi pembayaran");
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      toast.error("Silakan masukkan alasan pembatalan");
+      return;
+    }
+    setCancelling(true);
+    try {
+      await cancelBookingOrTransaction({
+        data: {
+          bookingId: trx?.bookingId,
+          transactionId,
+          reason: cancelReason.trim(),
+        },
+      });
+      toast.success("Pesanan berhasil dibatalkan");
+      setShowCancelModal(false);
+      setCancelReason("");
+      await fetchDetail(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal membatalkan pesanan");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -203,16 +301,36 @@ function CapsterTransactionDetailPage() {
 
       <main className="flex-1 space-y-4 px-4 pb-28 pt-3">
         {/* Status Header Card */}
-        <GlassCard className="p-4 flex items-center justify-between">
-          <div>
-            <span className="font-mono text-[14px] font-bold text-primary-soft">
-              #{formatTransactionId(trx.id, trx.date)}
-            </span>
-            <p className="text-[12px] text-muted-foreground">
-              {trx.date} • {trx.time}
-            </p>
+        <GlassCard className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-mono text-[14px] font-bold text-primary-soft">
+                #{formatTransactionId(trx.id, trx.date)}
+              </span>
+              <p className="text-[12px] text-muted-foreground">
+                {trx.date} • {trx.time}
+              </p>
+            </div>
+            <TransactionStatusBadge status={trx.status} />
           </div>
-          <TransactionStatusBadge status={trx.status} />
+          {trx.bookingStatus === "pending_confirmation" && (
+            <div className="flex items-center gap-2 rounded-[10px] bg-warning/10 border border-warning/30 p-2.5 text-[12px] text-warning font-medium">
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Menunggu Konfirmasi Capster (Batas 5 menit dari request)</span>
+            </div>
+          )}
+          {trx.bookingStatus === "awaiting_payment" && (
+            <div className="flex items-center gap-2 rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Pelayanan selesai — Menunggu pembayaran kasir (Batas 2 jam)</span>
+            </div>
+          )}
+          {trx.bookingStatus === "in_service" && (
+            <div className="flex items-center gap-2 rounded-[10px] bg-blue-500/10 border border-blue-500/30 p-2.5 text-[12px] text-blue-400 font-medium">
+              <Scissors className="h-4 w-4 shrink-0" />
+              <span>Pelayanan sedang berlangsung</span>
+            </div>
+          )}
         </GlassCard>
 
         {/* Data Pelanggan */}
@@ -319,7 +437,53 @@ function CapsterTransactionDetailPage() {
       </main>
 
       <BottomActionBar>
-        {trx.status === "Menunggu" ? (
+        {trx.bookingStatus === "pending_confirmation" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <PrimaryButton
+              loading={confirmingBooking}
+              onClick={handleConfirmBooking}
+            >
+              <CheckCircle className="h-4 w-4" strokeWidth={2} />
+              KONFIRMASI BOOKING
+            </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-4 w-4" strokeWidth={2} />
+              TOLAK / BATALKAN
+            </button>
+          </div>
+        ) : trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <PrimaryButton
+              loading={startingService}
+              onClick={handleStartService}
+            >
+              <Scissors className="h-4 w-4" strokeWidth={2} />
+              MULAI LAYANAN
+            </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-4 w-4" strokeWidth={2} />
+              BATALKAN PESANAN
+            </button>
+          </div>
+        ) : trx.bookingStatus === "in_service" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <PrimaryButton
+              loading={finishingService}
+              onClick={handleFinishService}
+            >
+              <CheckSquare className="h-4 w-4" strokeWidth={2} />
+              SELESAI PELAYANAN
+            </PrimaryButton>
+          </div>
+        ) : trx.bookingStatus === "awaiting_payment" || trx.status === "Menunggu" ? (
           <div className="flex flex-col gap-2 w-full">
             <PrimaryButton
               loading={confirming}
@@ -330,13 +494,48 @@ function CapsterTransactionDetailPage() {
             </PrimaryButton>
             <SecondaryButton
               onClick={() =>
-                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any,
-                })
+                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
               }
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2} />
               KEMBALI KE DASHBOARD
             </SecondaryButton>
+          </div>
+        ) : trx.status === "Selesai" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <PrimaryButton
+              onClick={() =>
+                navigate({
+                  to: `/${barbershopSlug}/capster/transactions/${trx.id}/receipt` as any,
+                })
+              }
+            >
+              <Receipt className="h-4 w-4" strokeWidth={2} />
+              LIHAT STRUK
+            </PrimaryButton>
+            <SecondaryButton
+              onClick={() =>
+                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
+              }
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+              KEMBALI KE DASHBOARD
+            </SecondaryButton>
+          </div>
+        ) : trx.status === "Kedaluwarsa" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex items-center justify-center gap-2 rounded-[12px] border border-rose-500/35 bg-rose-900/20 p-3 text-[13px] font-bold text-rose-400">
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Pesanan Ini Telah Kedaluwarsa</span>
+            </div>
+            <PrimaryButton
+              onClick={() =>
+                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
+              }
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+              KEMBALI KE DASHBOARD
+            </PrimaryButton>
           </div>
         ) : trx.status === "Batal" ? (
           <div className="flex flex-col gap-2 w-full">
@@ -346,8 +545,7 @@ function CapsterTransactionDetailPage() {
             </div>
             <PrimaryButton
               onClick={() =>
-                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any,
-                })
+                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
               }
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2} />
@@ -357,16 +555,56 @@ function CapsterTransactionDetailPage() {
         ) : (
           <PrimaryButton
             onClick={() =>
-              navigate({ to: `/${barbershopSlug}/capster/dashboard` as any,
-              })
+              navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
             }
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2} />
             KEMBALI KE DASHBOARD
           </PrimaryButton>
         )}
-        </BottomActionBar>
-        </MobileShell>
+      </BottomActionBar>
+
+      {/* Modal Pilihan Alasan Pembatalan */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="glass-3 w-full max-w-[420px] rounded-[24px] border border-white/15 p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-[16px] font-bold text-foreground">Batalkan Pesanan</h3>
+                <p className="text-[12px] text-muted-foreground">Tuliskan alasan pembatalan layanan ini</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-white/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              <input
+                type="text"
+                placeholder="Alasan pembatalan (misal: Pelanggan berhalangan)"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full rounded-[12px] border border-white/15 bg-white/5 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary-soft"
+              />
+            </div>
+            <div className="flex gap-2">
+              <SecondaryButton onClick={() => setShowCancelModal(false)}>Kembali</SecondaryButton>
+              <button
+                type="button"
+                disabled={cancelling || !cancelReason.trim()}
+                onClick={handleCancelBooking}
+                className="flex-1 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-danger text-[13px] font-bold text-white hover:bg-danger/90 disabled:opacity-50"
+              >
+                {cancelling ? "Membatalkan..." : "Konfirmasi Batal"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </MobileShell>
       )}
     </CapsterAuthGuard>
   );

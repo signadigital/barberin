@@ -182,35 +182,22 @@ export const loginCapster = createServerFn({
       .innerJoin(users, eq(capster.id_user, users.id_user))
       .where(and(eq(users.role, "capster"), eq(capster.status, "active")));
 
-    const activeShopId = targetShop?.id_barbershop;
-    // 1. Prioritaskan pencarian di barbershop yang sedang dibuka (targetShop)
-    let matched = activeShopId
-      ? all.find(
-          (c) =>
-            c.id_barbershop === activeShopId &&
-            (c.email.toLowerCase() === term ||
-              c.nama_lengkap.toLowerCase() === term ||
-              (c.no_pegawai && c.no_pegawai.toLowerCase() === term)),
-        )
-      : null;
+    if (!targetShop) {
+      throw new Error("Barbershop tidak ditemukan.");
+    }
 
-    // 2. Jika tidak ditemukan di barbershop ini (atau tidak ada targetShop), cek kecocokan exact di seluruh barbershop
-    if (!matched) {
-      matched = all.find(
-        (c) =>
-          c.email.toLowerCase() === term ||
+    const activeShopId = targetShop.id_barbershop;
+    // Cari capster yang terdaftar di barbershop ini saja (Strict Tenant Isolation)
+    const matched = all.find(
+      (c) =>
+        c.id_barbershop === activeShopId &&
+        (c.email.toLowerCase() === term ||
           c.nama_lengkap.toLowerCase() === term ||
-          (c.no_pegawai && c.no_pegawai.toLowerCase() === term),
-      );
-    }
+          (c.no_pegawai && c.no_pegawai.toLowerCase() === term)),
+    );
 
     if (!matched) {
-      throw new Error("Akun capster dengan email atau username tersebut tidak ditemukan.");
-    }
-
-    // Validasi Tenant: capster harus milik target barbershop
-    if (targetShop && matched.id_barbershop !== targetShop.id_barbershop) {
-      throw new Error("Anda tidak memiliki akses ke barbershop ini.");
+      throw new Error("Akun capster tidak terdaftar di barbershop ini.");
     }
 
     const expectedPassword = matched.password || "password";

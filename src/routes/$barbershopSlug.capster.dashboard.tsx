@@ -70,9 +70,12 @@ function CapsterDashboardPage() {
   }, [capsterId, capsterName, barbershopSlug, navigate]);
 
   const currentMetrics = dashboardMetrics;
-  const currentTransactions = transactions;
   const unconfirmedTransactions = currentTransactions.filter(
-    (t) => t.status === "Menunggu" && (!capsterId || !t.capsterId || t.capsterId === capsterId),
+    (t) =>
+      (t.status === "Menunggu" ||
+        t.bookingStatus === "pending_confirmation" ||
+        t.bookingStatus === "awaiting_payment") &&
+      (!capsterId || !t.capsterId || t.capsterId === capsterId),
   );
 
   useEffect(() => {

@@ -36,6 +36,11 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "confirmed",
   "completed",
   "cancelled",
+  "pending_confirmation",
+  "waiting",
+  "in_service",
+  "awaiting_payment",
+  "expired",
 ]);
 
 export const shiftStatusEnum = pgEnum("shift_status", [
@@ -49,6 +54,9 @@ export const transaksiStatusEnum = pgEnum("transaksi_status", [
   "paid",
   "cancelled",
   "refunded",
+  "ongoing",
+  "completed",
+  "expired",
 ]);
 
 export const metodePembayaranEnum = pgEnum("metode_pembayaran", [
@@ -62,6 +70,7 @@ export const pembayaranStatusEnum = pgEnum("pembayaran_status", [
   "success",
   "failed",
   "refunded",
+  "expired",
 ]);
 
 // ==============================
@@ -107,13 +116,23 @@ export const pelanggan = pgTable(
       .notNull()
       .unique()
       .references(() => users.id_user, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "cascade" },
+    ),
+    nama_pelanggan: varchar("nama_pelanggan", { length: 255 }),
+    no_hp: varchar("no_hp", { length: 50 }),
     alamat: text("alamat"),
     tanggal_lahir: timestamp("tanggal_lahir", { mode: "date" }),
     jenis_kelamin: varchar("jenis_kelamin", { length: 20 }),
+    foto: varchar("foto", { length: 500 }),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [index("pelanggan_user_idx").on(table.id_user)],
+  (table) => [
+    index("pelanggan_user_idx").on(table.id_user),
+    index("pelanggan_barbershop_idx").on(table.id_barbershop),
+  ],
 );
 
 // ==============================
@@ -153,9 +172,11 @@ export const capster = pgTable(
     id_barbershop: uuid("id_barbershop")
       .notNull()
       .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    nama_capster: varchar("nama_capster", { length: 255 }),
     no_pegawai: varchar("no_pegawai", { length: 50 }),
     tanggal_bergabung: timestamp("tanggal_bergabung", { mode: "date" }),
     status: commonStatusEnum("status").notNull().default("active"),
+    foto: varchar("foto", { length: 500 }),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
@@ -187,7 +208,7 @@ export const layanan = pgTable(
 );
 
 // ==============================
-// 6. BOOKING
+// 6. BOOKING (PERMINTAAN_LAYANAN)
 // ==============================
 export const booking = pgTable(
   "booking",
@@ -204,8 +225,17 @@ export const booking = pgTable(
     }),
     tanggal_booking: timestamp("tanggal_booking", { mode: "date" }).notNull(),
     waktu_booking: varchar("waktu_booking", { length: 30 }).notNull(),
-    status: bookingStatusEnum("status").notNull().default("pending"),
+    status: bookingStatusEnum("status").notNull().default("pending_confirmation"),
     catatan: text("catatan"),
+    waktu_permintaan: timestamp("waktu_permintaan", { mode: "date" }).notNull().defaultNow(),
+    batas_konfirmasi: timestamp("batas_konfirmasi", { mode: "date" }),
+    waktu_konfirmasi: timestamp("waktu_konfirmasi", { mode: "date" }),
+    waktu_mulai_layanan: timestamp("waktu_mulai_layanan", { mode: "date" }),
+    estimasi_tunggu_menit: integer("estimasi_tunggu_menit"),
+    estimasi_mulai: timestamp("estimasi_mulai", { mode: "date" }),
+    source: varchar("source", { length: 20 }).notNull().default("scan"),
+    cancelled_at: timestamp("cancelled_at", { mode: "date" }),
+    cancel_reason: text("cancel_reason"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
@@ -213,11 +243,14 @@ export const booking = pgTable(
     index("booking_pelanggan_idx").on(table.id_pelanggan),
     index("booking_capster_idx").on(table.id_capster),
     index("booking_status_idx").on(table.status),
+    index("booking_barbershop_idx").on(table.id_barbershop),
+    index("booking_waktu_permintaan_idx").on(table.waktu_permintaan),
+    index("booking_batas_konfirmasi_idx").on(table.batas_konfirmasi),
   ],
 );
 
 // ==============================
-// 7. DETAIL BOOKING
+// 7. DETAIL BOOKING (DETAIL_PERMINTAAN)
 // ==============================
 export const detailBooking = pgTable(
   "detail_booking",
@@ -226,9 +259,13 @@ export const detailBooking = pgTable(
     id_booking: uuid("id_booking")
       .notNull()
       .references(() => booking.id_booking, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop")
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
     id_layanan: uuid("id_layanan")
       .notNull()
       .references(() => layanan.id_layanan, { onDelete: "restrict" }),
+    nama_layanan_snapshot: varchar("nama_layanan_snapshot", { length: 255 }),
+    durasi_menit_snapshot: integer("durasi_menit_snapshot").default(30),
     harga_satuan: numeric("harga_satuan", { precision: 12, scale: 2 }).notNull(),
     qty: integer("qty").notNull().default(1),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
@@ -236,6 +273,7 @@ export const detailBooking = pgTable(
   (table) => [
     index("detail_booking_booking_idx").on(table.id_booking),
     index("detail_booking_layanan_idx").on(table.id_layanan),
+    index("detail_booking_barbershop_idx").on(table.id_barbershop),
   ],
 );
 
@@ -249,6 +287,10 @@ export const shiftCapster = pgTable(
     id_capster: uuid("id_capster")
       .notNull()
       .references(() => capster.id_capster, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "cascade" },
+    ),
     tanggal: timestamp("tanggal", { mode: "date" }).notNull(),
     waktu_mulai: varchar("waktu_mulai", { length: 30 }).notNull(),
     waktu_selesai: varchar("waktu_selesai", { length: 30 }),
@@ -265,6 +307,7 @@ export const shiftCapster = pgTable(
   },
   (table) => [
     index("shift_capster_capster_idx").on(table.id_capster),
+    index("shift_capster_barbershop_idx").on(table.id_barbershop),
     index("shift_capster_status_idx").on(table.status),
   ],
 );
@@ -289,6 +332,9 @@ export const transaksi = pgTable(
     id_pelanggan: uuid("id_pelanggan")
       .notNull()
       .references(() => pelanggan.id_pelanggan, { onDelete: "restrict" }),
+    id_capster: uuid("id_capster").references(() => capster.id_capster, {
+      onDelete: "restrict",
+    }),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
     diskon: numeric("diskon", { precision: 12, scale: 2 })
       .notNull()
@@ -297,6 +343,8 @@ export const transaksi = pgTable(
     status_transaksi: transaksiStatusEnum("status_transaksi")
       .notNull()
       .default("pending"),
+    waktu_selesai_layanan: timestamp("waktu_selesai_layanan", { mode: "date" }),
+    batas_pembayaran: timestamp("batas_pembayaran", { mode: "date" }),
     catatan_pemeriksaan: text("catatan_pemeriksaan"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
@@ -306,7 +354,9 @@ export const transaksi = pgTable(
     index("transaksi_booking_idx").on(table.id_booking),
     index("transaksi_shift_idx").on(table.id_shift),
     index("transaksi_pelanggan_idx").on(table.id_pelanggan),
+    index("transaksi_capster_idx").on(table.id_capster),
     index("transaksi_status_idx").on(table.status_transaksi),
+    index("transaksi_batas_pembayaran_idx").on(table.batas_pembayaran),
   ],
 );
 
@@ -317,6 +367,10 @@ export const pembayaran = pgTable(
   "pembayaran",
   {
     id_pembayaran: uuid("id_pembayaran").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "cascade" },
+    ),
     id_transaksi: uuid("id_transaksi")
       .notNull()
       .references(() => transaksi.id_transaksi, { onDelete: "cascade" }),
@@ -329,11 +383,17 @@ export const pembayaran = pgTable(
       .notNull()
       .default("pending"),
     waktu_bayar: timestamp("waktu_bayar", { mode: "date" }),
+    batas_pembayaran: timestamp("batas_pembayaran", { mode: "date" }),
+    dikonfirmasi_oleh: uuid("dikonfirmasi_oleh").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
     referensi: varchar("referensi", { length: 255 }),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [
     index("pembayaran_transaksi_idx").on(table.id_transaksi),
+    index("pembayaran_barbershop_idx").on(table.id_barbershop),
     index("pembayaran_status_idx").on(table.status_pembayaran),
   ],
 );
@@ -345,6 +405,10 @@ export const struk = pgTable(
   "struk",
   {
     id_struk: uuid("id_struk").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop").references(
+      () => barbershop.id_barbershop,
+      { onDelete: "cascade" },
+    ),
     id_transaksi: uuid("id_transaksi")
       .notNull()
       .unique()
@@ -358,6 +422,7 @@ export const struk = pgTable(
   },
   (table) => [
     index("struk_transaksi_idx").on(table.id_transaksi),
+    index("struk_barbershop_idx").on(table.id_barbershop),
     index("struk_no_struk_idx").on(table.no_struk),
   ],
 );
@@ -447,6 +512,32 @@ export const ownerVerificationTokens = pgTable(
   (table) => [
     index("owner_verif_token_hash_idx").on(table.token_hash),
     index("owner_verif_user_idx").on(table.id_user),
+  ],
+);
+
+// ==============================
+// 16. AUDIT LOG (SESUAI NEW_ERD)
+// ==============================
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id_audit: uuid("id_audit").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    id_user: uuid("id_user").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
+    aksi: varchar("aksi", { length: 100 }).notNull(),
+    entity_type: varchar("entity_type", { length: 50 }).notNull(),
+    entity_id: uuid("entity_id"),
+    alasan: text("alasan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("audit_log_barbershop_idx").on(table.id_barbershop),
+    index("audit_log_user_idx").on(table.id_user),
+    index("audit_log_created_at_idx").on(table.created_at),
   ],
 );
 
@@ -667,6 +758,9 @@ export type NewAlasanPembatalan = typeof alasanPembatalan.$inferInsert;
 
 export type OwnerVerificationToken = typeof ownerVerificationTokens.$inferSelect;
 export type NewOwnerVerificationToken = typeof ownerVerificationTokens.$inferInsert;
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type NewAuditLog = typeof auditLog.$inferInsert;
 
 // ============================================================================
 // SAAS PLATFORM / ADMIN PLATFORM SCHEMA (SESUAI GAMBAR 2)

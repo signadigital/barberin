@@ -113,6 +113,7 @@ function ServiceExecutionPage() {
     selectedCapster,
   } = useBarberin();
 
+  const [txDetail, setTxDetail] = useState<any>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [otherReason, setOtherReason] = useState("");
@@ -131,6 +132,7 @@ function ServiceExecutionPage() {
       try {
         const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
         if (!mounted || !detail) return;
+        setTxDetail(detail);
 
         // Cek jika pesanan dibatalkan
         const isCancelled =
@@ -143,9 +145,8 @@ function ServiceExecutionPage() {
         }
 
         // Cek status pembayaran berdasarkan database:
-        // Capster konfirmasi -> status_transaksi = 'paid' atau paymentStatus = 'success'
         const isPaid =
-          detail.status === "paid" || detail.paymentStatus === "success";
+          detail.status === "paid" || detail.status === "completed" || detail.paymentStatus === "success";
 
         if (isPaid) {
           actions.setPaymentConfirmationStatus("DIKONFIRMASI");
@@ -163,8 +164,12 @@ function ServiceExecutionPage() {
         actions.setPaymentConfirmationStatus("MENUNGGU");
 
         // Status pengerjaan layanan
-        if (detail.bookingStatus === "confirmed") {
+        if (detail.bookingStatus === "in_service") {
           actions.setServiceExecutionStatus("DIKERJAKAN");
+        } else if (detail.bookingStatus === "awaiting_payment") {
+          actions.setServiceExecutionStatus("HAMPIR_SELESAI");
+        } else if (detail.bookingStatus === "confirmed" || detail.bookingStatus === "waiting") {
+          actions.setServiceExecutionStatus("MENUNGGU");
         }
       } catch (err) {
         console.error("Polling status error:", err);
@@ -177,7 +182,7 @@ function ServiceExecutionPage() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [transactionId, navigate]);
+  }, [transactionId, navigate, barbershopSlug]);
 
   const handleConfirmCancel = async () => {
     if (!selectedReason || !transactionId) return;
@@ -220,15 +225,106 @@ function ServiceExecutionPage() {
       />
 
       <main className="flex-1 space-y-3 px-4 pb-28 pt-4">
+        {/* Status Lifecycle Alerts */}
+        {txDetail?.bookingStatus === "pending_confirmation" && (
+          <GlassCard className="space-y-2 border-warning/40 bg-warning/10">
+            <div className="flex items-center gap-2 text-warning font-semibold text-[14px]">
+              <Clock className="h-4 w-4 animate-pulse" />
+              <span>Menunggu Konfirmasi Capster</span>
+            </div>
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              Pesanan Anda menunggu konfirmasi capster. Batas waktu konfirmasi otomatis adalah 5 menit.
+            </p>
+          </GlassCard>
+        )}
+
+        {txDetail?.estimation && (txDetail.bookingStatus === "waiting" || txDetail.bookingStatus === "confirmed" || txDetail.bookingStatus === "pending_confirmation") && (
+          <GlassCard className="space-y-3 border-primary/30 bg-primary/5">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-primary-soft">
+                Estimasi Waktu Tunggu
+              </span>
+              <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary-soft ring-1 ring-primary/40">
+                Antrean Ke-{txDetail.estimation.antreanKe}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+                <span className="text-[11px] text-muted-foreground block">Waktu Tunggu</span>
+                <span className="text-[20px] font-extrabold text-foreground">
+                  ~{txDetail.estimation.estimasiTungguMenit}{" "}
+                  <span className="text-[12px] font-medium text-muted-foreground">menit</span>
+                </span>
+              </div>
+              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+                <span className="text-[11px] text-muted-foreground block">Estimasi Mulai</span>
+                <span className="text-[20px] font-extrabold text-foreground">
+                  {new Date(txDetail.estimation.estimasiMulai).toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Asia/Jakarta",
+                  })}
+                  <span className="text-[11px] font-normal text-muted-foreground ml-1">WIB</span>
+                </span>
+              </div>
+            </div>
+            {txDetail.estimation.totalAntreanSebelumnya > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                Terdapat {txDetail.estimation.totalAntreanSebelumnya} pelanggan dalam antrean sebelum Anda.
+              </p>
+            )}
+          </GlassCard>
+        )}
+
+        {txDetail?.bookingStatus === "awaiting_payment" && (
+          <GlassCard className="space-y-2 border-emerald-500/30 bg-emerald-500/10">
+            <div className="flex items-center gap-2 text-success font-semibold text-[14px]">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Layanan Selesai! Menunggu Pembayaran</span>
+            </div>
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              Layanan telah selesai dikerjakan. Silakan melakukan pembayaran di kasir (batas pembayaran 2 jam).
+            </p>
+          </GlassCard>
+        )}
+
+        {(txDetail?.status === "expired" || txDetail?.bookingStatus === "expired") && (
+          <GlassCard className="space-y-3 border-danger/30 bg-danger/10 text-center py-5">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-danger/20 text-danger ring-1 ring-danger/40">
+              <Clock className="h-5 w-5" />
+            </div>
+            <h3 className="text-[15px] font-bold text-foreground">Pesanan Kedaluwarsa</h3>
+            <p className="text-[12px] text-muted-foreground px-4">
+              Batas waktu konfirmasi (5 menit) atau pembayaran (2 jam) telah terlampaui.
+            </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  actions.reset();
+                  navigate({ to: `/${barbershopSlug}/customer/services` as any });
+                }}
+                className="inline-flex min-h-[40px] px-5 items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white hover:bg-primary/90"
+              >
+                Buat Pesanan Baru
+              </button>
+            </div>
+          </GlassCard>
+        )}
+
         <GlassCard className="flex items-start gap-3">
           <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary-soft" strokeWidth={2} />
           <div className="min-w-0">
             <p className="text-[14px] font-semibold">
-              Capster: {selectedCapster?.name ?? "-"}
+              Capster: {selectedCapster?.name ?? txDetail?.capsterName ?? "-"}
               {selectedCapster ? ` — ${selectedCapster.role}` : ""}
             </p>
             <p className="text-[13px] text-muted-foreground">
-              Layanan Anda sedang dikerjakan. Silakan menunggu hingga proses selesai.
+              {txDetail?.bookingStatus === "in_service"
+                ? "Layanan Anda sedang dikerjakan. Silakan menikmati pelayanan."
+                : txDetail?.bookingStatus === "awaiting_payment"
+                ? "Layanan telah selesai. Menunggu pembayaran dikonfirmasi."
+                : "Silakan menunggu giliran hingga capster memanggil Anda."}
             </p>
           </div>
         </GlassCard>
@@ -251,16 +347,29 @@ function ServiceExecutionPage() {
         <ServiceExecutionStatusView status={serviceExecutionStatus} />
       </main>
 
-      {/* Tombol Batalkan Pesanan di Bagian Bawah */}
+      {/* Tombol Aksi di Bagian Bawah */}
       <BottomActionBar>
-        <button
-          type="button"
-          onClick={() => setShowCancelModal(true)}
-          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[14px] font-bold text-danger shadow-sm transition-all hover:bg-danger/20 active:scale-[0.98]"
-        >
-          <XCircle className="h-4 w-4" strokeWidth={2.2} />
-          <span>Batalkan Pesanan</span>
-        </button>
+        {txDetail?.status === "expired" || txDetail?.bookingStatus === "expired" ? (
+          <button
+            type="button"
+            onClick={() => {
+              actions.reset();
+              navigate({ to: `/${barbershopSlug}/customer/services` as any });
+            }}
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
+          >
+            <span>Kembali ke Layanan</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowCancelModal(true)}
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[14px] font-bold text-danger shadow-sm transition-all hover:bg-danger/20 active:scale-[0.98]"
+          >
+            <XCircle className="h-4 w-4" strokeWidth={2.2} />
+            <span>Batalkan Pesanan</span>
+          </button>
+        )}
       </BottomActionBar>
 
       {/* Modal Pilihan Alasan Pembatalan (Bentuknya Tombol) */}
