@@ -457,9 +457,28 @@ function CapsterTransactionDetailPage() {
       </main>
 
       <BottomActionBar>
-        {trx.bookingStatus === "pending_confirmation" ||
-        trx.bookingStatus === "waiting" ||
-        trx.bookingStatus === "confirmed" ? (
+        {trx.bookingStatus === "pending_confirmation" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <div className="text-[11px] font-semibold text-amber-400 text-center">
+              Permintaan baru — batas konfirmasi 5 menit
+            </div>
+            <PrimaryButton
+              loading={confirmingBooking}
+              onClick={handleConfirmBooking}
+            >
+              <CheckSquare className="h-4 w-4" strokeWidth={2} />
+              KONFIRMASI LAYANAN
+            </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-4 w-4" strokeWidth={2} />
+              BATALKAN PESANAN
+            </button>
+          </div>
+        ) : trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed" ? (
           <div className="flex flex-col gap-2 w-full">
             <PrimaryButton
               loading={startingService}
@@ -479,6 +498,21 @@ function CapsterTransactionDetailPage() {
           </div>
         ) : trx.bookingStatus === "in_service" ? (
           <div className="flex flex-col gap-2 w-full">
+            <PrimaryButton
+              loading={finishingService}
+              onClick={handleFinishService}
+            >
+              <CheckCircle className="h-4 w-4" strokeWidth={2} />
+              SELESAI PELAYANAN
+            </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-4 w-4" strokeWidth={2} />
+              BATALKAN PESANAN
+            </button>
             <SecondaryButton
               onClick={() =>
                 navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })

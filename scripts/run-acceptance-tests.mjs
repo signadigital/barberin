@@ -826,29 +826,43 @@ async function runAllTests() {
     assert(svcShopBCheck.durasi_menit === 25, `Durasi layanan Shop B tetap 25 menit (terisolasi sempurna dari perubahan Shop A)`);
 
     // =========================================================================
-    // ALUR BARU: LANGSUNG MULAI LAYANAN & PELANGGAN SELESAI LAYANAN
+    // ALUR BPMN LENGKAP: KONFIRMASI LAYANAN, MULAI, SELESAI, KONFIRMASI BAYAR
     // =========================================================================
     console.log("\n=======================================================");
-    console.log("  ALUR BARU: LANGSUNG MULAI LAYANAN & PELANGGAN SELESAI LAYANAN");
+    console.log("  ALUR BPMN: KONFIRMASI LAYANAN & ESTIMASI WAKTU TUNGGU");
     console.log("=======================================================\n");
 
-    // TEST 1: Customer membuat request -> status langsung waiting (langsung masuk antrean & siap MULAI LAYANAN)
-    console.log("▶ TEST 1: Customer membuat request -> status langsung 'waiting' tanpa barrier konfirmasi");
+    // TEST 1: Customer membuat request -> status pending_confirmation dengan batas 5m
+    console.log("▶ TEST 1: Customer membuat request -> status 'pending_confirmation' & batas konfirmasi 5m");
+    const nowReq = new Date();
+    const batasReq5m = new Date(nowReq.getTime() + 5 * 60 * 1000);
     const [bReqT1] = await sql`
       INSERT INTO booking (
         id_barbershop, id_pelanggan, id_capster,
-        tanggal_booking, waktu_booking, status, waktu_permintaan, waktu_konfirmasi, source
+        tanggal_booking, waktu_booking, status, waktu_permintaan, batas_konfirmasi, source
       ) VALUES (
         ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
-        NOW(), '12:00', 'waiting', NOW(), NOW(), 'scan'
+        NOW(), '12:00', 'pending_confirmation', ${nowReq}, ${batasReq5m}, 'scan'
       ) RETURNING *;
     `;
     cleanupIds.bookings.push(bReqT1.id_booking);
-    assert(bReqT1.status === "waiting", "Status permintaan layanan baru langsung 'waiting' (langsung antre)");
-    assert(bReqT1.waktu_konfirmasi !== null, "waktu_konfirmasi langsung terisi saat pemesanan");
+    assert(bReqT1.status === "pending_confirmation", "Status permintaan layanan baru adalah 'pending_confirmation'");
+    assert(bReqT1.batas_konfirmasi !== null, "batas_konfirmasi tercatat 5 menit ke depan");
 
-    // TEST 2: Capster langsung klik MULAI LAYANAN -> status in_service
-    console.log("\n▶ TEST 2: Capster langsung klik MULAI LAYANAN -> status in_service");
+    // TEST 1B: Capster Konfirmasi Layanan (< 5m) -> status waiting & masuk antrean
+    console.log("\n▶ TEST 1B: Capster Konfirmasi Layanan (< 5m) -> status menjadi 'waiting'");
+    const nowConf = new Date();
+    const [bReqT1Conf] = await sql`
+      UPDATE booking
+      SET status = 'waiting', waktu_konfirmasi = ${nowConf}, updated_at = ${nowConf}
+      WHERE id_booking = ${bReqT1.id_booking}
+      RETURNING *;
+    `;
+    assert(bReqT1Conf.status === "waiting", "Status booking berhasil dikonfirmasi menjadi 'waiting'");
+    assert(bReqT1Conf.waktu_konfirmasi !== null, "waktu_konfirmasi tercatat di database");
+
+    // TEST 2: Capster klik MULAI LAYANAN -> status in_service
+    console.log("\n▶ TEST 2: Capster klik MULAI LAYANAN -> status in_service");
     const nowStart = new Date();
     const [bReqT2] = await sql`
       UPDATE booking

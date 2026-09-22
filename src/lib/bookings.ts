@@ -239,9 +239,10 @@ export const createCustomerBookingAndTransaction = createServerFn({
 
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const batasKonfirmasi = new Date(now.getTime() + 5 * 60 * 1000);
 
     // 6. Create Permintaan Layanan (Booking)
-    // Status langsung 'waiting' (langsung masuk antrean tanpa barrier konfirmasi 5 menit, langsung siap MULAI LAYANAN)
+    // Sesuai BPMN & ERD: status awal 'pending_confirmation', batas_konfirmasi = now + 5 menit
     const [bookingRow] = await db
       .insert(booking)
       .values({
@@ -250,9 +251,10 @@ export const createCustomerBookingAndTransaction = createServerFn({
         id_capster: data.capsterId,
         tanggal_booking: now,
         waktu_booking: timeStr,
-        status: "waiting",
+        status: "pending_confirmation",
         waktu_permintaan: now,
-        waktu_konfirmasi: now,
+        batas_konfirmasi: batasKonfirmasi,
+        waktu_konfirmasi: null,
         source: data.source || "scan",
       })
       .returning();

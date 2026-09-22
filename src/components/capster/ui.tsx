@@ -903,6 +903,8 @@ export function UnconfirmedTransactionsSection({
                     <span>
                       {trx.bookingStatus === "awaiting_payment"
                         ? "KONFIRMASI PEMBAYARAN"
+                        : trx.bookingStatus === "pending_confirmation"
+                        ? "KONFIRMASI LAYANAN"
                         : "MULAI LAYANAN"}
                     </span>
                     <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
