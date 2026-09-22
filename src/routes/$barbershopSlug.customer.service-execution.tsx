@@ -238,6 +238,38 @@ function ServiceExecutionPage() {
           </GlassCard>
         )}
 
+        {/* Live In-Service Display */}
+        {txDetail?.bookingStatus === "in_service" && (
+          <GlassCard className="space-y-3 border-emerald-500/30 bg-emerald-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-success font-semibold text-[14px]">
+                <Scissors className="h-4 w-4 animate-spin text-success" />
+                <span>Sedang Dilayani di Kursi</span>
+              </div>
+              <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/40">
+                In Service
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+                <span className="text-[11px] text-muted-foreground block">Durasi Layanan</span>
+                <span className="text-[20px] font-extrabold text-foreground">
+                  {txDetail.estimation?.totalDurationMinutes ?? txDetail.totalDurationMinutes ?? 30}{" "}
+                  <span className="text-[12px] font-medium text-muted-foreground">menit</span>
+                </span>
+              </div>
+              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+                <span className="text-[11px] text-muted-foreground block">Sisa Waktu</span>
+                <span className="text-[20px] font-extrabold text-success">
+                  ~{txDetail.estimation?.remainingMinutes ?? 0}{" "}
+                  <span className="text-[12px] font-medium text-muted-foreground">menit</span>
+                </span>
+              </div>
+            </div>
+          </GlassCard>
+        )}
+
+        {/* Live Estimation for Waiting / Confirmed / Pending Confirmation */}
         {txDetail?.estimation && (txDetail.bookingStatus === "waiting" || txDetail.bookingStatus === "confirmed" || txDetail.bookingStatus === "pending_confirmation") && (
           <GlassCard className="space-y-3 border-primary/30 bg-primary/5">
             <div className="flex items-center justify-between">
@@ -245,21 +277,23 @@ function ServiceExecutionPage() {
                 Estimasi Waktu Tunggu
               </span>
               <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary-soft ring-1 ring-primary/40">
-                Antrean Ke-{txDetail.estimation.antreanKe}
+                {txDetail.bookingStatus === "pending_confirmation"
+                  ? "Menunggu Konfirmasi"
+                  : `Antrean Ke-${txDetail.estimation.antreanKe ?? txDetail.estimation.positionInQueue ?? 1}`}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
                 <span className="text-[11px] text-muted-foreground block">Waktu Tunggu</span>
                 <span className="text-[20px] font-extrabold text-foreground">
-                  ~{txDetail.estimation.estimasiTungguMenit}{" "}
+                  ~{txDetail.estimation.estimasiTungguMenit ?? txDetail.estimation.waitTimeMinutes ?? 0}{" "}
                   <span className="text-[12px] font-medium text-muted-foreground">menit</span>
                 </span>
               </div>
               <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
                 <span className="text-[11px] text-muted-foreground block">Estimasi Mulai</span>
                 <span className="text-[20px] font-extrabold text-foreground">
-                  {new Date(txDetail.estimation.estimasiMulai).toLocaleTimeString("id-ID", {
+                  {new Date(txDetail.estimation.estimasiMulai ?? txDetail.estimation.estimatedStartTime).toLocaleTimeString("id-ID", {
                     hour: "2-digit",
                     minute: "2-digit",
                     timeZone: "Asia/Jakarta",
@@ -267,6 +301,12 @@ function ServiceExecutionPage() {
                   <span className="text-[11px] font-normal text-muted-foreground ml-1">WIB</span>
                 </span>
               </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[12px] text-muted-foreground">
+              <span>Durasi Layanan Anda:</span>
+              <span className="font-semibold text-foreground">
+                {txDetail.estimation.durasiLayanan ?? txDetail.totalDurationMinutes ?? 30} menit
+              </span>
             </div>
             {txDetail.estimation.totalAntreanSebelumnya > 0 && (
               <p className="text-[11px] text-muted-foreground">
@@ -329,16 +369,36 @@ function ServiceExecutionPage() {
           </div>
         </GlassCard>
 
-        <GlassCard className="space-y-2">
-          <h2 className="text-[15px] font-semibold">Layanan Anda</h2>
-          {cartItems.map((item) => (
-            <div key={item.service.id} className="flex items-center gap-2 text-[14px]">
+        <GlassCard className="space-y-2.5">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <h2 className="text-[15px] font-semibold">Layanan Anda</h2>
+            <span className="text-[12px] text-muted-foreground">
+              Total Durasi: <strong className="text-foreground">{txDetail?.totalDurationMinutes ?? 30} menit</strong>
+            </span>
+          </div>
+          {(txDetail?.items && txDetail.items.length > 0
+            ? txDetail.items
+            : cartItems.map((c) => ({
+                serviceId: c.service.id,
+                name: c.service.name,
+                price: c.service.price,
+                quantity: c.quantity,
+                durationMinutes: 30,
+                subtotal: c.service.price * c.quantity,
+              }))
+          ).map((item: any, idx: number) => (
+            <div key={item.serviceId || idx} className="flex items-center gap-2 text-[14px]">
               <Scissors className="h-4 w-4 shrink-0 text-primary-soft" strokeWidth={2} />
-              <span className="min-w-0 truncate">
-                {item.service.name} {item.quantity > 1 ? `(${item.quantity}x)` : ""}
-              </span>
+              <div className="min-w-0 flex-1 truncate">
+                <span>
+                  {item.name} {item.quantity > 1 ? `(${item.quantity}x)` : ""}
+                </span>
+                <span className="ml-1.5 text-[11px] text-muted-foreground">
+                  ({item.durationMinutes || 30}m)
+                </span>
+              </div>
               <span className="ml-auto shrink-0 text-[13px] text-muted-foreground">
-                {formatRupiah(item.service.price * item.quantity)}
+                {formatRupiah((item.price || 0) * (item.quantity || 1))}
               </span>
             </div>
           ))}

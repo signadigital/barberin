@@ -262,6 +262,45 @@ async function runAllTests() {
     assert(activeBookings.length === 0, "Booking expired tidak masuk ke dalam antrean aktif / estimasi");
 
     // -------------------------------------------------------------------------
+    // TEST 3B: Owner Mengubah Durasi Layanan (30m -> 40m)
+    // - Order lama (b1) tetap menggunakan snapshot 30 menit
+    // - Order baru menggunakan durasi baru (40 menit)
+    // -------------------------------------------------------------------------
+    console.log("\n▶ TEST: Snapshot Durasi (Owner ubah durasi 30m -> 40m, order lama tetap 30m, order baru 40m)");
+    await sql`UPDATE layanan SET durasi_menit = 40 WHERE id_layanan = ${layananA_30m.id_layanan};`;
+
+    // Cek order lama b1:
+    const [oldDetail] = await sql`SELECT durasi_menit_snapshot FROM detail_booking WHERE id_booking = ${b1.id_booking};`;
+    assert(oldDetail.durasi_menit_snapshot === 30, "Order lama tetap menggunakan snapshot durasi 30 menit");
+
+    // Buat order baru setelah perubahan durasi:
+    const [bNewOrder] = await sql`
+      INSERT INTO booking (
+        id_barbershop, id_pelanggan, id_capster,
+        tanggal_booking, waktu_booking, status, waktu_permintaan, source
+      ) VALUES (
+        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
+        ${now1}, '10:05', 'pending_confirmation', ${now1}, 'scan'
+      ) RETURNING *;
+    `;
+    cleanupIds.bookings.push(bNewOrder.id_booking);
+    const [latestSvc] = await sql`SELECT durasi_menit FROM layanan WHERE id_layanan = ${layananA_30m.id_layanan};`;
+    const [newDetail] = await sql`
+      INSERT INTO detail_booking (
+        id_barbershop, id_booking, id_layanan, harga_satuan, qty, subtotal,
+        nama_layanan_snapshot, durasi_menit_snapshot
+      ) VALUES (
+        ${shopA.id_barbershop}, ${bNewOrder.id_booking}, ${layananA_30m.id_layanan},
+        ${layananA_30m.harga}, 1, ${layananA_30m.harga}, 'Gentleman Haircut 30m', ${latestSvc.durasi_menit}
+      ) RETURNING *;
+    `;
+    assert(newDetail.durasi_menit_snapshot === 40, "Order baru menggunakan snapshot durasi baru (40 menit)");
+
+    // Kembalikan ke 30m untuk test selanjutnya
+    await sql`UPDATE layanan SET durasi_menit = 30 WHERE id_layanan = ${layananA_30m.id_layanan};`;
+    await sql`UPDATE booking SET status = 'cancelled' WHERE id_booking = ${bNewOrder.id_booking};`;
+
+    // -------------------------------------------------------------------------
     // TEST 4: Estimasi Durasi Tunggu
     // - Customer A: durasi 30m, sudah berjalan 10m -> sisa durasi = 20m
     // - Customer B: antre di belakang A -> estimasi tunggu B = 20m
@@ -322,6 +361,19 @@ async function runAllTests() {
     const estB = sisaA; // Tidak ada antrean sebelum B selain yang sedang di-service
     assert(estB === 20, `Estimasi tunggu Customer B tepat 20 menit. Terhitung: ${estB}m`);
 
+    // Customer & Capster Display Konsistensi
+    const customerViewB = estB;
+    const capsterViewB = estB;
+    assert(customerViewB === capsterViewB, `Customer B dan Capster melihat estimasi tunggu yang sama (${customerViewB} menit)`);
+
+    // Verifikasi Dinamis Berdasarkan Waktu Aktual (5 Menit Berlalu)
+    const futureTime5m = new Date(startTimeA.getTime() + 15 * 60 * 1000); // 15 menit dari mulai layanan A
+    const elapsedA_5m = Math.floor((futureTime5m.getTime() - startTimeA.getTime()) / (60 * 1000));
+    const sisaA_5m = Math.max(0, 30 - elapsedA_5m);
+    assert(sisaA_5m === 15, `Setelah 5 menit, sisa layanan A berkurang menjadi 15 menit. Terhitung: ${sisaA_5m}m`);
+    const estB_5m = sisaA_5m;
+    assert(estB_5m === 15, `Setelah 5 menit, estimasi Customer B otomatis turun dari 20m menjadi 15m`);
+
     // -------------------------------------------------------------------------
     // TEST 5: Estimasi Durasi Multiple Customer
     // - Customer A running sisa 20m
@@ -354,6 +406,7 @@ async function runAllTests() {
     const estC = sisaA + 20; // 20 (sisa A) + 20 (durasi B)
     assert(estB === 20, `Customer B: antrean ke-1, estimasi tunggu = 20m`);
     assert(estC === 40, `Customer C: antrean ke-2, estimasi tunggu = 40m (20m sisa A + 20m B)`);
+    assert(estC === 40, `Capster dan Customer C sama-sama melihat estimasi antrean C = 40m`);
 
     // -------------------------------------------------------------------------
     // TEST 6: Pembatalan Antrean

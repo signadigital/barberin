@@ -1055,6 +1055,8 @@ export const getTransactionDetail = createServerFn({
       liveEstimation = await getBookingEstimation(tx.id_booking);
     }
 
+    const itemsTotalDuration = items.reduce((sum, it) => sum + (it.durationMinutes * it.quantity), 0);
+
     return {
       transactionId: tx.id_transaksi,
       bookingId: tx.id_booking,
@@ -1083,6 +1085,7 @@ export const getTransactionDetail = createServerFn({
       notes: bookingInfo?.catatan ?? null,
       cancelReason: bookingInfo?.cancel_reason ?? null,
       cancelledAt: bookingInfo?.cancelled_at?.toISOString() ?? null,
+      totalDurationMinutes: liveEstimation?.totalDurationMinutes ?? itemsTotalDuration,
       estimation: liveEstimation,
     };
   });

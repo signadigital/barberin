@@ -19,6 +19,14 @@ export type QueueItemEstimation = {
   estimatedEndTime: Date; // Perkiraan waktu selesai
   positionInQueue: number; // 0 jika sedang in_service, 1 untuk antrean pertama, dst.
   serviceNames: string;
+  // UI Compatibility aliases
+  antreanKe?: number;
+  estimasiTungguMenit?: number;
+  durasiLayanan?: number;
+  sisaDurasi?: number;
+  estimasiMulai?: string;
+  estimasiSelesai?: string;
+  totalAntreanSebelumnya?: number;
 };
 
 /**
@@ -107,8 +115,6 @@ export async function calculateQueueEstimations(
     return timeA - timeB;
   });
 
-  const orderedQueue = inServiceBooking ? [inServiceBooking, ...waitingBookings] : waitingBookings;
-
   const results: QueueItemEstimation[] = [];
 
   // Hitung sisa durasi in_service berdasarkan waktu aktual server (referenceTime)
@@ -140,6 +146,13 @@ export async function calculateQueueEstimations(
       estimatedEndTime: estEnd,
       positionInQueue: 0,
       serviceNames: info.names.join(" + ") || "Layanan Barbershop",
+      antreanKe: 0,
+      estimasiTungguMenit: 0,
+      durasiLayanan: info.totalDuration,
+      sisaDurasi: inServiceRemaining,
+      estimasiMulai: estStart.toISOString(),
+      estimasiSelesai: estEnd.toISOString(),
+      totalAntreanSebelumnya: 0,
     });
 
     currentWaitAccumulator = inServiceRemaining;
@@ -167,20 +180,47 @@ export async function calculateQueueEstimations(
       waitTimeMinutes: waitTime,
       estimatedStartTime: estStart,
       estimatedEndTime: estEnd,
-      positionInQueue: queueIndex++,
+      positionInQueue: queueIndex,
       serviceNames: info.names.join(" + ") || "Layanan Barbershop",
+      antreanKe: queueIndex,
+      estimasiTungguMenit: waitTime,
+      durasiLayanan: info.totalDuration,
+      sisaDurasi: info.totalDuration,
+      estimasiMulai: estStart.toISOString(),
+      estimasiSelesai: estEnd.toISOString(),
+      totalAntreanSebelumnya: queueIndex - 1,
     });
 
     // Tambahkan durasi booking ini untuk pelanggan berikutnya di antrean
     currentWaitAccumulator += info.totalDuration;
+    queueIndex++;
   }
 
   return results;
 }
 
 /**
+ * Helper untuk mendapatkan estimasi dalam bentuk Map<bookingId, QueueItemEstimation>
+ * Memudahkan look-up O(1) saat me-render transaksi list di Capster
+ */
+export async function calculateCapsterEstimationsMap(
+  barbershopId: string,
+  capsterId: string,
+  referenceTime: Date = new Date(),
+): Promise<Map<string, QueueItemEstimation>> {
+  const queue = await calculateQueueEstimations(barbershopId, capsterId, referenceTime);
+  const map = new Map<string, QueueItemEstimation>();
+  for (const item of queue) {
+    map.set(item.bookingId, item);
+  }
+  return map;
+}
+
+/**
  * Ambil estimasi dinamis untuk satu permintaan layanan (booking) tertentu.
- * Mengembalikan null jika booking tidak ditemukan atau statusnya tidak aktif.
+ * Jika statusnya in_service/waiting/confirmed, mengambil nilai real-time queue.
+ * Jika statusnya pending_confirmation, menghitung preview estimasi tunggu
+ * (posisi di belakang antrean aktif saat ini).
  */
 export async function getBookingEstimation(
   bookingId: string,
@@ -192,6 +232,10 @@ export async function getBookingEstimation(
       id_barbershop: booking.id_barbershop,
       id_capster: booking.id_capster,
       status: booking.status,
+      waktu_permintaan: booking.waktu_permintaan,
+      waktu_konfirmasi: booking.waktu_konfirmasi,
+      waktu_mulai_layanan: booking.waktu_mulai_layanan,
+      source: booking.source,
     })
     .from(booking)
     .where(eq(booking.id_booking, bookingId))
@@ -201,7 +245,74 @@ export async function getBookingEstimation(
     return null;
   }
 
-  const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
-  const found = queue.find((q) => q.bookingId === bookingId);
-  return found ?? null;
+  // Jika booking sudah aktif dalam antrean (in_service, waiting, confirmed)
+  if (b.status === "in_service" || b.status === "waiting" || b.status === "confirmed") {
+    const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
+    const found = queue.find((q) => q.bookingId === bookingId);
+    return found ?? null;
+  }
+
+  // Jika status pending_confirmation: hitung preview estimasi tunggu untuk halaman Menunggu Konfirmasi
+  if (b.status === "pending_confirmation") {
+    const details = await db
+      .select({
+        durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
+        nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
+        qty: detailBooking.qty,
+      })
+      .from(detailBooking)
+      .where(eq(detailBooking.id_booking, bookingId));
+
+    let totalDuration = 0;
+    const names: string[] = [];
+    for (const d of details) {
+      const dur = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
+      totalDuration += dur * (d.qty || 1);
+      if (d.nama_layanan_snapshot) names.push(d.nama_layanan_snapshot);
+    }
+    if (totalDuration === 0) totalDuration = 30;
+
+    const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
+    const lastQueueItem = queue[queue.length - 1];
+    let waitTime = 0;
+    let position = 1;
+    if (lastQueueItem) {
+      const remainingForLast = Math.max(
+        0,
+        Math.floor((lastQueueItem.estimatedEndTime.getTime() - referenceTime.getTime()) / 60000),
+      );
+      waitTime = remainingForLast;
+      position = queue.filter((q) => q.positionInQueue > 0).length + 1;
+    }
+
+    const estStart = new Date(referenceTime.getTime() + waitTime * 60000);
+    const estEnd = new Date(estStart.getTime() + totalDuration * 60000);
+
+    return {
+      bookingId: b.id_booking,
+      barbershopId: b.id_barbershop,
+      capsterId: b.id_capster,
+      status: b.status,
+      source: b.source || "scan",
+      waktuPermintaan: b.waktu_permintaan,
+      waktuKonfirmasi: null,
+      waktuMulaiLayanan: null,
+      totalDurationMinutes: totalDuration,
+      remainingMinutes: totalDuration,
+      waitTimeMinutes: waitTime,
+      estimatedStartTime: estStart,
+      estimatedEndTime: estEnd,
+      positionInQueue: position,
+      serviceNames: names.join(" + ") || "Layanan Barbershop",
+      antreanKe: position,
+      estimasiTungguMenit: waitTime,
+      durasiLayanan: totalDuration,
+      sisaDurasi: totalDuration,
+      estimasiMulai: estStart.toISOString(),
+      estimasiSelesai: estEnd.toISOString(),
+      totalAntreanSebelumnya: position - 1,
+    };
+  }
+
+  return null;
 }

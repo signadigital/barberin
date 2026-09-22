@@ -867,9 +867,14 @@ export function UnconfirmedTransactionsSection({
                   <h3 className="text-[14px] font-bold text-foreground truncate group-hover:text-primary-soft transition-colors">
                     {trx.customerName}
                   </h3>
-                  <p className="text-[12px] text-muted-foreground truncate leading-snug mt-0.5">
-                    {trx.serviceNames}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[12px] text-muted-foreground truncate leading-snug">
+                      {trx.serviceNames}
+                    </p>
+                    <span className="shrink-0 text-[10px] font-medium bg-white/5 px-1.5 py-0.2 rounded text-slate-300 border border-white/10">
+                      {trx.totalDurationMinutes ?? 30}m
+                    </span>
+                  </div>
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-2.5 py-0.5 text-[10px] font-bold text-warning ring-1 ring-warning/30 shadow-sm mt-0.5">
                   <Clock className="h-3 w-3" strokeWidth={2.5} />
@@ -877,12 +882,18 @@ export function UnconfirmedTransactionsSection({
                 </span>
               </div>
 
-              {/* Row 3: Metode Pembayaran (kiri) vs Total Harga & Tombol Konfirmasi (kanan) */}
+              {/* Row 3: Metode Pembayaran & Estimasi (kiri) vs Total Harga & Tombol Konfirmasi (kanan) */}
               <div className="flex items-end justify-between gap-2 pt-2 border-t border-white/[0.06]">
-                <div className="flex items-center pb-0.5">
-                  <span className="inline-flex items-center rounded-[6px] bg-white/[0.06] border border-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                <div className="flex flex-col gap-1 pb-0.5">
+                  <span className="inline-flex items-center rounded-[6px] bg-white/[0.06] border border-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 w-fit">
                     {trx.paymentMethod}
                   </span>
+                  {trx.waitTimeMinutes !== undefined && (
+                    <span className="text-[11px] font-medium text-warning flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>Est. Tunggu: ~{trx.waitTimeMinutes}m</span>
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span className="text-[14px] font-extrabold text-foreground tracking-tight">
@@ -1050,7 +1061,7 @@ export function CapsterTransactionCard({
           <TransactionStatusBadge status={trx.status} />
         </div>
 
-        <div className="min-w-0 space-y-0.5">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <p className="truncate text-[14px] font-bold leading-tight text-foreground">
               {trx.customerName}
@@ -1059,7 +1070,38 @@ export function CapsterTransactionCard({
               Capster: {trx.capsterName}
             </span>
           </div>
-          <p className="truncate text-[12px] text-muted-foreground">{trx.serviceNames}</p>
+
+          <div className="flex items-center justify-between text-[12px] text-muted-foreground gap-2">
+            <span className="truncate">{trx.serviceNames}</span>
+            <span className="shrink-0 text-[11px] font-medium bg-white/5 px-2 py-0.5 rounded-[6px] border border-white/10 text-foreground">
+              Durasi: {trx.totalDurationMinutes ?? 30}m
+            </span>
+          </div>
+
+          {/* Dynamic Queue & Estimation Info dari Unified Engine */}
+          {trx.status === "Sedang Dilayani" && (
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-success bg-success/10 px-2.5 py-1 rounded-[8px] border border-success/20">
+              <Clock className="h-3.5 w-3.5 animate-spin" />
+              <span>Sisa Waktu Layanan: ~{trx.remainingMinutes ?? 0} menit</span>
+            </div>
+          )}
+
+          {trx.status === "Menunggu" && (
+            <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-[8px] border border-warning/20">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                <span>
+                  {trx.bookingStatus === "pending_confirmation"
+                    ? "Menunggu Konfirmasi"
+                    : `Antrean #${trx.positionInQueue ?? 1}`}
+                </span>
+              </span>
+              <span className="font-bold">
+                Estimasi Tunggu: ~{trx.waitTimeMinutes ?? 0} menit
+              </span>
+            </div>
+          )}
+
           {trx.status === "Batal" && trx.notes ? (
             <p className="text-[11px] text-danger/90 line-clamp-1 italic bg-danger/10 px-2 py-1 rounded-[6px] border border-danger/20 mt-1">
               {trx.notes}

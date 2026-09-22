@@ -136,6 +136,10 @@ function CapsterTransactionDetailPage() {
         notes: detail.notes ?? storeTrx?.notes ?? undefined,
         capsterId: detail.capsterId ?? storeTrx?.capsterId ?? "",
         capsterName: detail.capsterName,
+        totalDurationMinutes: detail.totalDurationMinutes ?? detail.estimation?.totalDurationMinutes,
+        remainingMinutes: detail.estimation?.remainingMinutes,
+        waitTimeMinutes: detail.estimation?.waitTimeMinutes,
+        positionInQueue: detail.estimation?.positionInQueue,
       };
       setTrx(mapped);
     } catch (err) {
@@ -314,21 +318,40 @@ function CapsterTransactionDetailPage() {
             <TransactionStatusBadge status={trx.status} />
           </div>
           {trx.bookingStatus === "pending_confirmation" && (
-            <div className="flex items-center gap-2 rounded-[10px] bg-warning/10 border border-warning/30 p-2.5 text-[12px] text-warning font-medium">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span>Menunggu Konfirmasi Capster (Batas 5 menit dari request)</span>
+            <div className="flex flex-col gap-1 rounded-[10px] bg-warning/10 border border-warning/30 p-2.5 text-[12px] text-warning font-medium">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span className="font-bold">Menunggu Konfirmasi Capster (Batas 5 menit)</span>
+              </div>
+              {trx.waitTimeMinutes !== undefined && (
+                <span className="text-[11px] text-muted-foreground pl-6">
+                  Perkiraan waktu tunggu jika dikonfirmasi: ~{trx.waitTimeMinutes} menit (Total durasi: {trx.totalDurationMinutes ?? 30}m)
+                </span>
+              )}
+            </div>
+          )}
+          {(trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed") && (
+            <div className="flex items-center justify-between rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>Antrean Ke-{trx.positionInQueue ?? 1} • Durasi: {trx.totalDurationMinutes ?? 30}m</span>
+              </div>
+              <span className="font-bold">Estimasi Tunggu: ~{trx.waitTimeMinutes ?? 0}m</span>
+            </div>
+          )}
+          {trx.bookingStatus === "in_service" && (
+            <div className="flex items-center justify-between rounded-[10px] bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-[12px] text-success font-medium">
+              <div className="flex items-center gap-2">
+                <Scissors className="h-4 w-4 shrink-0 animate-spin text-success" />
+                <span>Sedang Dilayani di Kursi</span>
+              </div>
+              <span className="font-bold">Sisa: ~{trx.remainingMinutes ?? 0} menit</span>
             </div>
           )}
           {trx.bookingStatus === "awaiting_payment" && (
             <div className="flex items-center gap-2 rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
               <Clock className="h-4 w-4 shrink-0" />
               <span>Pelayanan selesai — Menunggu pembayaran kasir (Batas 2 jam)</span>
-            </div>
-          )}
-          {trx.bookingStatus === "in_service" && (
-            <div className="flex items-center gap-2 rounded-[10px] bg-blue-500/10 border border-blue-500/30 p-2.5 text-[12px] text-blue-400 font-medium">
-              <Scissors className="h-4 w-4 shrink-0" />
-              <span>Pelayanan sedang berlangsung</span>
             </div>
           )}
         </GlassCard>

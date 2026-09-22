@@ -110,6 +110,7 @@ export const getCapsterTransactions = createServerFn({
         discount: transaksi.diskon,
         total: transaksi.total,
         status_transaksi: transaksi.status_transaksi,
+        batas_pembayaran: transaksi.batas_pembayaran,
         created_at: transaksi.created_at,
         customerName: users.nama_lengkap,
         customerPhone: users.no_hp,
@@ -154,6 +155,7 @@ export const getCapsterTransactions = createServerFn({
               id_booking: detailBooking.id_booking,
               id_layanan: detailBooking.id_layanan,
               nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
+              durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
               nama_layanan: layanan.nama_layanan,
               harga_satuan: detailBooking.harga_satuan,
               qty: detailBooking.qty,
@@ -181,6 +183,19 @@ export const getCapsterTransactions = createServerFn({
         : Promise.resolve([]),
     ]);
 
+    // Ambil estimasi queue real-time untuk capster ini (menggunakan mesin estimasi yang sama)
+    let estimationsMap = new Map<string, any>();
+    if (targetShopId && targetCapsterId) {
+      try {
+        const queueList = await calculateQueueEstimations(targetShopId, targetCapsterId);
+        for (const item of queueList) {
+          estimationsMap.set(item.bookingId, item);
+        }
+      } catch (err) {
+        console.error("Gagal menghitung queue estimation untuk capster:", err);
+      }
+    }
+
     const bookingMap = new Map(bookingsWithCapster.map((b) => [b.id_booking, b]));
     const paymentMap = new Map(allPayments.map((p) => [p.id_transaksi, p]));
 
@@ -191,6 +206,7 @@ export const getCapsterTransactions = createServerFn({
           id: string;
           name: string;
           price: number;
+          durationMinutes: number;
           category: string;
         };
         quantity: number;
@@ -199,11 +215,13 @@ export const getCapsterTransactions = createServerFn({
 
     allDetails.forEach((d) => {
       const list = detailsMap.get(d.id_booking) || [];
+      const duration = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
       list.push({
         service: {
           id: d.id_layanan,
           name: d.nama_layanan_snapshot || d.nama_layanan || "Layanan",
           price: Number(d.harga_satuan),
+          durationMinutes: duration,
           category: "Layanan",
         },
         quantity: d.qty,
@@ -239,6 +257,14 @@ export const getCapsterTransactions = createServerFn({
         displayStatus = "Menunggu";
       }
 
+      // Hubungkan dengan estimation engine
+      const est = r.id_booking ? estimationsMap.get(r.id_booking) : null;
+      const itemsDuration = items.reduce((s, it) => s + (it.service.durationMinutes * it.quantity), 0);
+      const totalDurationMinutes = est?.totalDurationMinutes ?? (itemsDuration > 0 ? itemsDuration : 30);
+      const remainingMinutes = est ? est.remainingMinutes : (displayStatus === "Sedang Dilayani" ? totalDurationMinutes : undefined);
+      const waitTimeMinutes = est ? est.waitTimeMinutes : undefined;
+      const positionInQueue = est ? est.positionInQueue : undefined;
+
       return {
         id: r.id,
         bookingId: r.id_booking,
@@ -270,6 +296,12 @@ export const getCapsterTransactions = createServerFn({
         notes: bInfo?.cancel_reason ? `Batal: ${bInfo.cancel_reason}` : (bInfo?.catatan ?? undefined),
         capsterId,
         capsterName,
+        batasKonfirmasi: bInfo?.batas_konfirmasi?.toISOString() ?? undefined,
+        batasPembayaran: r.batas_pembayaran?.toISOString() ?? undefined,
+        totalDurationMinutes,
+        remainingMinutes,
+        waitTimeMinutes,
+        positionInQueue,
       };
     });
   });

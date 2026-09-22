@@ -47,6 +47,10 @@ export type CapsterTransaction = {
   capsterName: string;
   batasKonfirmasi?: string | undefined;
   batasPembayaran?: string | undefined;
+  totalDurationMinutes?: number | undefined;
+  remainingMinutes?: number | undefined;
+  waitTimeMinutes?: number | undefined;
+  positionInQueue?: number | undefined;
 };
 
 export type ShiftInfo = {
