@@ -353,7 +353,7 @@ export function CapsterHeader({
     };
 
     fetchPending();
-    const interval = setInterval(fetchPending, 3500);
+    const interval = setInterval(fetchPending, 10000);
     return () => {
       mounted = false;
       clearInterval(interval);

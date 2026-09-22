@@ -64,7 +64,7 @@ function TodayTransactionsPage() {
     fetchToday(true);
     const intervalId = setInterval(() => {
       fetchToday(false);
-    }, 3000);
+    }, 8000);
 
     return () => {
       mounted = false;

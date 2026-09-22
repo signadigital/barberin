@@ -177,7 +177,7 @@ function ServiceExecutionPage() {
     };
 
     check();
-    const interval = setInterval(check, 1500);
+    const interval = setInterval(check, 4000);
     return () => {
       mounted = false;
       clearInterval(interval);

@@ -107,7 +107,7 @@ function CapsterDashboardPage() {
     };
 
     fetchAllData();
-    const intervalId = setInterval(fetchAllData, 3500);
+    const intervalId = setInterval(fetchAllData, 8000);
 
     return () => {
       mounted = false;

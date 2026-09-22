@@ -150,7 +150,7 @@ function CapsterTransactionDetailPage() {
     fetchDetail(true);
     const intervalId = setInterval(() => {
       if (mounted) fetchDetail(false);
-    }, 3000);
+    }, 6000);
 
     return () => {
       mounted = false;

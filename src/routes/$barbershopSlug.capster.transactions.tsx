@@ -67,7 +67,7 @@ function CapsterTransactionsPage() {
     fetchTransactions(true);
     const intervalId = setInterval(() => {
       fetchTransactions(false);
-    }, 3000);
+    }, 8000);
 
     return () => {
       mounted = false;

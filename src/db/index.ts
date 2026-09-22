@@ -30,7 +30,7 @@ export function getClient(): ReturnType<typeof postgres> {
 
   const conn = postgres(connectionString, {
     prepare: false,
-    max: 2,
+    max: 10,
     idle_timeout: 20,
     max_lifetime: 60 * 30,
     connect_timeout: 15,

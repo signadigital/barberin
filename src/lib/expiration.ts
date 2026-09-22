@@ -9,10 +9,26 @@ import { logAudit } from "./audit";
  * 2. Mengubah transaksi & pembayaran yang melewati batas pembayaran (2 jam setelah pelayanan fisik selesai) menjadi 'expired'
  * 3. Terisolasi per barbershop jika targetShopId ditentukan
  */
-export async function sweepExpiredRequestsAndPayments(targetShopId?: string): Promise<{
+// In-memory throttle map to avoid querying the DB multiple times per second during rapid client polling
+const lastSweepTimes = new Map<string, number>();
+
+export async function sweepExpiredRequestsAndPayments(
+  targetShopId?: string,
+  force = false,
+): Promise<{
   expiredRequestsCount: number;
   expiredTransactionsCount: number;
 }> {
+  const key = targetShopId || "global";
+  const nowMs = Date.now();
+  const lastSweep = lastSweepTimes.get(key) || 0;
+
+  // If already swept within the last 20 seconds for this tenant, skip redundant DB calls
+  if (!force && nowMs - lastSweep < 20_000) {
+    return { expiredRequestsCount: 0, expiredTransactionsCount: 0 };
+  }
+  lastSweepTimes.set(key, nowMs);
+
   const now = new Date();
   let expiredRequestsCount = 0;
   let expiredTransactionsCount = 0;
