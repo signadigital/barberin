@@ -55,8 +55,6 @@ function CartPage() {
               <CartItem
                 key={item.service.id}
                 item={item}
-                onDecrease={() => actions.setQuantity(item.service.id, item.quantity - 1)}
-                onIncrease={() => actions.setQuantity(item.service.id, item.quantity + 1)}
                 onRemove={() => actions.removeService(item.service.id)}
               />
             ))}

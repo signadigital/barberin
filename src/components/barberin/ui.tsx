@@ -214,38 +214,27 @@ export function CartItem({
   onRemove,
 }: {
   item: CartItemType;
-  onDecrease: () => void;
-  onIncrease: () => void;
+  onDecrease?: () => void;
+  onIncrease?: () => void;
   onRemove: () => void;
 }) {
   return (
     <GlassCard>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[15px] font-semibold leading-snug">{item.service.name}</p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {formatRupiah(item.service.price)} × {item.quantity}
+          <p className="mt-1 text-[15px] font-bold text-primary-soft">
+            {formatRupiah(item.service.price * item.quantity)}
           </p>
         </div>
         <button
           type="button"
           aria-label={`Hapus ${item.service.name}`}
           onClick={onRemove}
-          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-danger transition-colors active:bg-danger/15"
+          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-danger transition-colors hover:bg-danger/10 active:bg-danger/15"
         >
           <Trash2 className="h-5 w-5" strokeWidth={2} />
         </button>
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <QuantityControl
-          quantity={item.quantity}
-          onDecrease={onDecrease}
-          onIncrease={onIncrease}
-          label={item.service.name}
-        />
-        <span className="text-[15px] font-bold">
-          {formatRupiah(item.service.price * item.quantity)}
-        </span>
       </div>
     </GlassCard>
   );
@@ -258,7 +247,7 @@ export function PriceSummary({ items, total }: { items: CartItemType[]; total: n
       {items.map((i) => (
         <div key={i.service.id} className="flex justify-between gap-3 text-[13px]">
           <span className="min-w-0 truncate text-muted-foreground">
-            {i.service.name} ({i.quantity}x)
+            {i.service.name} {i.quantity > 1 ? `(${i.quantity}x)` : ""}
           </span>
           <span className="shrink-0">{formatRupiah(i.service.price * i.quantity)}</span>
         </div>

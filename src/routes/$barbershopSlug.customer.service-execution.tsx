@@ -239,7 +239,7 @@ function ServiceExecutionPage() {
             <div key={item.service.id} className="flex items-center gap-2 text-[14px]">
               <Scissors className="h-4 w-4 shrink-0 text-primary-soft" strokeWidth={2} />
               <span className="min-w-0 truncate">
-                {item.service.name} ({item.quantity}x)
+                {item.service.name} {item.quantity > 1 ? `(${item.quantity}x)` : ""}
               </span>
               <span className="ml-auto shrink-0 text-[13px] text-muted-foreground">
                 {formatRupiah(item.service.price * item.quantity)}
