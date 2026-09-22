@@ -70,6 +70,7 @@ function CapsterDashboardPage() {
   }, [capsterId, capsterName, barbershopSlug, navigate]);
 
   const currentMetrics = dashboardMetrics;
+  const currentTransactions = transactions || [];
   const unconfirmedTransactions = currentTransactions.filter(
     (t) =>
       (t.status === "Menunggu" ||
@@ -143,7 +144,7 @@ function CapsterDashboardPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[20px] font-extrabold text-foreground">
-              Halo, {capsterName.split(" ")[0] ?? "Admin"}! 👋
+              Halo, {(capsterName || "Admin").split(" ")[0]}! 👋
             </h2>
             <p className="text-[13px] text-muted-foreground">
               Kamu ke dashboard capster mu.

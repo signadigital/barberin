@@ -25,9 +25,9 @@ export type PaymentMethod = "tunai" | "qris" | "transfer";
 
 export type CapsterTransaction = {
   id: string;
-  bookingId?: string;
-  bookingStatus?: string;
-  source?: string;
+  bookingId?: string | undefined;
+  bookingStatus?: string | undefined;
+  source?: string | undefined;
   date: string;
   time: string;
   customerName: string;

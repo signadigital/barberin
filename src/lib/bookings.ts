@@ -678,6 +678,10 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
       .where(eq(transaksi.id_transaksi, data.transactionId))
       .returning();
 
+    if (!updatedTx) {
+      throw new Error("Gagal memperbarui transaksi.");
+    }
+
     // 2. Update Pembayaran -> SUCCESS
     let confirmedByUserId: string | null = null;
     if (data.capsterId) {
@@ -853,7 +857,7 @@ export const cancelBookingOrTransaction = createServerFn({
         barbershopId,
         aksi: "cancel request",
         entityType: "permintaan_layanan",
-        entityId: targetBookingId ?? targetTxId,
+        entityId: targetBookingId ?? targetTxId ?? null,
         alasan: data.reason.trim(),
       });
     }

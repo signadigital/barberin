@@ -38,7 +38,11 @@ export async function calculateQueueEstimations(
   await sweepExpiredRequestsAndPayments(barbershopId);
 
   // 2. Ambil seluruh permintaan layanan aktif untuk capster di barbershop ini
-  const activeStatuses = ["in_service", "confirmed", "waiting"];
+  const activeStatuses: ("in_service" | "confirmed" | "waiting")[] = [
+    "in_service",
+    "confirmed",
+    "waiting",
+  ];
 
   const activeBookings = await db
     .select({
@@ -123,7 +127,7 @@ export async function calculateQueueEstimations(
     results.push({
       bookingId: inServiceBooking.id_booking,
       barbershopId: inServiceBooking.id_barbershop,
-      capsterId: inServiceBooking.id_capster,
+      capsterId: inServiceBooking.id_capster ?? capsterId,
       status: inServiceBooking.status,
       source: inServiceBooking.source,
       waktuPermintaan: inServiceBooking.waktu_permintaan,
@@ -142,8 +146,8 @@ export async function calculateQueueEstimations(
   }
 
   // Hitung estimasi untuk setiap pelanggan yang sedang menunggu (waiting / confirmed)
-  for (let i = 0; i < waitingBookings.length; i++) {
-    const b = waitingBookings[i];
+  let queueIndex = 1;
+  for (const b of waitingBookings) {
     const info = durationMap.get(b.id_booking) ?? { totalDuration: 30, names: ["Layanan"] };
     const waitTime = currentWaitAccumulator;
     const estStart = new Date(referenceTime.getTime() + waitTime * 60000);
@@ -152,7 +156,7 @@ export async function calculateQueueEstimations(
     results.push({
       bookingId: b.id_booking,
       barbershopId: b.id_barbershop,
-      capsterId: b.id_capster,
+      capsterId: b.id_capster ?? capsterId,
       status: b.status,
       source: b.source,
       waktuPermintaan: b.waktu_permintaan,
@@ -163,7 +167,7 @@ export async function calculateQueueEstimations(
       waitTimeMinutes: waitTime,
       estimatedStartTime: estStart,
       estimatedEndTime: estEnd,
-      positionInQueue: i + 1,
+      positionInQueue: queueIndex++,
       serviceNames: info.names.join(" + ") || "Layanan Barbershop",
     });
 

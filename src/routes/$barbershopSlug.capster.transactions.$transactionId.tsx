@@ -96,12 +96,12 @@ function CapsterTransactionDetailPage() {
       }
 
       const mapped: CapsterTransaction = {
-        id: detail.id || (detail as any).transactionId,
-        bookingId: detail.bookingId ?? undefined,
-        bookingStatus: detail.bookingStatus ?? undefined,
-        source: (detail as any).source ?? undefined,
-        batasKonfirmasi: detail.batasKonfirmasi ?? undefined,
-        batasPembayaran: detail.batasPembayaran ?? undefined,
+        id: detail.transactionId,
+        bookingId: detail.bookingId || undefined,
+        bookingStatus: detail.bookingStatus || undefined,
+        source: (detail as any).source || undefined,
+        batasKonfirmasi: detail.batasKonfirmasi || undefined,
+        batasPembayaran: detail.batasPembayaran || undefined,
         date: new Date(detail.createdAt).toLocaleDateString("id-ID", {
           day: "2-digit",
           month: "long",
@@ -126,11 +126,11 @@ function CapsterTransactionDetailPage() {
           quantity: i.jumlah ?? i.quantity ?? 1,
         })),
         serviceNames: (detail.items || []).map((i: any) => i.namaLayanan || i.name).join(" + "),
-        subtotal: detail.totalHarga ?? detail.subtotal ?? 0,
-        discount: 0,
-        total: detail.totalHarga ?? detail.total ?? 0,
+        subtotal: detail.subtotal ?? 0,
+        discount: detail.discount ?? 0,
+        total: detail.total ?? 0,
         paymentMethod: (detail.paymentMethod ?? "tunai") as "tunai" | "qris" | "transfer",
-        cashReceived: detail.totalHarga ?? detail.total ?? 0,
+        cashReceived: detail.total ?? 0,
         change: 0,
         status: mappedStatus,
         notes: detail.notes ?? storeTrx?.notes ?? undefined,
@@ -233,7 +233,7 @@ function CapsterTransactionDetailPage() {
     try {
       await cancelBookingOrTransaction({
         data: {
-          bookingId: trx?.bookingId,
+          ...(trx?.bookingId ? { bookingId: trx.bookingId } : {}),
           transactionId,
           reason: cancelReason.trim(),
         },
