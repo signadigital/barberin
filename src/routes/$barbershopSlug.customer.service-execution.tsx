@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   Check,
   CheckCircle2,
+  CheckSquare,
   Clock,
   Loader2,
   Scissors,
@@ -26,7 +27,11 @@ import {
   useBarberin,
   type ServiceExecutionStatus,
 } from "@/lib/barberin-store";
-import { cancelCustomerTransaction, getTransactionDetail } from "@/lib/bookings";
+import {
+  cancelCustomerTransaction,
+  customerFinishService,
+  getTransactionDetail,
+} from "@/lib/bookings";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/$barbershopSlug/customer/service-execution")({
@@ -118,6 +123,7 @@ function ServiceExecutionPage() {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [otherReason, setOtherReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [finishing, setFinishing] = useState(false);
 
   const hasNavigatedRef = useRef(false);
 
@@ -212,6 +218,35 @@ function ServiceExecutionPage() {
         description: err?.message || "Terjadi kendala saat membatalkan pesanan.",
       });
       setCancelling(false);
+    }
+  };
+
+  const handleFinishService = async () => {
+    if (!transactionId) return;
+    setFinishing(true);
+    try {
+      await customerFinishService({
+        data: {
+          transactionId,
+          bookingId: txDetail?.bookingId,
+        },
+      });
+      toast.success("Pelayanan Selesai!", {
+        description: "Layanan telah selesai. Silakan menuju kasir untuk melakukan pembayaran.",
+      });
+      const detail = await getTransactionDetail({
+        data: { transactionId, barbershopSlug },
+      });
+      if (detail) {
+        setTxDetail(detail);
+      }
+    } catch (err: any) {
+      console.error("Gagal menyelesaikan layanan:", err);
+      toast.error("Gagal Menyelesaikan Layanan", {
+        description: err?.message || "Terjadi kendala saat menyelesaikan layanan.",
+      });
+    } finally {
+      setFinishing(false);
     }
   };
 
@@ -420,6 +455,40 @@ function ServiceExecutionPage() {
           >
             <span>Kembali ke Layanan</span>
           </button>
+        ) : txDetail?.bookingStatus === "in_service" ? (
+          <div className="flex flex-col gap-2 w-full">
+            <button
+              type="button"
+              disabled={finishing}
+              onClick={handleFinishService}
+              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-white shadow-[0_4px_16px_rgba(78,120,255,0.35)] transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+            >
+              {finishing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                  <span>Menyelesaikan Layanan...</span>
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="h-4 w-4" strokeWidth={2} />
+                  <span>SELESAI LAYANAN</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/30 bg-danger/5 text-[12px] font-semibold text-danger/80 hover:bg-danger/15 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-3.5 w-3.5" strokeWidth={2.2} />
+              <span>Batalkan Pesanan</span>
+            </button>
+          </div>
+        ) : txDetail?.bookingStatus === "awaiting_payment" ? (
+          <div className="flex items-center justify-center min-h-[48px] w-full rounded-[12px] bg-primary/20 border border-primary/40 text-[13px] font-bold text-primary-soft">
+            <Clock className="mr-2 h-4 w-4 animate-pulse" />
+            <span>Menunggu Konfirmasi Pembayaran di Kasir</span>
+          </div>
         ) : (
           <button
             type="button"

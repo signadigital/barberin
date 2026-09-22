@@ -826,100 +826,52 @@ async function runAllTests() {
     assert(svcShopBCheck.durasi_menit === 25, `Durasi layanan Shop B tetap 25 menit (terisolasi sempurna dari perubahan Shop A)`);
 
     // =========================================================================
-    // PERBAIKAN FINAL: HANYA 2 KONFIRMASI CAPSTER (TEST 1 - TEST 8)
-    // 1. KONFIRMASI LAYANAN (Max 5 Menit)
-    // 2. KONFIRMASI PEMBAYARAN (Max 2 Jam)
-    // Operasional: MULAI LAYANAN & SELESAI LAYANAN
+    // ALUR BARU: LANGSUNG MULAI LAYANAN & PELANGGAN SELESAI LAYANAN
     // =========================================================================
     console.log("\n=======================================================");
-    console.log("  PERBAIKAN FINAL: 2 KONFIRMASI CAPSTER (TEST 1 - TEST 8)");
+    console.log("  ALUR BARU: LANGSUNG MULAI LAYANAN & PELANGGAN SELESAI LAYANAN");
     console.log("=======================================================\n");
 
-    // TEST 1: Customer membuat request -> status pending_confirmation, Capster melihat [ KONFIRMASI LAYANAN ] (batas 5 menit)
-    console.log("▶ TEST 1: Customer membuat request -> pending_confirmation & batas konfirmasi 5 menit");
+    // TEST 1: Customer membuat request -> status langsung waiting (langsung masuk antrean & siap MULAI LAYANAN)
+    console.log("▶ TEST 1: Customer membuat request -> status langsung 'waiting' tanpa barrier konfirmasi");
     const [bReqT1] = await sql`
       INSERT INTO booking (
         id_barbershop, id_pelanggan, id_capster,
-        tanggal_booking, waktu_booking, status, waktu_permintaan, batas_konfirmasi, source
+        tanggal_booking, waktu_booking, status, waktu_permintaan, waktu_konfirmasi, source
       ) VALUES (
         ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
-        NOW(), '12:00', 'pending_confirmation', NOW(), NOW() + INTERVAL '5 minutes', 'scan'
+        NOW(), '12:00', 'waiting', NOW(), NOW(), 'scan'
       ) RETURNING *;
     `;
     cleanupIds.bookings.push(bReqT1.id_booking);
-    assert(bReqT1.status === "pending_confirmation", "Status awal permintaan layanan adalah 'pending_confirmation'");
-    const diffBatasKonfirmasi = Math.round((new Date(bReqT1.batas_konfirmasi).getTime() - new Date(bReqT1.waktu_permintaan).getTime()) / 1000);
-    assert(diffBatasKonfirmasi === 300, `Batas waktu konfirmasi layanan tepat 5 menit (300 detik). Terhitung: ${diffBatasKonfirmasi}s`);
+    assert(bReqT1.status === "waiting", "Status permintaan layanan baru langsung 'waiting' (langsung antre)");
+    assert(bReqT1.waktu_konfirmasi !== null, "waktu_konfirmasi langsung terisi saat pemesanan");
 
-    // TEST 2: Capster klik Konfirmasi Layanan dalam 5 menit -> status waiting / confirmed
-    console.log("\n▶ TEST 2: Capster klik Konfirmasi Layanan dalam 5 menit -> status waiting, waktu_konfirmasi tercatat");
-    const nowConf = new Date();
-    const [bReqT2] = await sql`
-      UPDATE booking
-      SET status = 'waiting', waktu_konfirmasi = ${nowConf}, updated_at = ${nowConf}
-      WHERE id_booking = ${bReqT1.id_booking}
-      RETURNING *;
-    `;
-    assert(bReqT2.status === "waiting", "Setelah Capster Konfirmasi Layanan, status berubah menjadi 'waiting'");
-    assert(bReqT2.waktu_konfirmasi !== null, "waktu_konfirmasi tercatat di database");
-
-    // TEST 3: Request tidak dikonfirmasi selama lebih dari 5 menit -> expired, tidak dapat dikonfirmasi
-    console.log("\n▶ TEST 3: Request > 5 menit tanpa konfirmasi -> expired & tidak dapat dikonfirmasi lagi");
-    const past5m = new Date(Date.now() - 6 * 60 * 1000);
-    const [bReqT3] = await sql`
-      INSERT INTO booking (
-        id_barbershop, id_pelanggan, id_capster,
-        tanggal_booking, waktu_booking, status, waktu_permintaan, batas_konfirmasi, source
-      ) VALUES (
-        ${shopA.id_barbershop}, ${cust1.id_pelanggan}, ${capsterA1.id_capster},
-        ${past5m}, '12:05', 'pending_confirmation', ${past5m}, ${new Date(past5m.getTime() + 5 * 60 * 1000)}, 'scan'
-      ) RETURNING *;
-    `;
-    cleanupIds.bookings.push(bReqT3.id_booking);
-    const isT3Expired = new Date().getTime() > new Date(bReqT3.batas_konfirmasi).getTime();
-    assert(isT3Expired, "Request T3 telah melebihi batas konfirmasi 5 menit");
-    const [bReqT3Expired] = await sql`
-      UPDATE booking
-      SET status = 'expired', updated_at = NOW()
-      WHERE id_booking = ${bReqT3.id_booking}
-      RETURNING *;
-    `;
-    assert(bReqT3Expired.status === "expired", "Status otomatis menjadi 'expired'");
-    let t3ConfirmRejected = false;
-    try {
-      if (bReqT3Expired.status !== "pending_confirmation") {
-        throw new Error("Permintaan telah kedaluwarsa dan tidak dapat dikonfirmasi.");
-      }
-    } catch (e) {
-      t3ConfirmRejected = true;
-    }
-    assert(t3ConfirmRejected, "Backend menolak konfirmasi layanan untuk request yang expired");
-
-    // TEST 4: Capster klik MULAI LAYANAN -> status in_service (operasional, bukan konfirmasi)
-    console.log("\n▶ TEST 4: Capster klik MULAI LAYANAN -> in_service (aksi operasional)");
+    // TEST 2: Capster langsung klik MULAI LAYANAN -> status in_service
+    console.log("\n▶ TEST 2: Capster langsung klik MULAI LAYANAN -> status in_service");
     const nowStart = new Date();
-    const [bReqT4] = await sql`
+    const [bReqT2] = await sql`
       UPDATE booking
       SET status = 'in_service', waktu_mulai_layanan = ${nowStart}, updated_at = ${nowStart}
       WHERE id_booking = ${bReqT1.id_booking}
       RETURNING *;
     `;
-    assert(bReqT4.status === "in_service", "Status layanan berhasil bertransisi menjadi 'in_service'");
-    assert(bReqT4.waktu_mulai_layanan !== null, "waktu_mulai_layanan tercatat di database");
+    assert(bReqT2.status === "in_service", "Status layanan berhasil bertransisi menjadi 'in_service'");
+    assert(bReqT2.waktu_mulai_layanan !== null, "waktu_mulai_layanan tercatat di database");
 
-    // TEST 5: Capster klik SELESAI LAYANAN -> status awaiting_payment (operasional, batas bayar = +2 jam)
-    console.log("\n▶ TEST 5: Capster klik SELESAI LAYANAN -> awaiting_payment (bukan completed, batas bayar +2 jam)");
+    // TEST 3: Pelanggan menekan tombol SELESAI LAYANAN di halaman pelanggan -> status awaiting_payment
+    console.log("\n▶ TEST 3: Pelanggan menekan [ SELESAI LAYANAN ] -> status awaiting_payment (batas bayar +2 jam)");
     const nowFinish = new Date();
     const batasBayar2h = new Date(nowFinish.getTime() + 2 * 60 * 60 * 1000);
-    const [bReqT5] = await sql`
+    const [bReqT3] = await sql`
       UPDATE booking
       SET status = 'awaiting_payment', updated_at = ${nowFinish}
       WHERE id_booking = ${bReqT1.id_booking}
       RETURNING *;
     `;
-    assert(bReqT5.status === "awaiting_payment", "Status layanan menjadi 'awaiting_payment' (belum completed)");
+    assert(bReqT3.status === "awaiting_payment", "Status layanan berhasil diselesaikan pelanggan menjadi 'awaiting_payment'");
 
-    const [txT5] = await sql`
+    const [txT3] = await sql`
       INSERT INTO transaksi (
         id_barbershop, id_booking, id_shift, id_capster, id_pelanggan,
         subtotal, diskon, total, status_transaksi, waktu_selesai_layanan, batas_pembayaran
@@ -928,64 +880,64 @@ async function runAllTests() {
         '50000.00', 0, '50000.00', 'ongoing', ${nowFinish}, ${batasBayar2h}
       ) RETURNING *;
     `;
-    cleanupIds.transaksi.push(txT5.id_transaksi);
-    assert(txT5.status_transaksi === "ongoing", "Transaksi tetap berstatus 'ongoing'");
+    cleanupIds.transaksi.push(txT3.id_transaksi);
+    assert(txT3.status_transaksi === "ongoing", "Transaksi tetap berstatus 'ongoing'");
 
-    const [payT5] = await sql`
+    const [payT3] = await sql`
       INSERT INTO pembayaran (
         id_barbershop, id_transaksi, metode_pembayaran, jumlah_bayar, status_pembayaran, batas_pembayaran
       ) VALUES (
-        ${shopA.id_barbershop}, ${txT5.id_transaksi}, 'tunai', '50000.00', 'pending', ${batasBayar2h}
+        ${shopA.id_barbershop}, ${txT3.id_transaksi}, 'tunai', '50000.00', 'pending', ${batasBayar2h}
       ) RETURNING *;
     `;
-    cleanupIds.pembayaran.push(payT5.id_pembayaran);
-    const diffBatasBayar = Math.round((new Date(txT5.batas_pembayaran).getTime() - new Date(txT5.waktu_selesai_layanan).getTime()) / (60 * 1000));
-    assert(diffBatasBayar === 120, `Batas pembayaran tepat 120 menit (2 jam) sejak pelayanan selesai. Terhitung: ${diffBatasBayar}m`);
+    cleanupIds.pembayaran.push(payT3.id_pembayaran);
+    const diffBatasBayar = Math.round((new Date(txT3.batas_pembayaran).getTime() - new Date(txT3.waktu_selesai_layanan).getTime()) / (60 * 1000));
+    assert(diffBatasBayar === 120, `Batas pembayaran tepat 120 menit (2 jam) sejak pelanggan menyelesaikan layanan. Terhitung: ${diffBatasBayar}m`);
 
-    // TEST 6: Customer bayar -> Capster melihat [ KONFIRMASI PEMBAYARAN ] (batas 2 jam)
-    console.log("\n▶ TEST 6: Customer melakukan pembayaran -> tahap awaiting_payment siap dikonfirmasi");
-    assert(bReqT5.status === "awaiting_payment" && txT5.status_transaksi === "ongoing", "Aksi yang muncul di Capster adalah KONFIRMASI PEMBAYARAN");
+    // TEST 4: Customer bayar -> Capster melihat [ KONFIRMASI PEMBAYARAN ]
+    console.log("\n▶ TEST 4: Layanan selesai -> tahap awaiting_payment siap dikonfirmasi pembayarannya oleh Capster");
+    assert(bReqT3.status === "awaiting_payment" && txT3.status_transaksi === "ongoing", "Aksi yang muncul di Capster adalah KONFIRMASI PEMBAYARAN");
 
-    // TEST 7: Capster melakukan Konfirmasi Pembayaran sebelum 2 jam -> payment = success, transaction = completed, struk terbit
-    console.log("\n▶ TEST 7: Capster Konfirmasi Pembayaran < 2 jam -> payment = success, transaction = completed, struk terbit");
+    // TEST 5: Capster melakukan Konfirmasi Pembayaran < 2 jam -> payment = success, transaction = completed, struk terbit
+    console.log("\n▶ TEST 5: Capster Konfirmasi Pembayaran < 2 jam -> payment = success, transaction = completed, struk terbit");
     const nowPayConf = new Date();
-    const [payT7] = await sql`
+    const [payT5] = await sql`
       UPDATE pembayaran
       SET status_pembayaran = 'success', waktu_bayar = ${nowPayConf}, dikonfirmasi_oleh = ${userCapsterA1.id_user}, updated_at = ${nowPayConf}
-      WHERE id_pembayaran = ${payT5.id_pembayaran}
+      WHERE id_pembayaran = ${payT3.id_pembayaran}
       RETURNING *;
     `;
-    assert(payT7.status_pembayaran === "success", "Status pembayaran berhasil menjadi 'success'");
-    assert(payT7.waktu_bayar !== null, "waktu_konfirmasi_pembayaran (waktu_bayar) tercatat");
+    assert(payT5.status_pembayaran === "success", "Status pembayaran berhasil menjadi 'success'");
+    assert(payT5.waktu_bayar !== null, "waktu_konfirmasi_pembayaran (waktu_bayar) tercatat");
 
-    const [txT7] = await sql`
+    const [txT5Done] = await sql`
       UPDATE transaksi
       SET status_transaksi = 'completed', updated_at = ${nowPayConf}
-      WHERE id_transaksi = ${txT5.id_transaksi}
+      WHERE id_transaksi = ${txT3.id_transaksi}
       RETURNING *;
     `;
-    assert(txT7.status_transaksi === "completed", "Status transaksi resmi menjadi 'completed'");
+    assert(txT5Done.status_transaksi === "completed", "Status transaksi resmi menjadi 'completed'");
 
-    const [bReqT7] = await sql`
+    const [bReqT5Done] = await sql`
       UPDATE booking
       SET status = 'completed', updated_at = ${nowPayConf}
       WHERE id_booking = ${bReqT1.id_booking}
       RETURNING *;
     `;
-    assert(bReqT7.status === "completed", "Status booking resmi menjadi 'completed'");
+    assert(bReqT5Done.status === "completed", "Status booking resmi menjadi 'completed'");
 
-    const [strukT7] = await sql`
+    const [strukT5] = await sql`
       INSERT INTO struk (
         id_barbershop, id_transaksi, no_struk, url_struk
       ) VALUES (
-        ${shopA.id_barbershop}, ${txT5.id_transaksi}, ${`STR-${Date.now()}`}, 'https://struk.barber.id/receipt.pdf'
+        ${shopA.id_barbershop}, ${txT3.id_transaksi}, ${`STR-${Date.now()}`}, 'https://struk.barber.id/receipt.pdf'
       ) RETURNING *;
     `;
-    cleanupIds.struk.push(strukT7.id_struk);
-    assert(strukT7.id_struk !== undefined, "Struk digital berhasil diterbitkan setelah konfirmasi pembayaran");
+    cleanupIds.struk.push(strukT5.id_struk);
+    assert(strukT5.id_struk !== undefined, "Struk digital berhasil diterbitkan setelah konfirmasi pembayaran");
 
-    // TEST 8: Konfirmasi pembayaran tidak dilakukan sampai 2 jam -> payment = expired, transaction = expired
-    console.log("\n▶ TEST 8: Pembayaran > 2 jam tanpa konfirmasi -> expired (payment & transaction)");
+    // TEST 6: Konfirmasi pembayaran tidak dilakukan sampai 2 jam -> payment = expired, transaction = expired
+    console.log("\n▶ TEST 6: Pembayaran > 2 jam tanpa konfirmasi -> expired (payment & transaction)");
     const past3h = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const batasPast3h = new Date(past3h.getTime() + 2 * 60 * 60 * 1000);
     const [txTimeout] = await sql`

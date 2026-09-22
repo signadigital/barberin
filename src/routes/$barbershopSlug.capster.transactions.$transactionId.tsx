@@ -317,23 +317,7 @@ function CapsterTransactionDetailPage() {
             </div>
             <TransactionStatusBadge status={trx.status} />
           </div>
-          {trx.bookingStatus === "pending_confirmation" && (
-            <div className="flex flex-col gap-1 rounded-[10px] bg-warning/10 border border-warning/30 p-2.5 text-[12px] text-warning font-medium">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 shrink-0" />
-                <span className="font-bold">Menunggu Konfirmasi Layanan</span>
-              </div>
-              <div className="text-[11px] text-slate-300 pl-6 flex items-center justify-between">
-                <span>Batas konfirmasi: 5 menit</span>
-                {trx.waitTimeMinutes !== undefined && (
-                  <span className="text-muted-foreground">
-                    Perkiraan waktu tunggu: ~{trx.waitTimeMinutes}m
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-          {(trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed") && (
+          {(trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed" || trx.bookingStatus === "pending_confirmation") && (
             <div className="flex items-center justify-between rounded-[10px] bg-primary/10 border border-primary/30 p-2.5 text-[12px] text-primary-soft font-medium">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0" />
@@ -343,12 +327,17 @@ function CapsterTransactionDetailPage() {
             </div>
           )}
           {trx.bookingStatus === "in_service" && (
-            <div className="flex items-center justify-between rounded-[10px] bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-[12px] text-success font-medium">
-              <div className="flex items-center gap-2">
-                <Scissors className="h-4 w-4 shrink-0 animate-spin text-success" />
-                <span>Sedang Dilayani di Kursi</span>
+            <div className="flex flex-col gap-1.5 rounded-[10px] bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-[12px] text-success font-medium">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Scissors className="h-4 w-4 shrink-0 animate-spin text-success" />
+                  <span className="font-bold">Sedang Dilayani di Kursi</span>
+                </div>
+                <span className="font-bold">Sisa: ~{trx.remainingMinutes ?? 0} menit</span>
               </div>
-              <span className="font-bold">Sisa: ~{trx.remainingMinutes ?? 0} menit</span>
+              <p className="text-[11px] text-slate-300">
+                Layanan sedang berlangsung. Pelanggan akan menyelesaikan layanan melalui halaman pelanggannya.
+              </p>
             </div>
           )}
           {trx.bookingStatus === "awaiting_payment" && (
@@ -468,28 +457,9 @@ function CapsterTransactionDetailPage() {
       </main>
 
       <BottomActionBar>
-        {trx.bookingStatus === "pending_confirmation" ? (
-          <div className="flex flex-col gap-2 w-full">
-            <div className="text-[11px] font-semibold text-warning text-center">
-              Batas konfirmasi: 5 menit
-            </div>
-            <PrimaryButton
-              loading={confirmingBooking}
-              onClick={handleConfirmBooking}
-            >
-              <CheckCircle className="h-4 w-4" strokeWidth={2} />
-              KONFIRMASI LAYANAN
-            </PrimaryButton>
-            <button
-              type="button"
-              onClick={() => setShowCancelModal(true)}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
-            >
-              <XCircle className="h-4 w-4" strokeWidth={2} />
-              TOLAK / BATALKAN
-            </button>
-          </div>
-        ) : trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed" ? (
+        {trx.bookingStatus === "pending_confirmation" ||
+        trx.bookingStatus === "waiting" ||
+        trx.bookingStatus === "confirmed" ? (
           <div className="flex flex-col gap-2 w-full">
             <PrimaryButton
               loading={startingService}
@@ -509,13 +479,14 @@ function CapsterTransactionDetailPage() {
           </div>
         ) : trx.bookingStatus === "in_service" ? (
           <div className="flex flex-col gap-2 w-full">
-            <PrimaryButton
-              loading={finishingService}
-              onClick={handleFinishService}
+            <SecondaryButton
+              onClick={() =>
+                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
+              }
             >
-              <CheckSquare className="h-4 w-4" strokeWidth={2} />
-              SELESAI LAYANAN
-            </PrimaryButton>
+              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+              KEMBALI KE DASHBOARD
+            </SecondaryButton>
           </div>
         ) : trx.bookingStatus === "awaiting_payment" ? (
           <div className="flex flex-col gap-2 w-full">

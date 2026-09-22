@@ -239,10 +239,9 @@ export const createCustomerBookingAndTransaction = createServerFn({
 
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    // Batas konfirmasi: tepat 5 menit dari waktu permintaan
-    const batasKonfirmasi = new Date(now.getTime() + 5 * 60 * 1000);
 
     // 6. Create Permintaan Layanan (Booking)
+    // Status langsung 'waiting' (langsung masuk antrean tanpa barrier konfirmasi 5 menit, langsung siap MULAI LAYANAN)
     const [bookingRow] = await db
       .insert(booking)
       .values({
@@ -251,9 +250,9 @@ export const createCustomerBookingAndTransaction = createServerFn({
         id_capster: data.capsterId,
         tanggal_booking: now,
         waktu_booking: timeStr,
-        status: "pending_confirmation",
+        status: "waiting",
         waktu_permintaan: now,
-        batas_konfirmasi: batasKonfirmasi,
+        waktu_konfirmasi: now,
         source: data.source || "scan",
       })
       .returning();
@@ -329,8 +328,7 @@ export const createCustomerBookingAndTransaction = createServerFn({
       success: true,
       transactionId: transaksiRow.id_transaksi,
       bookingId: bookingRow.id_booking,
-      bookingStatus: "pending_confirmation",
-      batasKonfirmasi: batasKonfirmasi.toISOString(),
+      bookingStatus: "waiting",
       customerId: pelangganRow.id_pelanggan,
       customerName: userRow.nama_lengkap,
       capsterId: data.capsterId,
@@ -590,6 +588,101 @@ export const capsterFinishService = createServerFn({
     await logAudit({
       barbershopId: b.id_barbershop,
       aksi: "finish service",
+      entityType: "permintaan_layanan",
+      entityId: b.id_booking,
+    });
+
+    return {
+      success: true,
+      bookingId: b.id_booking,
+      status: "awaiting_payment",
+      waktuSelesaiLayanan: now.toISOString(),
+      batasPembayaran: batasPembayaran.toISOString(),
+    };
+  });
+
+/**
+ * 4B. PELAYANAN SELESAI OLEH PELANGGAN (BPMN Update)
+ * Pelanggan menekan tombol "SELESAI LAYANAN" di halaman pantau layanan (service-execution).
+ * Status beralih menjadi AWAITING_PAYMENT.
+ * Batas pembayaran: 2 jam setelah pelayanan selesai.
+ */
+export const customerFinishService = createServerFn({
+  method: "POST",
+})
+  .validator((data: { transactionId?: string; bookingId?: string }) => data)
+  .handler(async ({ data }) => {
+    let targetBookingId = data.bookingId;
+
+    if (!targetBookingId && data.transactionId) {
+      const [tx] = await db
+        .select({ id_booking: transaksi.id_booking })
+        .from(transaksi)
+        .where(eq(transaksi.id_transaksi, data.transactionId))
+        .limit(1);
+      if (tx) {
+        targetBookingId = tx.id_booking || undefined;
+      }
+    }
+
+    if (!targetBookingId) {
+      throw new Error("Permintaan layanan tidak ditemukan.");
+    }
+
+    const [b] = await db
+      .select()
+      .from(booking)
+      .where(eq(booking.id_booking, targetBookingId))
+      .limit(1);
+
+    if (!b) {
+      throw new Error("Permintaan layanan tidak ditemukan.");
+    }
+
+    const now = new Date();
+    // Batas pembayaran: 2 jam dari waktu selesai fisik pelayanan
+    const batasPembayaran = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+    // Update status booking -> awaiting_payment
+    await db
+      .update(booking)
+      .set({
+        status: "awaiting_payment",
+        updated_at: now,
+      })
+      .where(eq(booking.id_booking, b.id_booking));
+
+    // Update transaksi: simpan waktu_selesai_layanan & batas_pembayaran
+    await db
+      .update(transaksi)
+      .set({
+        waktu_selesai_layanan: now,
+        batas_pembayaran: batasPembayaran,
+        updated_at: now,
+      })
+      .where(eq(transaksi.id_booking, b.id_booking));
+
+    // Update pembayaran: simpan batas_pembayaran
+    const [tx] = await db
+      .select({ id_transaksi: transaksi.id_transaksi })
+      .from(transaksi)
+      .where(eq(transaksi.id_booking, b.id_booking))
+      .limit(1);
+
+    if (tx) {
+      await db
+        .update(pembayaran)
+        .set({
+          batas_pembayaran: batasPembayaran,
+          updated_at: now,
+        })
+        .where(eq(pembayaran.id_transaksi, tx.id_transaksi));
+    }
+
+    // Catat Audit Log
+    await logAudit({
+      barbershopId: b.id_barbershop,
+      aksi: "finish service by customer",
       entityType: "permintaan_layanan",
       entityId: b.id_booking,
     });
