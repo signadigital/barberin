@@ -73,6 +73,44 @@ export const pembayaranStatusEnum = pgEnum("pembayaran_status", [
   "expired",
 ]);
 
+export const komisiStatusEnum = pgEnum("komisi_status", [
+  "belum_dibayar",
+  "diajukan",
+  "dibayar",
+  "dibatalkan",
+]);
+
+export const pengajuanKomisiStatusEnum = pgEnum("pengajuan_komisi_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "paid",
+  "cancelled",
+]);
+
+export const pembayaranKomisiStatusEnum = pgEnum("pembayaran_komisi_status", [
+  "pending",
+  "success",
+  "failed",
+  "cancelled",
+]);
+
+export const saldoJenisTransaksiEnum = pgEnum("saldo_jenis_transaksi", [
+  "pendapatan",
+  "pembayaran_komisi",
+  "penyesuaian",
+  "pengeluaran",
+]);
+
+export const notifikasiTipeEnum = pgEnum("notifikasi_tipe", [
+  "pengajuan_komisi",
+  "persetujuan_komisi",
+  "penolakan_komisi",
+  "pembayaran_komisi",
+  "info",
+  "transaksi",
+]);
+
 // ==============================
 // 1. USER
 // ==============================
@@ -174,6 +212,9 @@ export const capster = pgTable(
       .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
     nama_capster: varchar("nama_capster", { length: 255 }),
     no_pegawai: varchar("no_pegawai", { length: 50 }),
+    persentase_komisi: numeric("persentase_komisi", { precision: 5, scale: 2 })
+      .notNull()
+      .default("15.00"),
     tanggal_bergabung: timestamp("tanggal_bergabung", { mode: "date" }),
     status: commonStatusEnum("status").notNull().default("active"),
     foto: varchar("foto", { length: 500 }),
@@ -542,6 +583,172 @@ export const auditLog = pgTable(
 );
 
 // ==============================
+// 17. KOMISI TRANSAKSI (SESUAI ERD)
+// ==============================
+export const komisiTransaksi = pgTable(
+  "komisi_transaksi",
+  {
+    id_komisi_trx: uuid("id_komisi_trx").defaultRandom().primaryKey(),
+    id_transaksi: uuid("id_transaksi")
+      .notNull()
+      .references(() => transaksi.id_transaksi, { onDelete: "cascade" }),
+    id_capster: uuid("id_capster")
+      .notNull()
+      .references(() => capster.id_capster, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    persentase_komisi: numeric("persentase_komisi", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
+    dasar_komisi: numeric("dasar_komisi", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    nominal_komisi: numeric("nominal_komisi", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    status: komisiStatusEnum("status").notNull().default("belum_dibayar"),
+    id_pengajuan: uuid("id_pengajuan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("komisi_trx_transaksi_idx").on(table.id_transaksi),
+    index("komisi_trx_capster_idx").on(table.id_capster),
+    index("komisi_trx_barbershop_idx").on(table.id_barbershop),
+    index("komisi_trx_status_idx").on(table.status),
+    index("komisi_trx_pengajuan_idx").on(table.id_pengajuan),
+  ],
+);
+
+// ==============================
+// 18. PENGAJUAN KOMISI (SESUAI ERD)
+// ==============================
+export const pengajuanKomisi = pgTable(
+  "pengajuan_komisi",
+  {
+    id_pengajuan: uuid("id_pengajuan").defaultRandom().primaryKey(),
+    id_capster: uuid("id_capster")
+      .notNull()
+      .references(() => capster.id_capster, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    jumlah_pengajuan: numeric("jumlah_pengajuan", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    status: pengajuanKomisiStatusEnum("status").notNull().default("pending"),
+    keterangan: text("keterangan"),
+    diajukan_at: timestamp("diajukan_at", { mode: "date" }).notNull().defaultNow(),
+    disetujui_at: timestamp("disetujui_at", { mode: "date" }),
+    ditolak_at: timestamp("ditolak_at", { mode: "date" }),
+    ditolak_oleh: uuid("ditolak_oleh").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
+    alasan_penolakan: text("alasan_penolakan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("pengajuan_komisi_capster_idx").on(table.id_capster),
+    index("pengajuan_komisi_barbershop_idx").on(table.id_barbershop),
+    index("pengajuan_komisi_status_idx").on(table.status),
+    index("pengajuan_komisi_diajukan_idx").on(table.diajukan_at),
+  ],
+);
+
+// ==============================
+// 19. PEMBAYARAN KOMISI (SESUAI ERD)
+// ==============================
+export const pembayaranKomisi = pgTable(
+  "pembayaran_komisi",
+  {
+    id_pembayaran_komisi: uuid("id_pembayaran_komisi").defaultRandom().primaryKey(),
+    id_pengajuan: uuid("id_pengajuan")
+      .notNull()
+      .references(() => pengajuanKomisi.id_pengajuan, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    jumlah_bayar: numeric("jumlah_bayar", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    metode_pembayaran: metodePembayaranEnum("metode_pembayaran").notNull().default("transfer"),
+    referensi: varchar("referensi", { length: 255 }),
+    status: pembayaranKomisiStatusEnum("status").notNull().default("pending"),
+    dibayar_at: timestamp("dibayar_at", { mode: "date" }),
+    dibayar_oleh: uuid("dibayar_oleh").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
+    catatan: text("catatan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("pembayaran_komisi_pengajuan_idx").on(table.id_pengajuan),
+    index("pembayaran_komisi_barbershop_idx").on(table.id_barbershop),
+    index("pembayaran_komisi_status_idx").on(table.status),
+  ],
+);
+
+// ==============================
+// 20. SALDO BISNIS (SESUAI ERD)
+// ==============================
+export const saldoBisnis = pgTable(
+  "saldo_bisnis",
+  {
+    id_saldo: uuid("id_saldo").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    jenis_transaksi: saldoJenisTransaksiEnum("jenis_transaksi").notNull(),
+    referensi_id: varchar("referensi_id", { length: 255 }),
+    debit: numeric("debit", { precision: 12, scale: 2 }).notNull().default("0"),
+    kredit: numeric("kredit", { precision: 12, scale: 2 }).notNull().default("0"),
+    saldo: numeric("saldo", { precision: 12, scale: 2 }).notNull().default("0"),
+    keterangan: text("keterangan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("saldo_bisnis_barbershop_idx").on(table.id_barbershop),
+    index("saldo_bisnis_jenis_idx").on(table.jenis_transaksi),
+    index("saldo_bisnis_created_idx").on(table.created_at),
+  ],
+);
+
+// ==============================
+// 21. NOTIFIKASI (SESUAI ERD)
+// ==============================
+export const notifikasi = pgTable(
+  "notifikasi",
+  {
+    id_notifikasi: uuid("id_notifikasi").defaultRandom().primaryKey(),
+    id_user: uuid("id_user")
+      .notNull()
+      .references(() => users.id_user, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    tipe: notifikasiTipeEnum("tipe").notNull().default("info"),
+    judul: varchar("judul", { length: 255 }).notNull(),
+    pesan: text("pesan").notNull(),
+    is_read: boolean("is_read").notNull().default(false),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("notifikasi_user_idx").on(table.id_user),
+    index("notifikasi_barbershop_idx").on(table.id_barbershop),
+    index("notifikasi_is_read_idx").on(table.is_read),
+    index("notifikasi_created_idx").on(table.created_at),
+  ],
+);
+
+// ==============================
 // RELATIONS
 // ==============================
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -761,6 +968,21 @@ export type NewOwnerVerificationToken = typeof ownerVerificationTokens.$inferIns
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type NewAuditLog = typeof auditLog.$inferInsert;
+
+export type KomisiTransaksi = typeof komisiTransaksi.$inferSelect;
+export type NewKomisiTransaksi = typeof komisiTransaksi.$inferInsert;
+
+export type PengajuanKomisi = typeof pengajuanKomisi.$inferSelect;
+export type NewPengajuanKomisi = typeof pengajuanKomisi.$inferInsert;
+
+export type PembayaranKomisi = typeof pembayaranKomisi.$inferSelect;
+export type NewPembayaranKomisi = typeof pembayaranKomisi.$inferInsert;
+
+export type SaldoBisnis = typeof saldoBisnis.$inferSelect;
+export type NewSaldoBisnis = typeof saldoBisnis.$inferInsert;
+
+export type Notifikasi = typeof notifikasi.$inferSelect;
+export type NewNotifikasi = typeof notifikasi.$inferInsert;
 
 // ============================================================================
 // SAAS PLATFORM / ADMIN PLATFORM SCHEMA (SESUAI GAMBAR 2)

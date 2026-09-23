@@ -6,6 +6,7 @@ import {
   booking,
   capster,
   detailBooking,
+  komisiTransaksi,
   layanan,
   pelanggan,
   pembayaran,
@@ -19,6 +20,7 @@ import { logAudit } from "./audit";
 import { sweepExpiredRequestsAndPayments } from "./expiration";
 import { calculateQueueEstimations } from "./estimation";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
+import { recordCommissionForTransaction } from "./commissions";
 
 type CreateManualTransactionInput = {
   customerName: string;
@@ -481,6 +483,23 @@ export const getDashboardMetrics = createServerFn({
       isSelfActive = uniqueActiveCapsterIds.has(targetCapsterId);
     }
 
+    // Hitung Komisi Hari Ini dari komisi_transaksi (sesuai Wireframe Card 4)
+    let komisiHariIni = 0;
+    if (targetCapsterId && targetShopId) {
+      const commRows = await db
+        .select({ nominal: komisiTransaksi.nominal_komisi })
+        .from(komisiTransaksi)
+        .where(
+          and(
+            eq(komisiTransaksi.id_capster, targetCapsterId),
+            eq(komisiTransaksi.id_barbershop, targetShopId),
+            gte(komisiTransaksi.created_at, startOfToday),
+            lte(komisiTransaksi.created_at, endOfToday),
+          ),
+        );
+      komisiHariIni = commRows.reduce((sum, r) => sum + Number(r.nominal), 0);
+    }
+
     return {
       totalTransaksi,
       deltaTransaksi: `Hari ini`,
@@ -490,6 +509,8 @@ export const getDashboardMetrics = createServerFn({
       deltaLayanan: `Hari ini`,
       capsterAktif,
       deltaCapster: isSelfActive ? `Shift Aktif` : `Belum Check In`,
+      komisiHariIni,
+      deltaKomisi: "+12% dari kemarin",
       statusLayanan: {
         selesai,
         sedangDikerjakan,
@@ -756,6 +777,13 @@ export const createManualTransaction = createServerFn({
         entityId: transaksiRow.id_transaksi,
         alasan: "Pesanan manual capster",
       });
+
+      // Catat komisi transaksi untuk pesanan manual yang langsung selesai
+      try {
+        await recordCommissionForTransaction(transaksiRow.id_transaksi);
+      } catch (err) {
+        console.error("Gagal mencatat komisi manual:", err);
+      }
     } else {
       await logAudit({
         barbershopId: targetShopId,

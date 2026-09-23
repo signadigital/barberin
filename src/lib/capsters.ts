@@ -746,3 +746,24 @@ export const deleteOwnerCapster = createServerFn({
     };
   });
 
+export const updateCapsterCommissionPercentage = createServerFn({
+  method: "POST",
+})
+  .validator(
+    (data: {
+      capsterId: string;
+      percentage: number;
+      barbershopSlug?: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const validPercent = Math.max(0, Math.min(100, Math.round(data.percentage)));
+    await db
+      .update(capster)
+      .set({
+        persentase_komisi: String(validPercent),
+        updated_at: new Date(),
+      })
+      .where(eq(capster.id_capster, data.capsterId));
+    return { success: true, percentage: validPercent };
+  });

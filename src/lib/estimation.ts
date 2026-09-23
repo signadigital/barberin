@@ -104,8 +104,14 @@ export async function calculateQueueEstimations(
     durationMap.set(d.id_booking, existing);
   }
 
-  // 4. Pisahkan yang sedang in_service (maksimal 1 yang aktif dikerjakan di kursi)
-  const inServiceBooking = activeBookings.find((b) => b.status === "in_service");
+  // 4. Pisahkan yang sedang in_service (ambil booking in_service yang paling mutakhir/aktif)
+  const inServiceBookings = activeBookings.filter((b) => b.status === "in_service");
+  inServiceBookings.sort((a, b) => {
+    const tA = (a.waktu_mulai_layanan ?? a.created_at).getTime();
+    const tB = (b.waktu_mulai_layanan ?? b.created_at).getTime();
+    return tB - tA; // descending (terbaru lebih dahulu)
+  });
+  const inServiceBooking = inServiceBookings[0];
   const waitingBookings = activeBookings.filter((b) => b.status !== "in_service");
 
   // Urutkan antrean waiting secara konsisten (prioritaskan waktu_konfirmasi atau waktu_permintaan)
@@ -123,12 +129,14 @@ export async function calculateQueueEstimations(
 
   if (inServiceBooking) {
     const info = durationMap.get(inServiceBooking.id_booking) ?? { totalDuration: 30, names: ["Layanan"] };
-    const startTime = inServiceBooking.waktu_mulai_layanan ?? inServiceBooking.waktu_konfirmasi ?? inServiceBooking.waktu_permintaan;
+    // started_at HARUS waktu pelayanan benar-benar dimulai (waktu_mulai_layanan)
+    // Jangan gunakan waktu_permintaan atau waktu_konfirmasi yang menyebabkan elapsed time menjadi durasi penuh
+    const startTime = inServiceBooking.waktu_mulai_layanan ?? inServiceBooking.created_at ?? referenceTime;
     const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
     inServiceRemaining = Math.max(0, info.totalDuration - elapsedMinutes);
 
-    const estStart = referenceTime; // Sedang berlangsung
-    const estEnd = new Date(referenceTime.getTime() + inServiceRemaining * 60000);
+    const estStart = startTime; // Waktu aktual pelayanan dimulai
+    const estEnd = new Date(startTime.getTime() + info.totalDuration * 60000);
 
     results.push({
       bookingId: inServiceBooking.id_booking,
@@ -138,7 +146,7 @@ export async function calculateQueueEstimations(
       source: inServiceBooking.source,
       waktuPermintaan: inServiceBooking.waktu_permintaan,
       waktuKonfirmasi: inServiceBooking.waktu_konfirmasi,
-      waktuMulaiLayanan: inServiceBooking.waktu_mulai_layanan,
+      waktuMulaiLayanan: startTime,
       totalDurationMinutes: info.totalDuration,
       remainingMinutes: inServiceRemaining,
       waitTimeMinutes: 0, // Sedang dilayani, tidak ada waktu tunggu
@@ -249,7 +257,60 @@ export async function getBookingEstimation(
   if (b.status === "in_service" || b.status === "waiting" || b.status === "confirmed") {
     const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
     const found = queue.find((q) => q.bookingId === bookingId);
-    return found ?? null;
+    if (found) return found;
+
+    // Fallback presisi jika booking in_service tidak terambil di queue utama
+    if (b.status === "in_service") {
+      const details = await db
+        .select({
+          durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
+          nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
+          qty: detailBooking.qty,
+        })
+        .from(detailBooking)
+        .where(eq(detailBooking.id_booking, bookingId));
+
+      let totalDuration = 0;
+      const names: string[] = [];
+      for (const d of details) {
+        const dur = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
+        totalDuration += dur * (d.qty || 1);
+        if (d.nama_layanan_snapshot) names.push(d.nama_layanan_snapshot);
+      }
+      if (totalDuration === 0) totalDuration = 30;
+
+      const startTime = b.waktu_mulai_layanan ?? referenceTime;
+      const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
+      const remaining = Math.max(0, totalDuration - elapsedMinutes);
+      const estEnd = new Date(startTime.getTime() + totalDuration * 60000);
+
+      return {
+        bookingId: b.id_booking,
+        barbershopId: b.id_barbershop,
+        capsterId: b.id_capster,
+        status: b.status,
+        source: b.source || "scan",
+        waktuPermintaan: b.waktu_permintaan,
+        waktuKonfirmasi: b.waktu_konfirmasi,
+        waktuMulaiLayanan: startTime,
+        totalDurationMinutes: totalDuration,
+        remainingMinutes: remaining,
+        waitTimeMinutes: 0,
+        estimatedStartTime: startTime,
+        estimatedEndTime: estEnd,
+        positionInQueue: 0,
+        serviceNames: names.join(" + ") || "Layanan Barbershop",
+        antreanKe: 0,
+        estimasiTungguMenit: 0,
+        durasiLayanan: totalDuration,
+        sisaDurasi: remaining,
+        estimasiMulai: startTime.toISOString(),
+        estimasiSelesai: estEnd.toISOString(),
+        totalAntreanSebelumnya: 0,
+      };
+    }
+
+    return null;
   }
 
   // Jika status pending_confirmation: hitung preview estimasi tunggu untuk halaman Menunggu Konfirmasi

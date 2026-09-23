@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
@@ -18,6 +18,7 @@ import { getWibTimeString } from "@/lib/format";
 import { logAudit } from "./audit";
 import { sweepExpiredRequestsAndPayments } from "./expiration";
 import { calculateQueueEstimations, getBookingEstimation } from "./estimation";
+import { recordCommissionForTransaction } from "./commissions";
 
 type CreateBookingInput = {
   customerName: string;
@@ -487,6 +488,23 @@ export const capsterStartService = createServerFn({
 
     const now = new Date();
 
+    // Pastikan jika ada booking in_service sebelumnya dari capster ini, transisikan ke awaiting_payment
+    if (b.id_capster) {
+      await db
+        .update(booking)
+        .set({
+          status: "awaiting_payment",
+          updated_at: now,
+        })
+        .where(
+          and(
+            eq(booking.id_capster, b.id_capster),
+            eq(booking.status, "in_service"),
+            ne(booking.id_booking, b.id_booking),
+          ),
+        );
+    }
+
     // Update status booking -> in_service
     await db
       .update(booking)
@@ -881,6 +899,13 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
       });
     }
 
+    // 6. Catat Komisi Transaksi Capster (Snapshot Persentase Komisi)
+    try {
+      await recordCommissionForTransaction(updatedTx.id_transaksi);
+    } catch (err) {
+      console.error("Gagal mencatat komisi transaksi:", err);
+    }
+
     return {
       success: true,
       transactionId: updatedTx.id_transaksi,
@@ -1179,6 +1204,19 @@ export const getTransactionDetail = createServerFn({
     }
 
     const itemsTotalDuration = items.reduce((sum, it) => sum + (it.durationMinutes * it.quantity), 0);
+    const serverTime = new Date();
+
+    // Pastikan waktu_mulai_layanan terisi jika status in_service
+    let waktuMulaiLayananDate = bookingInfo?.waktu_mulai_layanan ?? null;
+    if (bookingInfo?.status === "in_service" && !waktuMulaiLayananDate) {
+      waktuMulaiLayananDate = serverTime;
+      if (tx.id_booking) {
+        await db
+          .update(booking)
+          .set({ waktu_mulai_layanan: serverTime, updated_at: serverTime })
+          .where(eq(booking.id_booking, tx.id_booking));
+      }
+    }
 
     return {
       transactionId: tx.id_transaksi,
@@ -1194,9 +1232,10 @@ export const getTransactionDetail = createServerFn({
       waktuPermintaan: bookingInfo?.waktu_permintaan?.toISOString() ?? tx.created_at.toISOString(),
       batasKonfirmasi: bookingInfo?.batas_konfirmasi?.toISOString() ?? null,
       waktuKonfirmasi: bookingInfo?.waktu_konfirmasi?.toISOString() ?? null,
-      waktuMulaiLayanan: bookingInfo?.waktu_mulai_layanan?.toISOString() ?? null,
+      waktuMulaiLayanan: waktuMulaiLayananDate ? waktuMulaiLayananDate.toISOString() : null,
       waktuSelesaiLayanan: tx.waktu_selesai_layanan?.toISOString() ?? null,
       batasPembayaran: tx.batas_pembayaran?.toISOString() ?? null,
+      serverTime: serverTime.toISOString(),
       subtotal: Number(tx.subtotal),
       discount: Number(tx.diskon),
       total: Number(tx.total),

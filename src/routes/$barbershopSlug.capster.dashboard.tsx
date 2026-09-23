@@ -22,6 +22,11 @@ import {
   getCapsterTransactions,
   getDashboardMetrics,
 } from "@/lib/capster-transactions";
+import {
+  getCapsterCommissionDashboard,
+  type CapsterCommissionDashboardData,
+} from "@/lib/commissions";
+import { CommissionWithdrawalCard } from "@/components/capster/CommissionWithdrawalCard";
 import { endShift, getActiveShift } from "@/lib/shifts";
 
 export const Route = createFileRoute("/$barbershopSlug/capster/dashboard")({
@@ -40,6 +45,7 @@ function CapsterDashboardPage() {
   const { capsterId, userId, capsterName, dashboardMetrics, shiftId, transactions } =
     useCapster();
   const [showEndShiftModal, setShowEndShiftModal] = useState(false);
+  const [commissionData, setCommissionData] = useState<CapsterCommissionDashboardData | null>(null);
 
   // Verifikasi shift aktif: jika belum check in, alihkan ke halaman check-in
   useEffect(() => {
@@ -86,7 +92,7 @@ function CapsterDashboardPage() {
     const fetchAllData = async () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
-        const [metrics, txs] = await Promise.all([
+        const [metrics, txs, comm] = await Promise.all([
           getDashboardMetrics({
             data: {
               capsterId,
@@ -98,10 +104,18 @@ function CapsterDashboardPage() {
               capsterId,
             },
           }),
+          getCapsterCommissionDashboard({
+            data: {
+              capsterId,
+              ...(userId ? { userId } : {}),
+              barbershopSlug,
+            },
+          }),
         ]);
         if (!mounted) return;
         if (metrics) capsterActions.setDashboardMetrics(metrics);
         if (txs) capsterActions.setTransactions(txs as CapsterTransaction[]);
+        if (comm) setCommissionData(comm);
       } catch (e) {
         console.error("Gagal memuat data dashboard:", e);
       }
@@ -197,13 +211,34 @@ function CapsterDashboardPage() {
             tone="purple"
           />
           <SummaryCard
-            icon={Users}
-            title="CAPSTER AKTIF"
-            value={String(currentMetrics.capsterAktif).padStart(2, "0")}
-            delta={currentMetrics.deltaCapster}
+            icon={Coins}
+            title="KOMISI HARI INI"
+            value={formatRupiah(commissionData?.komisiHariIni ?? currentMetrics.komisiHariIni ?? 0)}
+            delta={
+              commissionData?.komisiHariIni
+                ? "+12% dari kemarin"
+                : currentMetrics.deltaKomisi || "Hari ini"
+            }
             tone="warning"
           />
         </div>
+
+        {/* Card Penarikan Komisi (Sesuai Wireframe Dashboard Capster) */}
+        <CommissionWithdrawalCard
+          data={commissionData}
+          onRefresh={() => {
+            getCapsterCommissionDashboard({
+              data: {
+                capsterId,
+                ...(userId ? { userId } : {}),
+                barbershopSlug,
+              },
+            }).then((res) => {
+              if (res) setCommissionData(res);
+            });
+          }}
+          barbershopSlug={barbershopSlug}
+        />
 
         {/* Daftar Transaksi Belum Dikonfirmasi */}
         <UnconfirmedTransactionsSection transactions={unconfirmedTransactions} />

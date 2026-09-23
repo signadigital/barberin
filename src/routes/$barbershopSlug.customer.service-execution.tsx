@@ -137,6 +137,8 @@ function ServiceExecutionPage() {
     progressPercent: 100,
   });
 
+  const [inServiceRemainingMinutes, setInServiceRemainingMinutes] = useState<number | null>(null);
+
   const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
@@ -202,6 +204,44 @@ function ServiceExecutionPage() {
     txDetail?.estimation?.estimasiMulai,
     txDetail?.estimation?.estimasiTungguMenit,
     txDetail?.waktuKonfirmasi,
+  ]);
+
+  // Real-time Countdown untuk In Service (Sedang Dilayani di Kursi)
+  useEffect(() => {
+    if (!txDetail || txDetail.bookingStatus !== "in_service") return;
+
+    // Durasi Layanan dari snapshot Owner
+    const totalDuration =
+      txDetail.estimation?.totalDurationMinutes ??
+      txDetail.totalDurationMinutes ??
+      (txDetail.items?.reduce((s: number, it: any) => s + (it.durationMinutes * it.quantity), 0) || 30);
+
+    // started_at: waktu_mulai_layanan
+    const startedAtStr = txDetail.waktuMulaiLayanan ?? txDetail.estimation?.waktuMulaiLayanan;
+    const startedAtMs = startedAtStr ? new Date(startedAtStr).getTime() : Date.now();
+
+    // Server time offset untuk mencegah ketidakakuratan jam lokal perangkat
+    const serverTimeMs = txDetail.serverTime ? new Date(txDetail.serverTime).getTime() : Date.now();
+    const serverOffset = serverTimeMs - Date.now();
+
+    const tickInService = () => {
+      const nowServer = Date.now() + serverOffset;
+      const elapsedMs = Math.max(0, nowServer - startedAtMs);
+      const elapsedMinutes = Math.floor(elapsedMs / 60000);
+      const remaining = Math.max(0, totalDuration - elapsedMinutes);
+      setInServiceRemainingMinutes(remaining);
+    };
+
+    tickInService();
+    const interval = setInterval(tickInService, 1000);
+    return () => clearInterval(interval);
+  }, [
+    txDetail?.bookingStatus,
+    txDetail?.waktuMulaiLayanan,
+    txDetail?.estimation?.waktuMulaiLayanan,
+    txDetail?.estimation?.totalDurationMinutes,
+    txDetail?.totalDurationMinutes,
+    txDetail?.serverTime,
   ]);
 
   useEffect(() => {
@@ -495,7 +535,7 @@ function ServiceExecutionPage() {
               <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
                 <span className="text-[11px] text-muted-foreground block">Sisa Waktu</span>
                 <span className="text-[20px] font-extrabold text-success">
-                  ~{txDetail.estimation?.remainingMinutes ?? 0}{" "}
+                  ~{inServiceRemainingMinutes ?? txDetail.estimation?.remainingMinutes ?? (txDetail.estimation?.totalDurationMinutes ?? txDetail.totalDurationMinutes ?? 30)}{" "}
                   <span className="text-[12px] font-medium text-muted-foreground">menit</span>
                 </span>
               </div>

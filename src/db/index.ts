@@ -2,6 +2,40 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
+// Setup resilient DNS resolution for Supabase pooler in Node environment
+if (typeof window === "undefined") {
+  try {
+    const dns = await import("node:dns");
+    const origLookup = dns.lookup;
+    const resolver = new dns.promises.Resolver();
+    resolver.setServers(["8.8.8.8", "1.1.1.1"]);
+    dns.lookup = (hostname: string, options: any, callback: any) => {
+      if (typeof options === "function") {
+        callback = options;
+        options = {};
+      }
+      origLookup(hostname, options, (err: any, address: any, family: any) => {
+        if (!err) return callback(null, address, family);
+        resolver
+          .resolve4(hostname)
+          .then((addresses) => {
+            if (options && options.all) {
+              callback(
+                null,
+                addresses.map((a) => ({ address: a, family: 4 })),
+              );
+            } else {
+              callback(null, addresses[0], 4);
+            }
+          })
+          .catch(() => callback(err, address, family));
+      });
+    };
+  } catch {
+    // Ignore in non-node or browser contexts
+  }
+}
+
 // Use a global singleton in dev to prevent connection leaks during Vite HMR
 const globalForDb = globalThis as unknown as {
   conn: ReturnType<typeof postgres> | undefined;

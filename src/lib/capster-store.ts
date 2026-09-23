@@ -73,6 +73,8 @@ export type DashboardMetrics = {
   deltaLayanan: string;
   capsterAktif: number;
   deltaCapster: string;
+  komisiHariIni?: number;
+  deltaKomisi?: string;
   statusLayanan: {
     selesai: number;
     sedangDikerjakan: number;
@@ -127,6 +129,8 @@ export const EMPTY_METRICS: DashboardMetrics = {
   deltaLayanan: "Hari ini",
   capsterAktif: 0,
   deltaCapster: "Aktif",
+  komisiHariIni: 0,
+  deltaKomisi: "+12% dari kemarin",
   statusLayanan: {
     selesai: 0,
     sedangDikerjakan: 0,
