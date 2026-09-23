@@ -22,6 +22,7 @@ import { Route as SuperadminLoginRouteImport } from './routes/superadmin.login'
 import { Route as SuperadminTenantsRouteImport } from './routes/superadmin.tenants'
 import { Route as BarbershopSlugCapsterAccountRouteImport } from './routes/$barbershopSlug.capster.account'
 import { Route as BarbershopSlugCapsterCheckInRouteImport } from './routes/$barbershopSlug.capster.check-in'
+import { Route as BarbershopSlugCapsterCommissionsRouteImport } from './routes/$barbershopSlug.capster.commissions'
 import { Route as BarbershopSlugCapsterDashboardRouteImport } from './routes/$barbershopSlug.capster.dashboard'
 import { Route as BarbershopSlugCapsterEndShiftRouteImport } from './routes/$barbershopSlug.capster.end-shift'
 import { Route as BarbershopSlugCapsterLoginRouteImport } from './routes/$barbershopSlug.capster.login'
@@ -127,6 +128,12 @@ const BarbershopSlugCapsterCheckInRoute =
   BarbershopSlugCapsterCheckInRouteImport.update({
     id: '/capster/check-in',
     path: '/capster/check-in',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugCapsterCommissionsRoute =
+  BarbershopSlugCapsterCommissionsRouteImport.update({
+    id: '/capster/commissions',
+    path: '/capster/commissions',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
 const BarbershopSlugCapsterDashboardRoute =
@@ -376,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/tenants': typeof SuperadminTenantsRoute
   '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
   '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/commissions': typeof BarbershopSlugCapsterCommissionsRoute
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
@@ -430,6 +438,7 @@ export interface FileRoutesByTo {
   '/superadmin/tenants': typeof SuperadminTenantsRoute
   '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
   '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/commissions': typeof BarbershopSlugCapsterCommissionsRoute
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
@@ -485,6 +494,7 @@ export interface FileRoutesById {
   '/superadmin/tenants': typeof SuperadminTenantsRoute
   '/$barbershopSlug/capster/account': typeof BarbershopSlugCapsterAccountRoute
   '/$barbershopSlug/capster/check-in': typeof BarbershopSlugCapsterCheckInRoute
+  '/$barbershopSlug/capster/commissions': typeof BarbershopSlugCapsterCommissionsRoute
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/superadmin/tenants'
     | '/$barbershopSlug/capster/account'
     | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/commissions'
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/superadmin/tenants'
     | '/$barbershopSlug/capster/account'
     | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/commissions'
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
@@ -649,6 +661,7 @@ export interface FileRouteTypes {
     | '/superadmin/tenants'
     | '/$barbershopSlug/capster/account'
     | '/$barbershopSlug/capster/check-in'
+    | '/$barbershopSlug/capster/commissions'
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
@@ -795,6 +808,13 @@ declare module '@tanstack/react-router' {
       path: '/capster/check-in'
       fullPath: '/$barbershopSlug/capster/check-in'
       preLoaderRoute: typeof BarbershopSlugCapsterCheckInRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/capster/commissions': {
+      id: '/$barbershopSlug/capster/commissions'
+      path: '/capster/commissions'
+      fullPath: '/$barbershopSlug/capster/commissions'
+      preLoaderRoute: typeof BarbershopSlugCapsterCommissionsRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
     '/$barbershopSlug/capster/dashboard': {
@@ -1169,6 +1189,7 @@ const BarbershopSlugOwnerAuditFinanceRouteWithChildren =
 interface BarbershopSlugRouteChildren {
   BarbershopSlugCapsterAccountRoute: typeof BarbershopSlugCapsterAccountRoute
   BarbershopSlugCapsterCheckInRoute: typeof BarbershopSlugCapsterCheckInRoute
+  BarbershopSlugCapsterCommissionsRoute: typeof BarbershopSlugCapsterCommissionsRoute
   BarbershopSlugCapsterDashboardRoute: typeof BarbershopSlugCapsterDashboardRoute
   BarbershopSlugCapsterEndShiftRoute: typeof BarbershopSlugCapsterEndShiftRoute
   BarbershopSlugCapsterLoginRoute: typeof BarbershopSlugCapsterLoginRoute
@@ -1202,6 +1223,7 @@ interface BarbershopSlugRouteChildren {
 const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
   BarbershopSlugCapsterAccountRoute: BarbershopSlugCapsterAccountRoute,
   BarbershopSlugCapsterCheckInRoute: BarbershopSlugCapsterCheckInRoute,
+  BarbershopSlugCapsterCommissionsRoute: BarbershopSlugCapsterCommissionsRoute,
   BarbershopSlugCapsterDashboardRoute: BarbershopSlugCapsterDashboardRoute,
   BarbershopSlugCapsterEndShiftRoute: BarbershopSlugCapsterEndShiftRoute,
   BarbershopSlugCapsterLoginRoute: BarbershopSlugCapsterLoginRoute,

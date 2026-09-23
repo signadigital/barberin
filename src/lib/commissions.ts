@@ -494,6 +494,18 @@ export async function requestCommissionWithdrawalLogic(data?: {
 
   const barbershopId = c.id_barbershop;
 
+  // Verifikasi tenant jika barbershopSlug disediakan
+  if (data?.barbershopSlug) {
+    const [shop] = await db
+      .select({ id_barbershop: barbershop.id_barbershop })
+      .from(barbershop)
+      .where(eq(barbershop.slug, data.barbershopSlug))
+      .limit(1);
+    if (!shop || shop.id_barbershop !== barbershopId) {
+      throw new Error("Akses ditolak: Capster tidak terdaftar pada barbershop ini.");
+    }
+  }
+
   // Backend validation: Cek apakah masih ada pengajuan aktif (pending / approved yang belum dibayar)
   const candidateActive = await db
     .select({
@@ -604,6 +616,17 @@ export async function requestCommissionWithdrawalLogic(data?: {
       tipe: "pengajuan_komisi",
       judul: "Pengajuan Penarikan Komisi",
       pesan: `Capster ${c.nama_lengkap} mengajukan penarikan komisi sebesar ${formatRupiah(totalNominal)}.`,
+    });
+  }
+
+  // 4. Kirim NOTIFIKASI ke Capster (Event 1: Pengajuan berhasil dibuat)
+  if (c.id_user) {
+    await db.insert(notifikasi).values({
+      id_user: c.id_user,
+      id_barbershop: barbershopId,
+      tipe: "pengajuan_komisi",
+      judul: "Pengajuan Penarikan Terkirim",
+      pesan: `Pengajuan penarikan komisi sebesar ${formatRupiah(totalNominal)} berhasil diajukan dan sedang menunggu persetujuan Owner.`,
     });
   }
 
@@ -1579,3 +1602,541 @@ export const payCommissionRequest = createServerFn({
     }) => data,
   )
   .handler(async ({ data }) => payCommissionRequestLogic(data));
+
+// ============================================================================
+// 11. CAPSTER DETAIL KOMISI & RIWAYAT PENARIKAN (NEW FEATURE)
+// ============================================================================
+
+export function formatWithdrawalCode(idPengajuan: string, diajukanAt: Date | string | null): string {
+  const d = diajukanAt ? new Date(diajukanAt) : new Date();
+  const yyyymmdd = d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }).replace(/-/g, "");
+  const cleanId = idPengajuan.replace(/[^a-zA-Z0-9]/g, "").slice(-3).toUpperCase().padStart(3, "1");
+  return `#WD-${yyyymmdd}-${cleanId}`;
+}
+
+export function formatWithdrawalDateTime(date: Date | string | null | undefined): string {
+  if (!date) return "-";
+  const d = new Date(date);
+  const day = d.toLocaleDateString("id-ID", { day: "numeric", timeZone: "Asia/Jakarta" });
+  const month = d.toLocaleDateString("id-ID", { month: "long", timeZone: "Asia/Jakarta" });
+  const year = d.toLocaleDateString("id-ID", { year: "numeric", timeZone: "Asia/Jakarta" });
+  const time = d
+    .toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Jakarta",
+    })
+    .replace(".", ":");
+  return `${day} ${month} ${year} • ${time}`;
+}
+
+export type CapsterWithdrawalRequestItem = {
+  idPengajuan: string;
+  kodePengajuan: string;
+  jumlah: number;
+  jumlahFormatted: string;
+  status: string; // 'pending' | 'approved' | 'rejected' | 'cancelled'
+  uiStatus: "pending" | "approved" | "rejected" | "paid";
+  uiStatusLabel: string;
+  diajukanAt: string;
+  diajukanAtFormatted: string;
+  diajukanAtShort: string;
+  disetujuiAt: string | null;
+  disetujuiAtFormatted: string | null;
+  ditolakAt: string | null;
+  ditolakAtFormatted: string | null;
+  alasanPenolakan: string | null;
+  dibayarAt: string | null;
+  dibayarAtFormatted: string | null;
+  metodePembayaran: string | null;
+  referensi: string | null;
+  catatan: string | null;
+  transaksiCount: number;
+};
+
+export type CapsterCommissionDetailData = {
+  capsterId: string;
+  capsterName: string;
+  barbershopId: string;
+  persentaseKomisi: number;
+  totalKomisiDiterima: number;
+  totalKomisiDiterimaFormatted: string;
+  jumlahPembayaranDiterima: number; // "Dari X kali pembayaran"
+  komisiTersedia: number;
+  komisiTersediaFormatted: string;
+  canWithdraw: boolean;
+  canWithdrawReason: string;
+  counts: {
+    all: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    paid: number;
+  };
+  requests: CapsterWithdrawalRequestItem[];
+};
+
+export async function getCapsterCommissionDetailDataLogic(data?: {
+  capsterId?: string;
+  userId?: string;
+  barbershopSlug?: string;
+  statusFilter?: string;
+}): Promise<CapsterCommissionDetailData | null> {
+  let targetCapsterId = data?.capsterId?.trim();
+  let targetUserId = data?.userId?.trim();
+
+  if (!targetCapsterId && targetUserId) {
+    const [c] = await db
+      .select({ id_capster: capster.id_capster })
+      .from(capster)
+      .where(eq(capster.id_user, targetUserId))
+      .limit(1);
+    if (c) targetCapsterId = c.id_capster;
+  }
+
+  if (!targetCapsterId) return null;
+
+  // Profil capster & tenant
+  const [capsterRecord] = await db
+    .select({
+      id_capster: capster.id_capster,
+      id_barbershop: capster.id_barbershop,
+      nama_lengkap: users.nama_lengkap,
+      persentase_komisi: capster.persentase_komisi,
+    })
+    .from(capster)
+    .innerJoin(users, eq(capster.id_user, users.id_user))
+    .where(eq(capster.id_capster, targetCapsterId))
+    .limit(1);
+
+  if (!capsterRecord) return null;
+
+  const barbershopId = capsterRecord.id_barbershop;
+
+  // Tenant isolation check jika slug dikirimkan
+  if (data?.barbershopSlug) {
+    const [shop] = await db
+      .select({ id_barbershop: barbershop.id_barbershop })
+      .from(barbershop)
+      .where(eq(barbershop.slug, data.barbershopSlug))
+      .limit(1);
+    if (!shop || shop.id_barbershop !== barbershopId) {
+      return null;
+    }
+  }
+
+  // 1. Total Komisi Diterima & Jumlah Kali Pembayaran (STRICT: PEMBAYARAN_KOMISI.status = 'success')
+  const paidRows = await db
+    .select({
+      jumlah_bayar: pembayaranKomisi.jumlah_bayar,
+      id_pembayaran_komisi: pembayaranKomisi.id_pembayaran_komisi,
+    })
+    .from(pembayaranKomisi)
+    .innerJoin(
+      pengajuanKomisi,
+      eq(pembayaranKomisi.id_pengajuan, pengajuanKomisi.id_pengajuan),
+    )
+    .where(
+      and(
+        eq(pengajuanKomisi.id_capster, targetCapsterId),
+        eq(pengajuanKomisi.id_barbershop, barbershopId),
+        eq(pembayaranKomisi.status, "success"),
+      ),
+    );
+
+  const totalKomisiDiterima = paidRows.reduce((sum, r) => sum + Number(r.jumlah_bayar || 0), 0);
+  const jumlahPembayaranDiterima = paidRows.length;
+
+  // 2. Komisi Tersedia (STRICT: KOMISI_TRANSAKSI.status = 'belum_dibayar')
+  const unpaidRows = await db
+    .select({
+      nominal_komisi: komisiTransaksi.nominal_komisi,
+    })
+    .from(komisiTransaksi)
+    .where(
+      and(
+        eq(komisiTransaksi.id_capster, targetCapsterId),
+        eq(komisiTransaksi.id_barbershop, barbershopId),
+        eq(komisiTransaksi.status, "belum_dibayar"),
+      ),
+    );
+
+  const komisiTersedia = unpaidRows.reduce((sum, r) => sum + Number(r.nominal_komisi || 0), 0);
+
+  // 3. Cek apakah ada pengajuan aktif yang sedang diproses (pending / approved tanpa pembayaran success)
+  const candidateActive = await db
+    .select({
+      id_pengajuan: pengajuanKomisi.id_pengajuan,
+      status: pengajuanKomisi.status,
+      pembayaran_status: pembayaranKomisi.status,
+    })
+    .from(pengajuanKomisi)
+    .leftJoin(
+      pembayaranKomisi,
+      and(
+        eq(pengajuanKomisi.id_pengajuan, pembayaranKomisi.id_pengajuan),
+        eq(pembayaranKomisi.status, "success"),
+      ),
+    )
+    .where(
+      and(
+        eq(pengajuanKomisi.id_capster, targetCapsterId),
+        eq(pengajuanKomisi.id_barbershop, barbershopId),
+        inArray(pengajuanKomisi.status, ["pending", "approved"]),
+      ),
+    );
+
+  const hasActiveRequest = candidateActive.some(
+    (c) => c.status === "pending" || (c.status === "approved" && c.pembayaran_status !== "success"),
+  );
+
+  let canWithdraw = komisiTersedia > 0 && !hasActiveRequest;
+  let canWithdrawReason = "";
+  if (hasActiveRequest) {
+    canWithdrawReason = "Ada pengajuan yang sedang diproses";
+  } else if (komisiTersedia <= 0) {
+    canWithdrawReason = "Tidak ada komisi yang dapat diajukan";
+  }
+
+  // 4. Seluruh Riwayat Pengajuan Penarikan Capster
+  const rows = await db
+    .select({
+      id_pengajuan: pengajuanKomisi.id_pengajuan,
+      jumlah_pengajuan: pengajuanKomisi.jumlah_pengajuan,
+      status: pengajuanKomisi.status,
+      keterangan: pengajuanKomisi.keterangan,
+      diajukan_at: pengajuanKomisi.diajukan_at,
+      disetujui_at: pengajuanKomisi.disetujui_at,
+      ditolak_at: pengajuanKomisi.ditolak_at,
+      alasan_penolakan: pengajuanKomisi.alasan_penolakan,
+      pembayaran_id: pembayaranKomisi.id_pembayaran_komisi,
+      pembayaran_status: pembayaranKomisi.status,
+      dibayar_at: pembayaranKomisi.dibayar_at,
+      metode_pembayaran: pembayaranKomisi.metode_pembayaran,
+      referensi: pembayaranKomisi.referensi,
+      catatan: pembayaranKomisi.catatan,
+    })
+    .from(pengajuanKomisi)
+    .leftJoin(
+      pembayaranKomisi,
+      and(
+        eq(pengajuanKomisi.id_pengajuan, pembayaranKomisi.id_pengajuan),
+        eq(pembayaranKomisi.status, "success"),
+      ),
+    )
+    .where(
+      and(
+        eq(pengajuanKomisi.id_capster, targetCapsterId),
+        eq(pengajuanKomisi.id_barbershop, barbershopId),
+      ),
+    )
+    .orderBy(desc(pengajuanKomisi.diajukan_at));
+
+  // Ambil count komisi_transaksi per pengajuan
+  const pengajuanIds = rows.map((r) => r.id_pengajuan);
+  const txCountMap = new Map<string, number>();
+
+  if (pengajuanIds.length > 0) {
+    const txCounts = await db
+      .select({
+        id_pengajuan: komisiTransaksi.id_pengajuan,
+        count: sql<number>`count(${komisiTransaksi.id_komisi_trx})::int`,
+      })
+      .from(komisiTransaksi)
+      .where(inArray(komisiTransaksi.id_pengajuan, pengajuanIds))
+      .groupBy(komisiTransaksi.id_pengajuan);
+
+    for (const item of txCounts) {
+      if (item.id_pengajuan) {
+        txCountMap.set(item.id_pengajuan, Number(item.count || 0));
+      }
+    }
+  }
+
+  const mapped: CapsterWithdrawalRequestItem[] = rows.map((r) => {
+    let uiStatus: "pending" | "approved" | "rejected" | "paid" = "pending";
+    let uiStatusLabel = "Menunggu Persetujuan";
+
+    const isPaid =
+      (r.status === "approved" || r.status === "paid") &&
+      !!r.pembayaran_id &&
+      r.pembayaran_status === "success";
+
+    if (isPaid) {
+      uiStatus = "paid";
+      uiStatusLabel = "Sudah Ditarik";
+    } else if (r.status === "approved") {
+      uiStatus = "approved";
+      uiStatusLabel = "Disetujui";
+    } else if (r.status === "rejected") {
+      uiStatus = "rejected";
+      uiStatusLabel = "Ditolak";
+    } else {
+      uiStatus = "pending";
+      uiStatusLabel = "Menunggu Persetujuan";
+    }
+
+    const jumlah = Number(r.jumlah_pengajuan || 0);
+
+    return {
+      idPengajuan: r.id_pengajuan,
+      kodePengajuan: formatWithdrawalCode(r.id_pengajuan, r.diajukan_at),
+      jumlah,
+      jumlahFormatted: formatRupiah(jumlah),
+      status: r.status,
+      uiStatus,
+      uiStatusLabel,
+      diajukanAt: r.diajukan_at ? r.diajukan_at.toISOString() : "",
+      diajukanAtFormatted: formatWithdrawalDateTime(r.diajukan_at),
+      diajukanAtShort: formatShortWib(r.diajukan_at),
+      disetujuiAt: r.disetujui_at ? r.disetujui_at.toISOString() : null,
+      disetujuiAtFormatted: r.disetujui_at ? formatWithdrawalDateTime(r.disetujui_at) : null,
+      ditolakAt: r.ditolak_at ? r.ditolak_at.toISOString() : null,
+      ditolakAtFormatted: r.ditolak_at ? formatWithdrawalDateTime(r.ditolak_at) : null,
+      alasanPenolakan: r.alasan_penolakan || null,
+      dibayarAt: r.dibayar_at ? r.dibayar_at.toISOString() : null,
+      dibayarAtFormatted: r.dibayar_at ? formatShortWib(r.dibayar_at) : null,
+      metodePembayaran: r.metode_pembayaran || null,
+      referensi: r.referensi || null,
+      catatan: r.catatan || null,
+      transaksiCount: txCountMap.get(r.id_pengajuan) || 0,
+    };
+  });
+
+  const counts = {
+    all: mapped.length,
+    pending: mapped.filter((m) => m.uiStatus === "pending").length,
+    approved: mapped.filter((m) => m.uiStatus === "approved").length,
+    rejected: mapped.filter((m) => m.uiStatus === "rejected").length,
+    paid: mapped.filter((m) => m.uiStatus === "paid").length,
+  };
+
+  const filter = data?.statusFilter || "all";
+  const filtered = filter === "all" ? mapped : mapped.filter((m) => m.uiStatus === filter);
+
+  return {
+    capsterId: targetCapsterId,
+    capsterName: capsterRecord.nama_lengkap || "Capster",
+    barbershopId,
+    persentaseKomisi: Number(capsterRecord.persentase_komisi || 15),
+    totalKomisiDiterima,
+    totalKomisiDiterimaFormatted: formatRupiah(totalKomisiDiterima),
+    jumlahPembayaranDiterima,
+    komisiTersedia,
+    komisiTersediaFormatted: formatRupiah(komisiTersedia),
+    canWithdraw,
+    canWithdrawReason,
+    counts,
+    requests: filtered,
+  };
+}
+
+export const getCapsterCommissionDetailData = createServerFn({
+  method: "GET",
+})
+  .validator(
+    (
+      data:
+        | {
+            capsterId?: string;
+            userId?: string;
+            barbershopSlug?: string;
+            statusFilter?: string;
+          }
+        | undefined,
+    ) => data,
+  )
+  .handler(async ({ data }) => getCapsterCommissionDetailDataLogic(data));
+
+/**
+ * 12. GET DETAIL PENGAJUAN PENARIKAN KOMISI UNTUK CAPSTER
+ */
+export async function getCapsterWithdrawalDetailLogic(data: {
+  pengajuanId: string;
+  capsterId?: string;
+  userId?: string;
+  barbershopSlug?: string;
+}) {
+  let targetCapsterId = data?.capsterId?.trim();
+  let targetUserId = data?.userId?.trim();
+
+  if (!targetCapsterId && targetUserId) {
+    const [c] = await db
+      .select({ id_capster: capster.id_capster })
+      .from(capster)
+      .where(eq(capster.id_user, targetUserId))
+      .limit(1);
+    if (c) targetCapsterId = c.id_capster;
+  }
+
+  const [p] = await db
+    .select({
+      id_pengajuan: pengajuanKomisi.id_pengajuan,
+      id_capster: pengajuanKomisi.id_capster,
+      id_barbershop: pengajuanKomisi.id_barbershop,
+      jumlah_pengajuan: pengajuanKomisi.jumlah_pengajuan,
+      status: pengajuanKomisi.status,
+      keterangan: pengajuanKomisi.keterangan,
+      diajukan_at: pengajuanKomisi.diajukan_at,
+      disetujui_at: pengajuanKomisi.disetujui_at,
+      ditolak_at: pengajuanKomisi.ditolak_at,
+      alasan_penolakan: pengajuanKomisi.alasan_penolakan,
+    })
+    .from(pengajuanKomisi)
+    .where(eq(pengajuanKomisi.id_pengajuan, data.pengajuanId))
+    .limit(1);
+
+  if (!p) {
+    throw new Error("Pengajuan komisi tidak ditemukan.");
+  }
+
+  // Security check: Must belong to requesting capster
+  if (targetCapsterId && p.id_capster !== targetCapsterId) {
+    throw new Error("Akses ditolak: Pengajuan bukan milik Capster ini.");
+  }
+
+  // Security check: Tenant isolation
+  if (data?.barbershopSlug) {
+    const [shop] = await db
+      .select({ id_barbershop: barbershop.id_barbershop })
+      .from(barbershop)
+      .where(eq(barbershop.slug, data.barbershopSlug))
+      .limit(1);
+    if (!shop || shop.id_barbershop !== p.id_barbershop) {
+      throw new Error("Akses ditolak: Pengajuan tidak terdaftar pada barbershop ini.");
+    }
+  }
+
+  // Ambil record pembayaran jika ada
+  const [pay] = await db
+    .select({
+      id_pembayaran_komisi: pembayaranKomisi.id_pembayaran_komisi,
+      jumlah_bayar: pembayaranKomisi.jumlah_bayar,
+      metode_pembayaran: pembayaranKomisi.metode_pembayaran,
+      referensi: pembayaranKomisi.referensi,
+      status: pembayaranKomisi.status,
+      dibayar_at: pembayaranKomisi.dibayar_at,
+      catatan: pembayaranKomisi.catatan,
+    })
+    .from(pembayaranKomisi)
+    .where(
+      and(
+        eq(pembayaranKomisi.id_pengajuan, p.id_pengajuan),
+        eq(pembayaranKomisi.status, "success"),
+      ),
+    )
+    .limit(1);
+
+  const isPaid = (p.status === "approved" || p.status === "paid") && !!pay;
+  let uiStatus: "pending" | "approved" | "rejected" | "paid" = "pending";
+  let uiStatusLabel = "Menunggu Persetujuan Owner";
+
+  if (isPaid) {
+    uiStatus = "paid";
+    uiStatusLabel = "Sudah Ditarik";
+  } else if (p.status === "approved") {
+    uiStatus = "approved";
+    uiStatusLabel = "Disetujui / Menunggu Pembayaran";
+  } else if (p.status === "rejected") {
+    uiStatus = "rejected";
+    uiStatusLabel = "Ditolak";
+  } else {
+    uiStatus = "pending";
+    uiStatusLabel = "Menunggu Persetujuan Owner";
+  }
+
+  // Ambil transaksi pembentuk komisi
+  const komisiRows = await db
+    .select({
+      id_komisi_trx: komisiTransaksi.id_komisi_trx,
+      nominal_komisi: komisiTransaksi.nominal_komisi,
+      dasar_komisi: komisiTransaksi.dasar_komisi,
+      persentase_komisi: komisiTransaksi.persentase_komisi,
+      created_at: komisiTransaksi.created_at,
+      id_transaksi: transaksi.id_transaksi,
+      transaksi_total: transaksi.total,
+      transaksi_created_at: transaksi.created_at,
+      id_booking: transaksi.id_booking,
+    })
+    .from(komisiTransaksi)
+    .innerJoin(transaksi, eq(komisiTransaksi.id_transaksi, transaksi.id_transaksi))
+    .where(eq(komisiTransaksi.id_pengajuan, p.id_pengajuan));
+
+  const bookingIds = komisiRows
+    .map((k) => k.id_booking)
+    .filter((b): b is string => Boolean(b));
+
+  const detailMap = new Map<string, string>();
+  if (bookingIds.length > 0) {
+    const details = await db
+      .select({
+        id_booking: detailBooking.id_booking,
+        nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
+      })
+      .from(detailBooking)
+      .where(inArray(detailBooking.id_booking, bookingIds));
+
+    for (const d of details) {
+      if (d.id_booking && !detailMap.has(d.id_booking)) {
+        detailMap.set(d.id_booking, d.nama_layanan_snapshot || "Layanan Barbershop");
+      }
+    }
+  }
+
+  const transactions = komisiRows.map((k) => {
+    const serviceName =
+      (k.id_booking && detailMap.get(k.id_booking)) || "Layanan Haircut";
+    return {
+      id: k.id_komisi_trx,
+      layananName: serviceName,
+      nominal: Number(k.dasar_komisi || k.transaksi_total),
+      persentase: Number(k.persentase_komisi || 15),
+      komisi: Number(k.nominal_komisi),
+      tanggalFormatted: formatShortWib(k.transaksi_created_at || k.created_at),
+    };
+  });
+
+  const jumlah = Number(p.jumlah_pengajuan || 0);
+
+  return {
+    pengajuan: {
+      idPengajuan: p.id_pengajuan,
+      kodePengajuan: formatWithdrawalCode(p.id_pengajuan, p.diajukan_at),
+      jumlah,
+      jumlahFormatted: formatRupiah(jumlah),
+      status: p.status,
+      uiStatus,
+      uiStatusLabel,
+      keterangan: p.keterangan,
+      diajukanAt: p.diajukan_at ? p.diajukan_at.toISOString() : "",
+      diajukanAtFormatted: formatWithdrawalDateTime(p.diajukan_at),
+      disetujuiAtFormatted: p.disetujui_at ? formatWithdrawalDateTime(p.disetujui_at) : null,
+      ditolakAtFormatted: p.ditolak_at ? formatWithdrawalDateTime(p.ditolak_at) : null,
+      alasanPenolakan: p.alasan_penolakan || null,
+      dibayarAtFormatted: pay?.dibayar_at ? formatShortWib(pay.dibayar_at) : null,
+      metodePembayaran: pay?.metode_pembayaran || null,
+      referensi: pay?.referensi || null,
+      catatan: pay?.catatan || null,
+    },
+    dasarKomisi: {
+      transactions,
+      totalNominal: transactions.reduce((sum, t) => sum + t.nominal, 0),
+      totalKomisi: transactions.reduce((sum, t) => sum + t.komisi, 0),
+    },
+  };
+}
+
+export const getCapsterWithdrawalDetail = createServerFn({
+  method: "GET",
+})
+  .validator(
+    (data: {
+      pengajuanId: string;
+      capsterId?: string;
+      userId?: string;
+      barbershopSlug?: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => getCapsterWithdrawalDetailLogic(data));
+

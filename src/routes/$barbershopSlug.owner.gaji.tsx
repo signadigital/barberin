@@ -266,7 +266,7 @@ function OwnerGajiPage() {
       await approveCommissionRequest({
         data: {
           pengajuanId: selectedPengajuanId,
-          ...(user?.id ? { ownerUserId: user.id } : {}),
+          ...(user?.id_user ? { ownerUserId: user.id_user } : {}),
           barbershopSlug,
         },
       });
@@ -296,7 +296,7 @@ function OwnerGajiPage() {
         data: {
           pengajuanId: selectedPengajuanId,
           alasan: rejectReason.trim(),
-          ...(user?.id ? { ownerUserId: user.id } : {}),
+          ...(user?.id_user ? { ownerUserId: user.id_user } : {}),
           barbershopSlug,
         },
       });
@@ -321,7 +321,7 @@ function OwnerGajiPage() {
         data: {
           pengajuanId: selectedPengajuanId,
           metodePembayaran: payMethod,
-          ...(user?.id ? { ownerUserId: user.id } : {}),
+          ...(user?.id_user ? { ownerUserId: user.id_user } : {}),
           ...(payNotes.trim() ? { catatan: payNotes.trim() } : {}),
           barbershopSlug,
         },
@@ -408,14 +408,10 @@ function OwnerGajiPage() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header Desktop & Mobile */}
           <OwnerHeader
-            title="Gaji"
-            subtitle="Kelola komisi capster berdasarkan transaksi layanan yang berhasil."
             searchPlaceholder="Cari nama capster atau ID capster..."
             onSearchChange={setSearchQuery}
           />
           <OwnerMobileHeader
-            title="Gaji & Komisi"
-            subtitle="Manajemen Komisi Capster"
             activePath={getTenantPath(barbershopSlug, "/owner/gaji")}
           />
 

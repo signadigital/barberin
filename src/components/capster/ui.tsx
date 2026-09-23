@@ -17,6 +17,7 @@ import {
   Scissors,
   User,
   Users,
+  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -656,21 +657,22 @@ export function CapsterHeader({
 export function CapsterBottomNav({
   activeTab,
 }: {
-  activeTab?: "dashboard" | "transactions" | "services" | "account";
+  activeTab?: "dashboard" | "transactions" | "commissions" | "services" | "account";
 }) {
   const slug = useCapsterTenantSlug();
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: Grid, to: getCapsterTenantPath(slug, "/capster/dashboard") },
     { id: "transactions", label: "Transaksi", icon: ListOrdered, to: getCapsterTenantPath(slug, "/capster/transactions") },
+    { id: "commissions", label: "Detail Komisi", icon: Wallet, to: getCapsterTenantPath(slug, "/capster/commissions") },
     { id: "services", label: "Layanan", icon: Scissors, to: getCapsterTenantPath(slug, "/capster/services") },
   ];
 
   return (
     <nav
       aria-label="Navigasi Capster"
-      className="glass-3 safe-bottom sticky bottom-0 z-20 mt-auto border-x-0 border-b-0 px-3 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
+      className="glass-3 safe-bottom sticky bottom-0 z-20 mt-auto border-x-0 border-b-0 px-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
     >
-      <div className="grid grid-cols-3 items-center">
+      <div className="grid grid-cols-4 items-center">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -693,7 +695,7 @@ export function CapsterBottomNav({
               >
                 <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 2} />
               </div>
-              <span className="text-[11px] leading-none">{tab.label}</span>
+              <span className="text-[10.5px] leading-tight text-center">{tab.label}</span>
             </Link>
           );
         })}
