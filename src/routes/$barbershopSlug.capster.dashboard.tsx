@@ -106,9 +106,9 @@ function CapsterDashboardPage() {
           }),
           getCapsterCommissionDashboard({
             data: {
-              capsterId,
+              ...(capsterId ? { capsterId } : {}),
               ...(userId ? { userId } : {}),
-              barbershopSlug,
+              ...(barbershopSlug ? { barbershopSlug } : {}),
             },
           }),
         ]);
@@ -229,9 +229,9 @@ function CapsterDashboardPage() {
           onRefresh={() => {
             getCapsterCommissionDashboard({
               data: {
-                capsterId,
+                ...(capsterId ? { capsterId } : {}),
                 ...(userId ? { userId } : {}),
-                barbershopSlug,
+                ...(barbershopSlug ? { barbershopSlug } : {}),
               },
             }).then((res) => {
               if (res) setCommissionData(res);

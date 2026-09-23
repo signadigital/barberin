@@ -29,6 +29,7 @@ import {
 } from "@/lib/commissions";
 import { updateCapsterCommissionPercentage } from "@/lib/capsters";
 import { formatRupiah } from "@/lib/format";
+import { getOwnerSalaryData } from "@/lib/salary";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/komisi")({
   head: () => ({
@@ -83,8 +84,8 @@ function OwnerKomisiPage() {
 
   const loadRequests = () => {
     getOwnerCommissionRequests({ data: { barbershopSlug } })
-      .then((res) => {
-        if (res) setRequests(res);
+      .then((res: any) => {
+        if (res?.requests) setRequests(res.requests);
       })
       .catch((e) => console.error("Gagal memuat pengajuan komisi:", e));
   };

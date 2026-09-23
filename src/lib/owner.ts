@@ -2306,18 +2306,19 @@ export const getOwnerNotifications = createServerFn({
           const alreadyInDbNotifs = dbNotifs.some(
             (dn) =>
               dn.tipe === "pengajuan_komisi" &&
-              dn.pesan.includes(p.nama_capster),
+              p.nama_capster &&
+              dn.pesan?.includes(p.nama_capster),
           );
           if (!alreadyInDbNotifs) {
             pengajuanItems.push({
               id: `pengajuan-pending-${p.id_pengajuan}`,
               type: "pengajuan_komisi",
               title: "Pengajuan Penarikan Komisi",
-              message: `Capster ${p.nama_capster} mengajukan penarikan komisi sebesar ${formatRupiah(Number(p.jumlah_pengajuan))}.`,
+              message: `Capster ${p.nama_capster || "Capster"} mengajukan penarikan komisi sebesar ${formatRupiah(Number(p.jumlah_pengajuan))}.`,
               detail: "Menunggu Persetujuan Owner",
               timeAgo: formatWaktuRelatif(p.diajukan_at || new Date()),
               timestamp: (p.diajukan_at || new Date()).toISOString(),
-              link: "/owner/komisi",
+              link: "/owner/gaji",
               amount: Number(p.jumlah_pengajuan),
             });
           }

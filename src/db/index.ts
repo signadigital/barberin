@@ -1,6 +1,6 @@
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
+import * as schema from "./schema.ts";
 
 // Setup resilient DNS resolution for Supabase pooler in Node environment
 if (typeof window === "undefined") {
@@ -9,7 +9,7 @@ if (typeof window === "undefined") {
     const origLookup = dns.lookup;
     const resolver = new dns.promises.Resolver();
     resolver.setServers(["8.8.8.8", "1.1.1.1"]);
-    dns.lookup = (hostname: string, options: any, callback: any) => {
+    (dns as any).lookup = (hostname: string, options: any, callback: any) => {
       if (typeof options === "function") {
         callback = options;
         options = {};

@@ -1,25 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useMemo } from "react";
 import {
   Wallet,
   Receipt,
   Users,
   Calendar,
-  Download,
   Search,
   ArrowLeft,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   Clock,
-  Settings,
+  SlidersHorizontal,
   ChevronRight,
   Filter,
   X,
   CreditCard,
   Building2,
   TrendingUp,
-  FileCheck,
-  ChevronDown,
+  RefreshCw,
+  Coins,
+  ShieldCheck,
+  Check,
+  Percent,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,18 +31,21 @@ import {
   OwnerHeader,
   OwnerMobileHeader,
   OwnerBottomNav,
+  useTenantSlug,
+  getTenantPath,
 } from "@/components/owner/ui";
-import { formatRupiah, getIndonesianMonthYear } from "@/lib/format";
+import { formatRupiah } from "@/lib/format";
 import {
-  getOwnerSalaryData,
-  getOwnerCapsterBaseTransactions,
-  type SalaryPeriod,
-} from "@/lib/salary";
-import {
-  useCommissionStore,
-  commissionActions,
-  type CapsterCommissionItem,
-} from "@/lib/commission-store";
+  getOwnerCommissionRequests,
+  getOwnerCommissionRequestDetail,
+  getOwnerCommissionRecap,
+  getOwnerCommissionPaymentHistory,
+  approveCommissionRequest,
+  rejectCommissionRequest,
+  payCommissionRequest,
+} from "@/lib/commissions";
+import { getCapsters, updateCapsterCommissionPercentage } from "@/lib/capsters";
+import { useOwner } from "@/lib/owner-store";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/gaji")({
   head: () => ({
@@ -55,1663 +60,1605 @@ export const Route = createFileRoute("/$barbershopSlug/owner/gaji")({
   component: OwnerGajiPage,
 });
 
-type ViewMode = "overview" | "detail" | "settings" | "history";
-type PeriodFilter = SalaryPeriod;
+type TabType = "rekap" | "pengajuan" | "riwayat";
+type PeriodType = "month" | "today" | "7d" | "30d" | "all";
+type StatusFilterType = "all" | "pending" | "approved" | "rejected" | "paid";
 
 function OwnerGajiPage() {
   const { barbershopSlug } = (Route as any).useParams();
-  const store = useCommissionStore();
+  const { user } = useOwner();
 
-  // Active view mode
-  const [viewMode, setViewMode] = useState<ViewMode>("overview");
-  const [selectedCapsterId, setSelectedCapsterId] = useState<string>("");
+  // Active Tab
+  const [activeTab, setActiveTab] = useState<TabType>("pengajuan");
 
-  // Filters & States
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("month");
-  const [dateRangeText, setDateRangeText] = useState("Memuat periode...");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  // Filter States
+  const [period, setPeriod] = useState<PeriodType>("month");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [topSearch, setTopSearch] = useState("");
-  const [historyPeriodFilter, setHistoryPeriodFilter] = useState<string>("all");
-  const [loading, setLoading] = useState(false);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [dateRangeText, setDateRangeText] = useState("1 - 30 September 2026");
 
-  // 1. Fetch live salary summary & capsters from PostgreSQL database
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    getOwnerSalaryData({
-      data: {
-        period: periodFilter,
-        barbershopSlug,
-      },
-    })
-      .then((liveSummary) => {
-        if (isMounted && liveSummary) {
-          commissionActions.syncWithLiveSalaryData(liveSummary);
-          setDateRangeText(liveSummary.dateRangeText);
-          if (!selectedCapsterId && liveSummary.capsters.length > 0 && liveSummary.capsters[0]) {
-            setSelectedCapsterId(liveSummary.capsters[0].capsterId);
-          }
-        }
-      })
-      .catch((err) => {
-        console.warn("Gagal memuat data komisi & gaji live:", err);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+  // Selection for Detail View
+  const [selectedPengajuanId, setSelectedPengajuanId] = useState<string | null>(null);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [periodFilter, barbershopSlug]);
+  // Data States
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [counts, setCounts] = useState({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    paid: 0,
+  });
+  const [requestsList, setRequestsList] = useState<any[]>([]);
 
-  // Modals state
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentCapster, setPaymentCapster] = useState<CapsterCommissionItem | null>(null);
-  const [paymentDate, setPaymentDate] = useState("");
-  const [paymentNotes, setPaymentNotes] = useState("");
+  // Detail View State
+  const [detailData, setDetailData] = useState<any | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
+  // Rekap Komisi State
+  const [rekapData, setRekapData] = useState<any | null>(null);
+  const [isLoadingRekap, setIsLoadingRekap] = useState(false);
+
+  // Riwayat Pembayaran State
+  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Capsters for "Atur Komisi" Modal
+  const [capsters, setCapsters] = useState<any[]>([]);
+  const [isLoadingCapsters, setIsLoadingCapsters] = useState(false);
   const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
-  const [editingCapster, setEditingCapster] = useState<CapsterCommissionItem | null>(null);
-  const [inputPercentage, setInputPercentage] = useState<string>("15");
+  const [editingCapster, setEditingCapster] = useState<{
+    id: string;
+    name: string;
+    percentage: number;
+  } | null>(null);
+  const [inputPercentage, setInputPercentage] = useState("15");
 
-  // Selected capster for detail view
-  const currentDetailCapster = useMemo(() => {
-    return (
-      store.capsters.find(
-        (c) =>
-          c.capsterId === selectedCapsterId ||
-          c.id === selectedCapsterId ||
-          c.name.toLowerCase() === selectedCapsterId.toLowerCase(),
-      ) || store.capsters[0]
-    );
-  }, [store.capsters, selectedCapsterId]);
+  // Modals for Actions
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isPostApproveModalOpen, setIsPostApproveModalOpen] = useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState<"transfer" | "tunai" | "qris">("transfer");
+  const [payNotes, setPayNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 2. Fetch live base transactions for the selected capster in detail view
-  useEffect(() => {
-    let isMounted = true;
-    if (viewMode === "detail" && currentDetailCapster) {
-      const targetId = currentDetailCapster.capsterId || currentDetailCapster.id;
-      setLoadingTransactions(true);
-      getOwnerCapsterBaseTransactions({
+  // 1. Fetch Pengajuan Requests
+  const fetchRequests = async () => {
+    if (!barbershopSlug) return;
+    setIsLoadingRequests(true);
+    try {
+      const res = await getOwnerCommissionRequests({
         data: {
-          capsterId: targetId,
-          period: periodFilter,
+          barbershopSlug,
+          statusFilter,
+          period,
+          ...(searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {}),
+        },
+      });
+      if (res) {
+        setRequestsList(res.requests);
+        setCounts(res.counts);
+        if (res.dateRangeText) setDateRangeText(res.dateRangeText);
+      }
+    } catch (err) {
+      console.error("Gagal memuat data pengajuan komisi:", err);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
+
+  // 2. Fetch Detail Pengajuan
+  const fetchDetail = async (id: string) => {
+    setIsLoadingDetail(true);
+    try {
+      const res = await getOwnerCommissionRequestDetail({
+        data: {
+          pengajuanId: id,
           barbershopSlug,
         },
-      })
-        .then((txs) => {
-          if (isMounted && txs) {
-            commissionActions.setLiveBaseTransactions(targetId, txs);
-          }
-        })
-        .catch((err) => {
-          console.warn("Gagal mengambil transaksi dasar live:", err);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingTransactions(false);
-        });
+      });
+      if (res) {
+        setDetailData(res);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal memuat detail pengajuan");
+    } finally {
+      setIsLoadingDetail(false);
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [viewMode, currentDetailCapster?.capsterId, periodFilter, barbershopSlug]);
-
-  // Base transactions for current detail capster
-  const baseTransactions = useMemo(() => {
-    if (!currentDetailCapster) return [];
-    const nameKey = currentDetailCapster.name.toLowerCase();
-    const idKey = currentDetailCapster.capsterId || currentDetailCapster.id;
-    return (
-      store.baseTransactions[idKey] ||
-      store.baseTransactions[currentDetailCapster.id] ||
-      store.baseTransactions[`cps-${nameKey}`] ||
-      []
-    );
-  }, [store.baseTransactions, currentDetailCapster]);
-
-  const successfulBaseTxs = useMemo(() => {
-    return baseTransactions.filter((t) => t.countedInCommission);
-  }, [baseTransactions]);
-
-  const cancelledBaseTxs = useMemo(() => {
-    return baseTransactions.filter((t) => !t.countedInCommission);
-  }, [baseTransactions]);
-
-  // Overview Summary metrics based on actual capsters in store
-  const totalCapsters = store.capsters.length;
-  const totalTransactions = store.capsters.reduce((sum, c) => sum + c.transactionCount, 0);
-  const totalRevenue = store.capsters.reduce((sum, c) => sum + c.serviceRevenue, 0);
-  const totalCommission = store.capsters.reduce((sum, c) => sum + c.totalCommission, 0);
-  const unpaidCommission = store.capsters
-    .filter(
-      (c) =>
-        c.paymentStatus !== "Sudah Dibayar" &&
-        c.paymentStatus !== "Belum Diatur" &&
-        c.totalCommission > 0,
-    )
-    .reduce((sum, c) => sum + c.totalCommission, 0);
-  const netIncome = Math.max(0, totalRevenue - totalCommission);
-
-  // Filtered Capster List for Table
-  const filteredCapsters = useMemo(() => {
-    return store.capsters.filter((c) => {
-      const q = (searchQuery || topSearch).trim().toLowerCase();
-      const matchQuery =
-        !q ||
-        c.name.toLowerCase().includes(q) ||
-        c.noPegawai.toLowerCase().includes(q);
-
-      const matchStatus =
-        statusFilter === "all" ||
-        c.paymentStatus.toLowerCase() === statusFilter.toLowerCase();
-
-      return matchQuery && matchStatus;
-    });
-  }, [store.capsters, searchQuery, topSearch, statusFilter]);
-
-  // Filtered Payment History
-  const filteredPaymentHistory = useMemo(() => {
-    return store.paymentHistory.filter((p) => {
-      if (historyPeriodFilter === "all") return true;
-      return p.period.toLowerCase().includes(historyPeriodFilter.toLowerCase());
-    });
-  }, [store.paymentHistory, historyPeriodFilter]);
-
-  // Handlers
-  const handleOpenDetail = (capsterId: string) => {
-    setSelectedCapsterId(capsterId);
-    setViewMode("detail");
   };
 
-  const handleOpenPaymentModal = (c: CapsterCommissionItem) => {
-    setPaymentCapster(c);
-    const now = new Date();
-    setPaymentDate(
-      now.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        timeZone: "Asia/Jakarta",
-      }),
-    );
-    setPaymentNotes(`Pembayaran komisi ${c.name} periode ${c.period || dateRangeText}`);
-    setIsPaymentModalOpen(true);
+  // 3. Fetch Rekap Komisi
+  const fetchRekap = async () => {
+    if (!barbershopSlug) return;
+    setIsLoadingRekap(true);
+    try {
+      const res = await getOwnerCommissionRecap({
+        data: {
+          barbershopSlug,
+          period,
+          ...(searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {}),
+        },
+      });
+      if (res) {
+        setRekapData(res);
+      }
+    } catch (err) {
+      console.error("Gagal memuat rekap komisi:", err);
+    } finally {
+      setIsLoadingRekap(false);
+    }
   };
 
-  const handleConfirmPayment = () => {
-    if (!paymentCapster) return;
-    commissionActions.payCommission(
-      paymentCapster.capsterId,
-      paymentDate,
-      paymentNotes,
-    );
-    setIsPaymentModalOpen(false);
-    toast.success(
-      `Pembayaran komisi ${paymentCapster.name} (${formatRupiah(paymentCapster.totalCommission)}) berhasil dikonfirmasi!`,
-    );
+  // 4. Fetch Riwayat Pembayaran
+  const fetchHistory = async () => {
+    if (!barbershopSlug) return;
+    setIsLoadingHistory(true);
+    try {
+      const res = await getOwnerCommissionPaymentHistory({
+        data: {
+          barbershopSlug,
+          period,
+          ...(searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {}),
+        },
+      });
+      if (res) {
+        setHistoryList(res.payments);
+      }
+    } catch (err) {
+      console.error("Gagal memuat riwayat pembayaran:", err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
-  const handleOpenCommissionModal = (c: CapsterCommissionItem) => {
-    setEditingCapster(c);
-    setInputPercentage(
-      c.commissionPercentage !== null ? String(c.commissionPercentage) : "15",
-    );
-    setIsCommissionModalOpen(true);
+  // 5. Fetch Capsters for Atur Komisi
+  const fetchCapsters = async () => {
+    if (!barbershopSlug) return;
+    setIsLoadingCapsters(true);
+    try {
+      const res = await getCapsters({ data: { slug: barbershopSlug } });
+      if (res) {
+        setCapsters(res);
+      }
+    } catch (err) {
+      console.error("Gagal memuat daftar capster:", err);
+    } finally {
+      setIsLoadingCapsters(false);
+    }
   };
 
-  const handleSaveCommission = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCapster) return;
-    const num = Number(inputPercentage);
-    if (isNaN(num) || num < 0 || num > 100) {
-      toast.error("Persentase komisi harus berupa angka antara 0 dan 100.");
+  // Trigger data fetch on tab/filter change
+  useEffect(() => {
+    if (activeTab === "pengajuan") {
+      if (selectedPengajuanId) {
+        fetchDetail(selectedPengajuanId);
+      } else {
+        fetchRequests();
+      }
+    } else if (activeTab === "rekap") {
+      fetchRekap();
+    } else if (activeTab === "riwayat") {
+      fetchHistory();
+    }
+  }, [activeTab, selectedPengajuanId, period, statusFilter, barbershopSlug]);
+
+  // Handle Search Debounce or Submit
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (activeTab === "pengajuan" && !selectedPengajuanId) {
+        fetchRequests();
+      } else if (activeTab === "rekap") {
+        fetchRekap();
+      } else if (activeTab === "riwayat") {
+        fetchHistory();
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Handler: Approve Request
+  const handleApprove = async () => {
+    if (!selectedPengajuanId || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await approveCommissionRequest({
+        data: {
+          pengajuanId: selectedPengajuanId,
+          ...(user?.id ? { ownerUserId: user.id } : {}),
+          barbershopSlug,
+        },
+      });
+      toast.success("Pengajuan komisi berhasil disetujui!");
+      setIsApproveModalOpen(false);
+      setIsPostApproveModalOpen(true);
+      // Refresh current detail
+      await fetchDetail(selectedPengajuanId);
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal menyetujui pengajuan komisi");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler: Reject Request
+  const handleReject = async () => {
+    if (!selectedPengajuanId || isSubmitting) return;
+    if (!rejectReason.trim()) {
+      toast.error("Alasan penolakan wajib diisi.");
       return;
     }
-
-    commissionActions.setCommissionPercentage(editingCapster.capsterId, num);
-    setIsCommissionModalOpen(false);
-    toast.success(
-      `Persentase komisi ${editingCapster.name} berhasil diatur ke ${num}%.`,
-    );
+    setIsSubmitting(true);
+    try {
+      await rejectCommissionRequest({
+        data: {
+          pengajuanId: selectedPengajuanId,
+          alasan: rejectReason.trim(),
+          ...(user?.id ? { ownerUserId: user.id } : {}),
+          barbershopSlug,
+        },
+      });
+      toast.success("Pengajuan komisi berhasil ditolak.");
+      setIsRejectModalOpen(false);
+      setRejectReason("");
+      await fetchDetail(selectedPengajuanId);
+      fetchRequests();
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal menolak pengajuan komisi");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleExportCSV = () => {
-    const headers = [
-      "No",
-      "Nama Capster",
-      "ID Capster",
-      "Periode",
-      "Jumlah Transaksi",
-      "Pendapatan Layanan",
-      "Persentase Komisi",
-      "Total Komisi",
-      "Status Pembayaran",
-    ];
-    const rows = store.capsters.map((c, i) => [
-      i + 1,
-      c.name,
-      c.noPegawai,
-      c.period,
-      c.transactionCount,
-      c.serviceRevenue,
-      c.commissionPercentage !== null ? `${c.commissionPercentage}%` : "-",
-      c.totalCommission,
-      c.paymentStatus,
-    ]);
+  // Handler: Pay Commission
+  const handlePay = async () => {
+    if (!selectedPengajuanId || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await payCommissionRequest({
+        data: {
+          pengajuanId: selectedPengajuanId,
+          metodePembayaran: payMethod,
+          ...(user?.id ? { ownerUserId: user.id } : {}),
+          ...(payNotes.trim() ? { catatan: payNotes.trim() } : {}),
+          barbershopSlug,
+        },
+      });
+      toast.success(`Pembayaran komisi sebesar ${formatRupiah(res.amount)} berhasil dikonfirmasi!`);
+      setIsPayModalOpen(false);
+      setIsPostApproveModalOpen(false);
+      await fetchDetail(selectedPengajuanId);
+      fetchRequests();
+      fetchHistory();
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengonfirmasi pembayaran komisi");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+  // Handler: Save Commission Percentage
+  const handleSavePercentage = async (capsterId: string, percentage: number) => {
+    try {
+      await updateCapsterCommissionPercentage({
+        data: {
+          capsterId,
+          percentage,
+          barbershopSlug,
+        },
+      });
+      toast.success("Persentase komisi berhasil diperbarui!");
+      fetchCapsters();
+      fetchRequests();
+      if (selectedPengajuanId) fetchDetail(selectedPengajuanId);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal memperbarui persentase komisi");
+    }
+  };
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `data_komisi_capster_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Data komisi berhasil diexport!");
+  // Helper: Status badge renderer
+  const renderStatusBadge = (uiStatus: string, label: string) => {
+    switch (uiStatus) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+            {label || "Menunggu Persetujuan"}
+          </span>
+        );
+      case "approved":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+            {label || "Disetujui / Menunggu Pembayaran"}
+          </span>
+        );
+      case "paid":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {label || "Sudah Terbayarkan"}
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/25">
+            <X className="h-3.5 w-3.5" />
+            {label || "Ditolak"}
+          </span>
+        );
+      default:
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+            {label}
+          </span>
+        );
+    }
   };
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased font-sans">
-      {/* Sidebar BARBERIN Desktop */}
-      <OwnerSidebar activePath="/owner/gaji" />
+      <div className="flex h-screen bg-[#070D18] text-slate-100 overflow-hidden font-sans">
+        {/* Sidebar */}
+        <OwnerSidebar activePath={getTenantPath(barbershopSlug, "/owner/gaji")} />
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <OwnerMobileHeader activePath="/owner/gaji" />
+        {/* Content Wrapper */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Header Desktop & Mobile */}
+          <OwnerHeader
+            title="Gaji"
+            subtitle="Kelola komisi capster berdasarkan transaksi layanan yang berhasil."
+            searchPlaceholder="Cari nama capster atau ID capster..."
+            onSearchChange={setSearchQuery}
+          />
+          <OwnerMobileHeader
+            title="Gaji & Komisi"
+            subtitle="Manajemen Komisi Capster"
+            activePath={getTenantPath(barbershopSlug, "/owner/gaji")}
+          />
 
-        {/* Desktop Header with dark theme matching the other pages */}
-        <OwnerHeader
-          variant="dark"
-          searchPlaceholder="Cari nama capster atau ID capster..."
-          searchValue={topSearch}
-          onSearchChange={setTopSearch}
-        />
-
-        <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-24 lg:pb-12 max-w-[1600px] w-full mx-auto">
-          {/* ================================================================ */}
-          {/* CASE 1: VIEW DETAIL GAJI CAPSTER (DESKTOP & MOBILE)               */}
-          {/* ================================================================ */}
-          {viewMode === "detail" && currentDetailCapster && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Header Navigation */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("overview")}
-                    className="p-2 rounded-xl bg-[#0F1D33] border border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-xs"
-                    title="Kembali"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                      Detail Gaji Capster
-                    </h1>
-                    <p className="text-xs text-slate-400 hidden sm:block">
-                      Rincian perhitungan komisi capster berdasarkan transaksi layanan yang berhasil.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("overview")}
-                    className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F1D33] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors shadow-xs"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Kembali</span>
-                  </button>
-
-                  {currentDetailCapster.paymentStatus !== "Sudah Dibayar" &&
-                    currentDetailCapster.statusCommission === "Diatur" &&
-                    currentDetailCapster.totalCommission > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenPaymentModal(currentDetailCapster)}
-                        className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/25 transition-all active:scale-95"
-                      >
-                        <CreditCard className="h-4 w-4" />
-                        <span>
-                          {currentDetailCapster.paymentStatus === "Diproses"
-                            ? "Selesaikan Pembayaran"
-                            : "Bayar Komisi"}
-                        </span>
-                      </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Capster Profile Card */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold text-xl flex items-center justify-center shrink-0">
-                    {currentDetailCapster.avatarLetter}
-                  </div>
-                  <div>
-                    <h2 className="text-lg md:text-xl font-bold text-white leading-tight">
-                      {currentDetailCapster.name}
-                    </h2>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">
-                      ID Capster: {currentDetailCapster.noPegawai}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-8 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800">
-                  <div>
-                    <div className="text-[11px] text-slate-400 font-medium">Periode</div>
-                    <div className="text-sm font-bold text-slate-200 mt-0.5">
-                      {currentDetailCapster.period}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-slate-400 font-medium">Status</div>
-                    <div className="mt-0.5">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                          currentDetailCapster.paymentStatus === "Sudah Dibayar"
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                            : currentDetailCapster.paymentStatus === "Diproses"
-                              ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                              : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                        }`}
-                      >
-                        {currentDetailCapster.paymentStatus}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Detail Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. Informasi Komisi */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Informasi Komisi
-                  </h3>
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Jumlah Transaksi Berhasil</span>
-                      <span className="font-bold text-white text-sm">
-                        {currentDetailCapster.transactionCount}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-slate-500">
-                      <span>Transaksi Dibatalkan</span>
-                      <span className="text-rose-400 font-medium">
-                        {cancelledBaseTxs.length} (tidak dihitung)
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-800">
-                      <span className="text-slate-400">Pendapatan Layanan</span>
-                      <span className="font-bold text-white">
-                        {formatRupiah(currentDetailCapster.serviceRevenue)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Persentase Komisi</span>
-                      <span className="font-bold text-blue-400">
-                        {currentDetailCapster.commissionPercentage !== null
-                          ? `${currentDetailCapster.commissionPercentage}%`
-                          : "Belum Diatur"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Perhitungan Komisi */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Perhitungan Komisi
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Pendapatan Layanan</span>
-                      <span className="font-semibold text-slate-200">
-                        {formatRupiah(currentDetailCapster.serviceRevenue)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">× Persentase Komisi</span>
-                      <span className="font-semibold text-blue-400">
-                        {currentDetailCapster.commissionPercentage || 0}%
-                      </span>
-                    </div>
-                    <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-300">Total Komisi</span>
-                      <span className="text-xl font-extrabold text-blue-400">
-                        {formatRupiah(currentDetailCapster.totalCommission)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Catatan */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-2 flex flex-col justify-center">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Catatan
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Transaksi yang dibatalkan tidak dihitung dalam perhitungan komisi. Persentase komisi dapat disesuaikan melalui menu{" "}
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("settings")}
-                      className="text-blue-400 font-semibold hover:underline"
-                    >
-                      Pengaturan Komisi
-                    </button>
-                    . Perubahan komisi akan tercatat otomatis pada Audit Aktivitas.
-                  </p>
-                </div>
-              </div>
-
-              {/* Mobile Primary Action Button */}
-              {currentDetailCapster.paymentStatus !== "Sudah Dibayar" &&
-                currentDetailCapster.statusCommission === "Diatur" &&
-                currentDetailCapster.totalCommission > 0 && (
-                  <div className="block sm:hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenPaymentModal(currentDetailCapster)}
-                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      <span>
-                        {currentDetailCapster.paymentStatus === "Diproses"
-                          ? "Selesaikan Pembayaran"
-                          : "Bayar Komisi"}
-                      </span>
-                    </button>
-                  </div>
-              )}
-
-              {/* Base Transactions Section */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      Transaksi Dasar Komisi{" "}
-                      <span className="text-sm font-normal text-slate-400">
-                        (Transaksi Berhasil: {successfulBaseTxs.length})
-                      </span>
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Daftar transaksi layanan yang dikerjakan langsung oleh capster ini pada periode terkait.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  {loadingTransactions ? (
-                    <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
-                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Mengambil data transaksi asli dari database...</span>
-                    </div>
-                  ) : successfulBaseTxs.length === 0 ? (
-                    <div className="py-12 text-center text-slate-400 text-xs">
-                      Tidak ada transaksi berhasil untuk capster ini pada periode {dateRangeText}.
-                    </div>
-                  ) : (
-                    <table className="w-full text-left text-xs whitespace-nowrap">
-                      <thead>
-                        <tr className="text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-                          <th className="py-3 px-3">No.</th>
-                          <th className="py-3 px-3">No. Transaksi</th>
-                          <th className="py-3 px-3">Tanggal & Waktu</th>
-                          <th className="py-3 px-3">Pelanggan</th>
-                          <th className="py-3 px-3">Layanan</th>
-                          <th className="py-3 px-3">Nominal</th>
-                          <th className="py-3 px-3">Metode</th>
-                          <th className="py-3 px-3">Status</th>
-                          <th className="py-3 px-3 text-right">Pembayaran</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/50">
-                        {successfulBaseTxs.map((t, idx) => (
-                          <tr key={t.id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="py-3.5 px-3 text-slate-400">{idx + 1}</td>
-                            <td className="py-3.5 px-3 font-semibold text-white">
-                              {t.transactionNumber}
-                            </td>
-                            <td className="py-3.5 px-3 text-slate-300">{t.dateTime}</td>
-                            <td className="py-3.5 px-3 font-medium text-slate-200">
-                              {t.customerName}
-                            </td>
-                            <td className="py-3.5 px-3 text-slate-300">{t.serviceName}</td>
-                            <td className="py-3.5 px-3 font-semibold text-white">
-                              {formatRupiah(t.amount)}
-                            </td>
-                            <td className="py-3.5 px-3">
-                              <span className="px-2 py-0.5 rounded-md bg-[#0A1424] border border-slate-700 text-slate-300 text-[11px] font-medium">
-                                {t.paymentMethod}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-3">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[11px] font-medium">
-                                <CheckCircle2 className="h-3 w-3" />
-                                {t.status}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-3 text-right">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold border border-emerald-500/30">
-                                {t.paymentStatus}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-
-                {/* Mobile Transaction Cards */}
-                <div className="block md:hidden divide-y divide-slate-800/50">
-                  {loadingTransactions ? (
-                    <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Mengambil transaksi...</span>
-                    </div>
-                  ) : successfulBaseTxs.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-xs">
-                      Tidak ada transaksi berhasil pada periode ini.
-                    </div>
-                  ) : (
-                    successfulBaseTxs.map((t) => (
-                      <div key={t.id} className="py-3.5 flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 mt-0.5">
-                            <Receipt className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold text-white">
-                              {t.transactionNumber}
-                            </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
-                              {t.dateTime}
-                            </div>
-                            <div className="text-xs font-medium text-slate-300 mt-1">
-                              {t.serviceName} • {t.customerName}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-bold text-white">
-                            {formatRupiah(t.amount)}
-                          </div>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-medium">
-                            {t.paymentStatus}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================ */}
-          {/* CASE 2: VIEW PENGATURAN KOMISI CAPSTER (DESKTOP & MOBILE)         */}
-          {/* ================================================================ */}
-          {viewMode === "settings" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Top Header Title & Back Button */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("overview")}
-                    className="p-2 rounded-xl bg-[#0F1D33] border border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-xs"
-                    title="Kembali ke Gaji"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
-                      Pengaturan Komisi Capster
-                    </h1>
-                    <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-                      Atur persentase komisi untuk setiap capster sebagai dasar perhitungan gaji dan komisi.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setViewMode("overview")}
-                  className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 bg-[#0F1D33] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors shadow-xs"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>Kembali ke Halaman Gaji</span>
-                </button>
-              </div>
-
-              {/* Table / Card Container */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-4">
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-                        <th className="py-3 px-3">No.</th>
-                        <th className="py-3 px-3">Nama Capster</th>
-                        <th className="py-3 px-3">ID Capster</th>
-                        <th className="py-3 px-3">Persentase Komisi</th>
-                        <th className="py-3 px-3">Status</th>
-                        <th className="py-3 px-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                      {store.capsters.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                            Belum ada akun capster yang terdaftar untuk toko ini. Tambahkan capster terlebih dahulu di menu Manajemen Akun Capster.
-                          </td>
-                        </tr>
-                      ) : (
-                        store.capsters.map((c, index) => (
-                          <tr key={c.id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="py-4 px-3 text-slate-400">{index + 1}</td>
-                            <td className="py-4 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="h-8 w-8 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-xs">
-                                  {c.avatarLetter}
-                                </div>
-                                <span className="font-semibold text-white">{c.name}</span>
-                              </div>
-                            </td>
-                          <td className="py-4 px-3 font-mono text-slate-400">{c.noPegawai}</td>
-                          <td className="py-4 px-3 font-semibold text-white">
-                            {c.commissionPercentage !== null ? `${c.commissionPercentage}%` : "-"}
-                          </td>
-                          <td className="py-4 px-3">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                c.statusCommission === "Diatur"
-                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                  : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                              }`}
-                            >
-                              {c.statusCommission}
-                            </span>
-                          </td>
-                          <td className="py-4 px-3 text-right">
-                            {c.statusCommission === "Diatur" ? (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCommissionModal(c)}
-                                className="text-blue-400 hover:text-blue-300 font-semibold text-xs hover:underline"
-                              >
-                                Ubah
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCommissionModal(c)}
-                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-                              >
-                                Atur Komisi
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards List */}
-                <div className="block md:hidden divide-y divide-slate-800/50">
-                  {store.capsters.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-xs">
-                      Belum ada akun capster yang terdaftar.
-                    </div>
-                  ) : (
-                    store.capsters.map((c) => (
-                      <div
-                        key={c.id}
-                      onClick={() => handleOpenCommissionModal(c)}
-                      className="py-3.5 flex items-center justify-between gap-3 cursor-pointer active:bg-slate-800/40 rounded-xl px-2 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
-                          {c.avatarLetter}
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-white">{c.name}</div>
-                          <div className="text-xs text-slate-400">{c.noPegawai}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {c.commissionPercentage !== null ? (
-                          <div className="text-sm font-bold text-white">
-                            {c.commissionPercentage}%
-                          </div>
-                        ) : null}
-
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            c.statusCommission === "Diatur"
-                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                              : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                          }`}
-                        >
-                          {c.statusCommission}
-                          <ChevronRight className="h-3 w-3" />
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-                {/* Pagination footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800 text-xs text-slate-400">
-                  <div>Menampilkan 1 - {store.capsters.length} dari {store.capsters.length} data</div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled
-                      className="px-2.5 py-1 rounded-lg border border-slate-800 text-slate-600 cursor-not-allowed"
-                    >
-                      &lt;
-                    </button>
-                    <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold shadow-xs">
-                      1
-                    </span>
-                    <button
-                      type="button"
-                      disabled
-                      className="px-2.5 py-1 rounded-lg border border-slate-800 text-slate-600 cursor-not-allowed"
-                    >
-                      &gt;
-                    </button>
-                    <span className="ml-2 text-slate-400 font-medium">10 per halaman</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Information Card (5 Points Wireframe) */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-xs space-y-3">
-                <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Informasi</span>
-                </div>
-                <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-300 leading-relaxed pl-1">
-                  <li>Persentase komisi ditentukan oleh Owner.</li>
-                  <li>Jika belum diatur, sistem tidak akan menghitung komisi.</li>
-                  <li>Komisi dihitung dari transaksi layanan yang berhasil.</li>
-                  <li>Transaksi yang dibatalkan tidak dihitung sebagai komisi.</li>
-                  <li>Perubahan persentase komisi akan tercatat di Audit Aktivitas.</li>
-                </ol>
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================ */}
-          {/* CASE 3: VIEW MOBILE RIWAYAT PEMBAYARAN                            */}
-          {/* ================================================================ */}
-          {viewMode === "history" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("overview")}
-                    className="p-2 rounded-xl bg-[#0F1D33] border border-slate-700/80 text-slate-300 hover:text-white shadow-xs"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <h1 className="text-xl font-bold text-white">Riwayat Pembayaran</h1>
-                </div>
-              </div>
-
-              {/* Mobile Search & Filter */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-3 flex items-center gap-2 shadow-xs">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari capster atau periode..."
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-[#0A1424] border border-slate-700/80 text-white outline-hidden"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="p-2 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white"
-                  title="Filter"
-                >
-                  <Filter className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* List Cards */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-4 shadow-xs divide-y divide-slate-800/50">
-                {filteredPaymentHistory.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 text-xs">
-                    Belum ada riwayat pembayaran.
-                  </div>
-                ) : (
-                  filteredPaymentHistory.map((h) => (
-                  <div key={h.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 mt-0.5">
-                        <Receipt className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-white">{h.capsterName}</div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
-                          {h.paymentDate}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-white">
-                        {formatRupiah(h.commissionAmount)}
-                      </div>
-                      <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold">
-                        {h.status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-          )}
-
-          {/* ================================================================ */}
-          {/* CASE 4: VIEW UTAMA (OVERVIEW) — Sesuai Gambar 1 & Gambar 2        */}
-          {/* ================================================================ */}
-          {viewMode === "overview" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Header Title, Subtitle, & Actions */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-                    Gaji
-                  </h1>
-                  <p className="text-xs md:text-sm text-slate-400 mt-1">
-                    Kelola komisi capster berdasarkan transaksi layanan yang berhasil.
-                  </p>
-                </div>
-
-                {/* Button Atur Komisi (Sesuai Gambar 2 screen 1) */}
-                <button
-                  type="button"
-                  onClick={() => setViewMode("settings")}
-                  className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/25 transition-all active:scale-95"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Atur Komisi</span>
-                </button>
-              </div>
-
-              {/* Filter Bar (Desktop & Mobile) */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-3.5 md:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-                {/* Period Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
-                  {(["today", "7d", "month", "all"] as const).map((p) => {
-                    const label =
-                      p === "today"
-                        ? "Hari ini"
-                        : p === "7d"
-                          ? "7 Hari"
-                          : p === "month"
-                            ? "Bulan ini"
-                            : "Semua";
-                    const isActive = periodFilter === p;
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPeriodFilter(p)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                          isActive
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                  {loading && (
-                    <div className="flex items-center gap-1 text-xs text-blue-400 pl-2 shrink-0">
-                      <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                      <span className="hidden sm:inline">Memuat...</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Date range & Apply */}
-                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                  {/* Date Range Box */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-medium text-slate-300">
-                    <Calendar className="h-3.5 w-3.5 text-blue-400" />
-                    <span>{dateRangeText}</span>
-                  </div>
-
-                  {/* Refresh Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoading(true);
-                      getOwnerSalaryData({
-                        data: { period: periodFilter, barbershopSlug },
-                      })
-                        .then((liveSummary) => {
-                          if (liveSummary) {
-                            commissionActions.syncWithLiveSalaryData(liveSummary);
-                            setDateRangeText(liveSummary.dateRangeText);
-                            toast.success("Data transaksi komisi berhasil diperbarui!");
-                          }
-                        })
-                        .catch(() => {
-                          toast.error("Gagal memperbarui data dari database.");
-                        })
-                        .finally(() => setLoading(false));
-                    }}
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
-                  >
-                    Segarkan Data
-                  </button>
-                </div>
-              </div>
-
-              {/* 6 Summary Cards Grid */}
-              {/* DESKTOP: 6 columns in a row. TABLET: 3 columns. MOBILE: 2 columns */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 md:gap-4">
-                {/* 1. Total Capster */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <span>Total Capster</span>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-1.5">
-                    <span className="text-2xl font-extrabold text-white tracking-tight">
-                      {totalCapsters}
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">capster</span>
-                  </div>
-                </div>
-
-                {/* 2. Total Transaksi */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-emerald-600/20 text-emerald-400">
-                      <Receipt className="h-4 w-4" />
-                    </div>
-                    <span>Total Transaksi</span>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-1.5">
-                    <span className="text-2xl font-extrabold text-white tracking-tight">
-                      {totalTransactions}
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">transaksi</span>
-                  </div>
-                  {totalTransactions > 0 ? (
-                    <div className="mt-1 text-[11px] text-emerald-400 font-medium flex items-center gap-0.5">
-                      <span>↑ 12% dari periode sebelumnya</span>
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-[11px] text-slate-500 font-normal">
-                      <span>Belum ada transaksi</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Total Pendapatan Layanan */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-teal-600/20 text-teal-400">
-                      <Building2 className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Total Pendapatan</span>
-                  </div>
-                  <div className="mt-3 text-lg md:text-xl font-extrabold text-white tracking-tight truncate">
-                    {formatRupiah(totalRevenue)}
-                  </div>
-                  {totalRevenue > 0 ? (
-                    <div className="mt-1 text-[11px] text-emerald-400 font-medium flex items-center gap-0.5">
-                      <span>↑ 10% dari periode sebelumnya</span>
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-[11px] text-slate-500 font-normal">
-                      <span>Rp 0 pada periode ini</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Total Komisi */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400">
-                      <Wallet className="h-4 w-4" />
-                    </div>
-                    <span>Total Komisi</span>
-                  </div>
-                  <div className="mt-3 text-lg md:text-xl font-extrabold text-white tracking-tight truncate">
-                    {formatRupiah(totalCommission)}
-                  </div>
-                  {totalCommission > 0 ? (
-                    <div className="mt-1 text-[11px] text-emerald-400 font-medium flex items-center gap-0.5">
-                      <span>↑ 10% dari periode sebelumnya</span>
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-[11px] text-slate-500 font-normal">
-                      <span>Rp 0 pada periode ini</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 5. Belum Dibayar */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-rose-600/20 text-rose-400">
-                      <AlertCircle className="h-4 w-4" />
-                    </div>
-                    <span>Belum Dibayar</span>
-                  </div>
-                  <div className="mt-3 text-lg md:text-xl font-extrabold text-rose-400 tracking-tight truncate">
-                    {formatRupiah(unpaidCommission)}
-                  </div>
-                </div>
-
-                {/* 6. Pendapatan Bersih Owner */}
-                <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-slate-400 text-xs font-medium">
-                    <div className="p-2 rounded-xl bg-emerald-600/20 text-emerald-400">
-                      <TrendingUp className="h-4 w-4" />
-                    </div>
-                    <span className="truncate">Pendapatan Bersih</span>
-                  </div>
-                  <div className="mt-3 text-lg md:text-xl font-extrabold text-emerald-400 tracking-tight truncate">
-                    {formatRupiah(netIncome)}
-                  </div>
-                  {netIncome > 0 ? (
-                    <div className="mt-1 text-[11px] text-emerald-400 font-medium flex items-center gap-0.5">
-                      <span>↑ 10% dari periode sebelumnya</span>
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-[11px] text-slate-500 font-normal">
-                      <span>Rp 0 pada periode ini</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Section: Data Komisi Capster */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-xs space-y-4">
-                {/* Section Header with Search & Export */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                  <h3 className="text-base font-bold text-white">
-                    Data Komisi Capster
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    {/* Search Input */}
-                    <div className="relative w-full sm:w-56">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Cari capster..."
-                        className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-[#0A1424] border border-slate-700/80 text-white placeholder:text-slate-500 outline-hidden focus:border-blue-500 transition-all"
-                      />
-                    </div>
-
-                    {/* Status Dropdown */}
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 outline-hidden hover:bg-slate-800 transition-colors shrink-0"
-                    >
-                      <option value="all">Semua Status</option>
-                      <option value="Belum Dibayar">Belum Dibayar</option>
-                      <option value="Sudah Dibayar">Sudah Dibayar</option>
-                      <option value="Diproses">Diproses</option>
-                      <option value="Belum Diatur">Belum Diatur</option>
-                    </select>
-
-                    {/* Export Button */}
-                    <button
-                      type="button"
-                      onClick={handleExportCSV}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors shadow-xs shrink-0"
-                    >
-                      <Download className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Export</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-                        <th className="py-3 px-3">No.</th>
-                        <th className="py-3 px-3">Nama Capster</th>
-                        <th className="py-3 px-3">Periode</th>
-                        <th className="py-3 px-3">Jumlah Transaksi</th>
-                        <th className="py-3 px-3">Pendapatan Layanan</th>
-                        <th className="py-3 px-3">Persentase Komisi</th>
-                        <th className="py-3 px-3">Total Komisi</th>
-                        <th className="py-3 px-3">Status Pembayaran</th>
-                        <th className="py-3 px-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                      {filteredCapsters.length === 0 ? (
-                        <tr>
-                          <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <Wallet className="h-8 w-8 text-slate-600 stroke-[1.5]" />
-                              <p className="font-semibold text-slate-300">Belum Ada Data Komisi Capster</p>
-                              <p className="text-slate-500 text-[11px]">
-                                Belum ada capster atau transaksi yang tercatat pada periode ini.
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredCapsters.map((c, index) => (
-                          <tr key={c.id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="py-4 px-3 text-slate-400">{index + 1}</td>
-                            <td className="py-4 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="h-8 w-8 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-xs">
-                                  {c.avatarLetter}
-                                </div>
-                                <span className="font-semibold text-white">{c.name}</span>
-                              </div>
-                            </td>
-                            <td className="py-4 px-3 text-slate-400">{c.period}</td>
-                            <td className="py-4 px-3 text-slate-200 font-medium">
-                              {c.transactionCount}
-                            </td>
-                            <td className="py-4 px-3 font-semibold text-white">
-                              {formatRupiah(c.serviceRevenue)}
-                            </td>
-                            <td className="py-4 px-3 text-slate-300">
-                              {c.commissionPercentage !== null ? `${c.commissionPercentage}%` : "-"}
-                            </td>
-                            <td className="py-4 px-3 font-bold text-white">
-                              {c.totalCommission > 0 ? formatRupiah(c.totalCommission) : "-"}
-                            </td>
-                            <td className="py-4 px-3">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                  c.paymentStatus === "Sudah Dibayar"
-                                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                    : c.paymentStatus === "Diproses"
-                                      ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                                      : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                                }`}
-                              >
-                                {c.paymentStatus}
-                              </span>
-                            </td>
-                            <td className="py-4 px-3 text-right">
-                              <div className="flex items-center justify-end gap-2.5">
-                                {c.paymentStatus !== "Sudah Dibayar" &&
-                                  c.statusCommission === "Diatur" &&
-                                  c.totalCommission > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenPaymentModal(c);
-                                      }}
-                                      className="px-2.5 py-1 bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-lg text-xs font-semibold transition-all shadow-xs"
-                                    >
-                                      {c.paymentStatus === "Diproses" ? "Selesaikan" : "Bayar"}
-                                    </button>
-                                  )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenDetail(c.capsterId)}
-                                  className="text-blue-400 hover:text-blue-300 font-semibold text-xs hover:underline"
-                                >
-                                  Lihat Detail
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards List View */}
-                <div className="block md:hidden divide-y divide-slate-800/50">
-                  {filteredCapsters.length === 0 ? (
-                    <div className="py-10 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
-                      <Wallet className="h-7 w-7 text-slate-600 stroke-[1.5]" />
-                      <p className="font-semibold text-slate-300">Belum Ada Data Komisi Capster</p>
-                      <p className="text-slate-500 text-[11px]">
-                        Belum ada capster atau transaksi pada periode ini.
-                      </p>
-                    </div>
-                  ) : (
-                    filteredCapsters.map((c) => (
-                      <div
-                        key={c.id}
-                        onClick={() => handleOpenDetail(c.capsterId)}
-                        className="py-3.5 flex items-center justify-between gap-3 cursor-pointer active:bg-slate-800/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
-                            {c.avatarLetter}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-white">{c.name}</div>
-                            <div className="text-xs text-slate-400">
-                              {c.transactionCount} transaksi
-                            </div>
-                          </div>
-                        </div>
-
-                      <div className="text-right">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            c.paymentStatus === "Sudah Dibayar"
-                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                              : c.paymentStatus === "Diproses"
-                                ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                                : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                          }`}
-                        >
-                          {c.paymentStatus}
-                        </span>
-                        <div className="text-xs font-extrabold text-white mt-1">
-                          {c.totalCommission > 0 ? formatRupiah(c.totalCommission) : "-"}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-                {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800 text-xs text-slate-400">
-                  <div>
-                    Menampilkan 1 - {filteredCapsters.length} dari {store.capsters.length} data
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled
-                      className="px-2.5 py-1 rounded-lg border border-slate-800 text-slate-600 cursor-not-allowed"
-                    >
-                      &lt;
-                    </button>
-                    <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold shadow-xs">
-                      1
-                    </span>
-                    <button
-                      type="button"
-                      disabled
-                      className="px-2.5 py-1 rounded-lg border border-slate-800 text-slate-600 cursor-not-allowed"
-                    >
-                      &gt;
-                    </button>
-                    <span className="ml-2 text-slate-400 font-medium">10 per halaman</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section: Riwayat Pembayaran Komisi */}
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                  <h3 className="text-base font-bold text-white">
-                    Riwayat Pembayaran Komisi
-                  </h3>
-
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={historyPeriodFilter}
-                      onChange={(e) => setHistoryPeriodFilter(e.target.value)}
-                      className="px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 outline-hidden hover:bg-slate-800 transition-colors"
-                    >
-                      <option value="all">Semua Periode</option>
-                      <option value={getIndonesianMonthYear(0)}>
-                        {getIndonesianMonthYear(0)}
-                      </option>
-                      <option value={getIndonesianMonthYear(-1)}>
-                        {getIndonesianMonthYear(-1)}
-                      </option>
-                      <option value={getIndonesianMonthYear(-2)}>
-                        {getIndonesianMonthYear(-2)}
-                      </option>
-                    </select>
-
-                    {/* Mobile link to open dedicated history page */}
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("history")}
-                      className="sm:hidden text-xs text-blue-400 font-semibold flex items-center gap-0.5"
-                    >
-                      <span>Lihat Semua</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-                        <th className="py-3 px-3">No.</th>
-                        <th className="py-3 px-3">Tanggal Pembayaran</th>
-                        <th className="py-3 px-3">Nama Capster</th>
-                        <th className="py-3 px-3">Periode</th>
-                        <th className="py-3 px-3">Pendapatan Layanan</th>
-                        <th className="py-3 px-3">Persentase</th>
-                        <th className="py-3 px-3">Nominal Komisi</th>
-                        <th className="py-3 px-3">Dibayar Oleh</th>
-                        <th className="py-3 px-3">Status</th>
-                        <th className="py-3 px-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                      {filteredPaymentHistory.length === 0 ? (
-                        <tr>
-                          <td colSpan={10} className="py-8 text-center text-slate-400 text-xs">
-                            Belum ada riwayat pembayaran komisi.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredPaymentHistory.map((h, index) => (
-                          <tr key={h.id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="py-4 px-3 text-slate-400">{index + 1}</td>
-                            <td className="py-4 px-3 font-medium text-slate-300">{h.paymentDate}</td>
-                            <td className="py-4 px-3 font-semibold text-white">{h.capsterName}</td>
-                            <td className="py-4 px-3 text-slate-400">{h.period}</td>
-                            <td className="py-4 px-3 font-semibold text-white">
-                              {formatRupiah(h.serviceRevenue)}
-                            </td>
-                            <td className="py-4 px-3 text-slate-300">{h.commissionPercentage}%</td>
-                            <td className="py-4 px-3 font-bold text-white">
-                              {formatRupiah(h.commissionAmount)}
-                            </td>
-                            <td className="py-4 px-3 text-slate-400">{h.paidBy}</td>
-                            <td className="py-4 px-3">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
-                                {h.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDetail(h.capsterId)}
-                                className="text-blue-400 hover:text-blue-300 font-semibold text-xs hover:underline"
-                              >
-                                Lihat Detail
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Simple Cards */}
-                <div className="block md:hidden divide-y divide-slate-800/50">
-                  {filteredPaymentHistory.length === 0 ? (
-                    <div className="py-6 text-center text-slate-400 text-xs">
-                      Belum ada riwayat pembayaran komisi.
-                    </div>
-                  ) : (
-                    filteredPaymentHistory.slice(0, 3).map((h) => (
-                      <div key={h.id} className="py-3 flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-xs font-bold text-white">{h.capsterName}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">
-                            {h.paymentDate}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-bold text-white">
-                            {formatRupiah(h.commissionAmount)}
-                          </div>
-                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold">
-                            {h.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
-
-        {/* Mobile Bottom Navigation */}
-        <OwnerBottomNav activePath="/owner/gaji" />
-      </div>
-
-      {/* ==================================================================== */}
-      {/* MODAL 1: KONFIRMASI PEMBAYARAN (DESKTOP & MOBILE)                    */}
-      {/* ==================================================================== */}
-      {isPaymentModalOpen && paymentCapster && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#0F1D33] border border-slate-700/80 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-slate-100">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">
-                Konfirmasi Pembayaran
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsPaymentModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-4 text-xs">
-              {/* Capster Overview */}
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0A1424] border border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
-                    {paymentCapster.avatarLetter}
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">
-                      {paymentCapster.name}
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      ID Capster: {paymentCapster.noPegawai}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[11px] text-slate-400">Periode</div>
-                  <div className="text-xs font-bold text-slate-200">
-                    {paymentCapster.period}
-                  </div>
-                </div>
-              </div>
-
-              {/* Breakdown */}
-              <div className="space-y-2 p-3.5 rounded-2xl bg-[#0A1424]/60 border border-slate-800">
-                <div className="flex justify-between items-center text-slate-400">
-                  <span>Pendapatan Layanan</span>
-                  <span className="font-semibold text-white">
-                    {formatRupiah(paymentCapster.serviceRevenue)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-slate-400">
-                  <span>Persentase Komisi</span>
-                  <span className="font-semibold text-blue-400">
-                    {paymentCapster.commissionPercentage || 0}%
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-slate-800 flex justify-between items-center">
-                  <span className="font-bold text-slate-300">Total Komisi</span>
-                  <span className="text-base font-extrabold text-blue-400">
-                    {formatRupiah(paymentCapster.totalCommission)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Input Tanggal Pembayaran */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Tanggal Pembayaran</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-[#0A1424] text-white text-xs outline-hidden focus:border-blue-500"
-                  />
-                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Input Catatan (Opsional) */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Catatan (Opsional)</label>
-                <input
-                  type="text"
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="Tambahkan catatan pembayaran..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-[#0A1424] text-white text-xs outline-hidden focus:border-blue-500 placeholder:text-slate-500"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-end gap-3 bg-[#0A1424]/40">
-              <button
-                type="button"
-                onClick={() => setIsPaymentModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 font-semibold text-xs transition-colors"
-              >
-                Batalkan
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmPayment}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/25 transition-all active:scale-95"
-              >
-                Konfirmasi Pembayaran
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================================================================== */}
-      {/* MODAL 2: ATUR / UBAH PERSENTASE KOMISI (DESKTOP & MOBILE)            */}
-      {/* ==================================================================== */}
-      {isCommissionModalOpen && editingCapster && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#0F1D33] border border-slate-700/80 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-slate-100">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">
-                {editingCapster.commissionPercentage !== null
-                  ? "Ubah Persentase Komisi"
-                  : "Atur Persentase Komisi"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsCommissionModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Form Body */}
-            <form onSubmit={handleSaveCommission} className="p-6 space-y-4 text-xs">
-              {/* Capster Identity */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#0A1424] border border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
-                  {editingCapster.avatarLetter}
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white">{editingCapster.name}</div>
-                  <div className="text-[11px] text-slate-400">
-                    ID Capster: {editingCapster.noPegawai}
-                  </div>
-                </div>
-              </div>
-
-              {/* Percentage Input */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Persentase Komisi</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    value={inputPercentage}
-                    onChange={(e) => setInputPercentage(e.target.value)}
-                    placeholder="15"
-                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-700 bg-[#0A1424] text-white font-semibold text-sm outline-hidden focus:border-blue-500"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
-                    %
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Masukkan persentase komisi (contoh: 15)
+          {/* Main Body */}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+            {/* Top Page Header & Atur Komisi Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">
+                  Gaji
+                </h1>
+                <p className="text-sm text-slate-400 mt-1">
+                  Kelola komisi capster berdasarkan transaksi layanan yang berhasil.
                 </p>
               </div>
 
-              {/* Footer Buttons */}
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  fetchCapsters();
+                  setIsCommissionModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all self-start sm:self-auto shrink-0 cursor-pointer"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Atur Komisi</span>
+              </button>
+            </div>
+
+            {/* 3 Tabs Bar */}
+            <div className="flex items-center gap-2 border-b border-slate-800/80 pb-px">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("rekap");
+                  setSelectedPengajuanId(null);
+                }}
+                className={`px-4 py-3 text-sm font-semibold transition-all relative cursor-pointer ${
+                  activeTab === "rekap"
+                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Rekap Komisi
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("pengajuan");
+                }}
+                className={`px-4 py-3 text-sm font-semibold transition-all relative flex items-center gap-2 cursor-pointer ${
+                  activeTab === "pengajuan"
+                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>Pengajuan Penarikan</span>
+                {counts.pending > 0 && (
+                  <span className="px-1.5 py-0.5 text-[11px] bg-red-600 text-white rounded-full font-bold leading-none">
+                    {counts.pending}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("riwayat");
+                  setSelectedPengajuanId(null);
+                }}
+                className={`px-4 py-3 text-sm font-semibold transition-all relative cursor-pointer ${
+                  activeTab === "riwayat"
+                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Riwayat Pembayaran
+              </button>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* TAB 2: PENGAJUAN PENARIKAN (SCREEN 1, SCREEN 2, SCREEN 7) */}
+            {/* ========================================================================= */}
+            {activeTab === "pengajuan" && (
+              <>
+                {/* VIEW A: DETAIL PENGAJUAN KOMISI (SCREEN 2) */}
+                {selectedPengajuanId ? (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    {/* Back button & Title */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPengajuanId(null)}
+                          className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-medium mb-2 transition-colors cursor-pointer"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                          <span>Kembali ke Daftar Pengajuan</span>
+                        </button>
+                        <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
+                          Detail Pengajuan Penarikan Komisi
+                        </h2>
+                      </div>
+
+                      {detailData && (
+                        <div>
+                          {renderStatusBadge(
+                            detailData.pengajuan.uiStatus,
+                            detailData.pengajuan.statusLabel,
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {isLoadingDetail ? (
+                      <div className="p-12 flex flex-col items-center justify-center gap-3">
+                        <RefreshCw className="h-8 w-8 text-blue-500 animate-spin" />
+                        <p className="text-sm text-slate-400">Memuat detail pengajuan...</p>
+                      </div>
+                    ) : detailData ? (
+                      <>
+                        {/* 2-Column Info Grid: Capster Info + Pengajuan Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Card 1: Informasi Capster */}
+                          <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                              Informasi Capster
+                            </h3>
+                            <div className="flex items-center gap-4">
+                              <div className="h-14 w-14 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xl font-bold shrink-0">
+                                {detailData.capster.avatarLetter}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-base font-bold text-white">
+                                  {detailData.capster.name}
+                                </div>
+                                <div className="text-xs text-slate-400">
+                                  {detailData.capster.phone}
+                                </div>
+                                <div className="flex items-center gap-2 pt-1">
+                                  <span className="text-xs text-slate-300">
+                                    {detailData.capster.role}
+                                  </span>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    {detailData.capster.status}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Card 2: Informasi Pengajuan */}
+                          <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-3">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                              Informasi Pengajuan
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400">Jumlah Diajukan</span>
+                                <span className="font-bold text-white text-base">
+                                  {formatRupiah(detailData.pengajuan.jumlah)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400">Tanggal Pengajuan</span>
+                                <span className="text-slate-200">
+                                  {detailData.pengajuan.diajukanAtFormatted}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400">Status</span>
+                                <span>
+                                  {renderStatusBadge(
+                                    detailData.pengajuan.uiStatus,
+                                    detailData.pengajuan.statusLabel,
+                                  )}
+                                </span>
+                              </div>
+
+                              {detailData.pengajuan.alasanPenolakan && (
+                                <div className="mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                                  <span className="font-semibold block mb-0.5">Alasan Penolakan:</span>
+                                  {detailData.pengajuan.alasanPenolakan}
+                                </div>
+                              )}
+
+                              {detailData.pengajuan.dibayarAtFormatted && (
+                                <div className="mt-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Dibayarkan Pada:</span>
+                                    <span className="font-semibold text-white">
+                                      {detailData.pengajuan.dibayarAtFormatted}
+                                    </span>
+                                  </div>
+                                  {detailData.pengajuan.metodePembayaran && (
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Metode:</span>
+                                      <span className="uppercase text-white font-medium">
+                                        {detailData.pengajuan.metodePembayaran}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {detailData.pengajuan.referensi && (
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Referensi:</span>
+                                      <span className="font-mono text-white text-[11px]">
+                                        {detailData.pengajuan.referensi}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card 3: Dasar Komisi */}
+                        <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-start gap-3">
+                              <div className="h-9 w-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                                <ShieldCheck className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <h3 className="text-base font-bold text-white">Dasar Komisi</h3>
+                                <p className="text-xs text-slate-400">
+                                  Komisi berasal dari transaksi yang telah selesai pada hari ini. Berikut daftar transaksi yang membentuk komisi:
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="text-xs text-blue-400 hover:text-blue-300 font-medium shrink-0 cursor-pointer self-end sm:self-auto">
+                              Lihat Semua Transaksi
+                            </span>
+                          </div>
+
+                          {/* Table of transactions */}
+                          <div className="overflow-x-auto rounded-xl border border-slate-800/80">
+                            <table className="w-full text-left text-sm">
+                              <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold">
+                                <tr>
+                                  <th className="px-4 py-3">Tanggal</th>
+                                  <th className="px-4 py-3">Layanan</th>
+                                  <th className="px-4 py-3 text-right">Nominal</th>
+                                  <th className="px-4 py-3 text-right">
+                                    Komisi ({detailData.capster.persentaseKomisi}%)
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/50">
+                                {detailData.dasarKomisi.transactions.length > 0 ? (
+                                  detailData.dasarKomisi.transactions.map((tx: any) => (
+                                    <tr key={tx.id} className="hover:bg-slate-800/30 transition-colors">
+                                      <td className="px-4 py-3 text-slate-300 font-mono text-xs">
+                                        {tx.tanggalFormatted}
+                                      </td>
+                                      <td className="px-4 py-3 text-white font-medium">
+                                        {tx.layananName}
+                                      </td>
+                                      <td className="px-4 py-3 text-slate-300 text-right">
+                                        {formatRupiah(tx.nominal)}
+                                      </td>
+                                      <td className="px-4 py-3 text-emerald-400 font-semibold text-right">
+                                        {formatRupiah(tx.komisi)}
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={4} className="px-4 py-6 text-center text-slate-500 text-xs">
+                                      Tidak ada rincian transaksi pembentuk komisi yang tercatat.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                              {detailData.dasarKomisi.transactions.length > 0 && (
+                                <tfoot className="bg-slate-900/60 font-semibold border-t border-slate-800 text-xs">
+                                  <tr>
+                                    <td colSpan={2} className="px-4 py-3 text-slate-400">
+                                      Total Transaksi ({detailData.dasarKomisi.transactions.length})
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-300 text-right">
+                                      {formatRupiah(detailData.dasarKomisi.totalNominal)}
+                                    </td>
+                                    <td className="px-4 py-3 text-emerald-400 font-bold text-right">
+                                      {formatRupiah(detailData.dasarKomisi.totalKomisi)}
+                                    </td>
+                                  </tr>
+                                </tfoot>
+                              )}
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons / Status Notices */}
+                        <div className="pt-2">
+                          {detailData.pengajuan.uiStatus === "pending" && (
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRejectReason("");
+                                  setIsRejectModalOpen(true);
+                                }}
+                                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-red-500/50 hover:bg-red-500/10 text-red-400 text-sm font-semibold transition-all cursor-pointer"
+                              >
+                                Tolak Pengajuan
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setIsApproveModalOpen(true)}
+                                className="w-full sm:flex-1 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                              >
+                                Setujui Pengajuan
+                              </button>
+                            </div>
+                          )}
+
+                          {detailData.pengajuan.uiStatus === "approved" && (
+                            <div className="space-y-4">
+                              {/* Screen 5 Banner */}
+                              <div className="rounded-2xl bg-blue-950/40 border border-blue-800/50 p-5 flex items-start gap-4">
+                                <div className="h-10 w-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                                  <Clock className="h-5 w-5" />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="font-bold text-white text-base">
+                                    Pengajuan Telah Disetujui
+                                  </div>
+                                  <p className="text-xs text-slate-300">
+                                    Komisi sebesar {formatRupiah(detailData.pengajuan.jumlah)} untuk{" "}
+                                    <span className="font-semibold text-white">
+                                      {detailData.capster.name}
+                                    </span>{" "}
+                                    telah disetujui. Silakan lakukan pembayaran dan konfirmasi setelah komisi diberikan kepada Capster.
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setIsPayModalOpen(true)}
+                                className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                              >
+                                Konfirmasi Komisi Sudah Dibayarkan
+                              </button>
+                            </div>
+                          )}
+
+                          {detailData.pengajuan.uiStatus === "paid" && (
+                            <div className="rounded-2xl bg-emerald-950/40 border border-emerald-800/50 p-5 flex items-center gap-4">
+                              <CheckCircle2 className="h-8 w-8 text-emerald-400 shrink-0" />
+                              <div>
+                                <div className="font-bold text-emerald-400 text-base">
+                                  Sudah Terbayarkan
+                                </div>
+                                <p className="text-xs text-slate-300">
+                                  Komisi sebesar {formatRupiah(detailData.pengajuan.jumlah)} telah berhasil dibayarkan kepada{" "}
+                                  <span className="font-semibold text-white">{detailData.capster.name}</span> pada{" "}
+                                  {detailData.pengajuan.dibayarAtFormatted}.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {detailData.pengajuan.uiStatus === "rejected" && (
+                            <div className="rounded-2xl bg-red-950/40 border border-red-800/50 p-5 flex items-center gap-4">
+                              <AlertTriangle className="h-8 w-8 text-red-400 shrink-0" />
+                              <div>
+                                <div className="font-bold text-red-400 text-base">
+                                  Pengajuan Ditolak
+                                </div>
+                                <p className="text-xs text-slate-300">
+                                  Pengajuan ini ditolak oleh Owner. Komisi telah dikembalikan ke saldo belum dibayar milik Capster.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : (
+                  /* VIEW B: DAFTAR PENGAJUAN (SCREEN 1 & SCREEN 7) */
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    {/* Filter Controls Row */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      {/* Left: Date Filter + Segarkan Data */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {/* Date Filter Dropdown */}
+                        <div className="relative">
+                          <select
+                            value={period}
+                            onChange={(e) => setPeriod(e.target.value as PeriodType)}
+                            className="appearance-none bg-[#0A1424] border border-slate-700/80 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-medium text-slate-200 hover:border-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
+                          >
+                            <option value="month">1 - 30 September 2026</option>
+                            <option value="today">Hari Ini</option>
+                            <option value="7d">7 Hari Terakhir</option>
+                            <option value="30d">30 Hari Terakhir</option>
+                            <option value="all">Semua Waktu</option>
+                          </select>
+                          <Calendar className="h-3.5 w-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+
+                        {/* Segarkan Data Button */}
+                        <button
+                          type="button"
+                          onClick={() => fetchRequests()}
+                          disabled={isLoadingRequests}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${isLoadingRequests ? "animate-spin" : ""}`} />
+                          <span>Segarkan Data</span>
+                        </button>
+                      </div>
+
+                      {/* Right: Search Capster */}
+                      <div className="relative w-full lg:w-64">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Cari capster..."
+                          className="w-full bg-[#0A1424] border border-slate-700/80 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Filter Pills (Screen 1) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("all")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                          statusFilter === "all"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        Semua ({counts.all})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("pending")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                          statusFilter === "pending"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        Menunggu ({counts.pending})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("approved")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                          statusFilter === "approved"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        Disetujui ({counts.approved})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("rejected")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                          statusFilter === "rejected"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        Ditolak ({counts.rejected})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("paid")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                          statusFilter === "paid"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        Terbayarkan ({counts.paid})
+                      </button>
+                    </div>
+
+                    {/* Table (Screen 1 & Screen 7) */}
+                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                            <tr>
+                              <th className="px-5 py-3.5 w-14">NO.</th>
+                              <th className="px-5 py-3.5">NAMA CAPSTER</th>
+                              <th className="px-5 py-3.5">JUMLAH</th>
+                              <th className="px-5 py-3.5">TANGGAL PENGAJUAN</th>
+                              <th className="px-5 py-3.5">STATUS</th>
+                              <th className="px-5 py-3.5">DIBAYARKAN</th>
+                              <th className="px-5 py-3.5 text-right w-24">AKSI</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/60">
+                            {isLoadingRequests ? (
+                              <tr>
+                                <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                                  <div className="flex flex-col items-center justify-center gap-3">
+                                    <RefreshCw className="h-6 w-6 text-blue-500 animate-spin" />
+                                    <span className="text-xs">Memuat daftar pengajuan komisi...</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : requestsList.length > 0 ? (
+                              requestsList.map((item, idx) => (
+                                <tr key={item.idPengajuan} className="hover:bg-slate-800/30 transition-colors">
+                                  <td className="px-5 py-4 text-xs font-mono text-slate-400">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${
+                                          idx % 2 === 0 ? "bg-blue-600" : "bg-purple-600"
+                                        }`}
+                                      >
+                                        {item.avatarLetter}
+                                      </div>
+                                      <div>
+                                        <div className="font-semibold text-white text-sm">
+                                          {item.capsterName}
+                                        </div>
+                                        {item.noPegawai && (
+                                          <div className="text-[11px] text-slate-400">
+                                            {item.noPegawai}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-5 py-4 font-semibold text-white">
+                                    {formatRupiah(item.jumlah)}
+                                  </td>
+                                  <td className="px-5 py-4 text-slate-300 font-mono text-xs">
+                                    {item.diajukanAtShort}
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    {renderStatusBadge(item.uiStatus, item.statusLabel)}
+                                  </td>
+                                  <td className="px-5 py-4 text-slate-400 font-mono text-xs">
+                                    {item.dibayarAt || "-"}
+                                  </td>
+                                  <td className="px-5 py-4 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedPengajuanId(item.idPengajuan)}
+                                      className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                                    >
+                                      Lihat
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={7} className="px-5 py-12 text-center text-slate-500 text-xs">
+                                  Tidak ada data pengajuan komisi yang sesuai dengan filter.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Footer Pagination */}
+                      <div className="px-5 py-3.5 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <span>Menampilkan {requestsList.length} dari {counts.all} data</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-500 cursor-not-allowed text-xs"
+                          >
+                            &lt;
+                          </button>
+                          <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold text-xs">
+                            1
+                          </span>
+                          <button
+                            type="button"
+                            disabled
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-500 cursor-not-allowed text-xs"
+                          >
+                            &gt;
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 1: REKAP KOMISI */}
+            {/* ========================================================================= */}
+            {activeTab === "rekap" && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* 4 Summary Cards */}
+                {rekapData?.summary && (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
+                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                        <span>Total Komisi Belum Dibayar</span>
+                        <Coins className="h-4 w-4 text-amber-400" />
+                      </div>
+                      <div className="text-xl font-bold text-amber-400">
+                        {formatRupiah(rekapData.summary.totalKomisiBelumDibayar)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
+                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                        <span>Total Komisi Terbayarkan</span>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      </div>
+                      <div className="text-xl font-bold text-emerald-400">
+                        {formatRupiah(rekapData.summary.totalKomisiTerbayar)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
+                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                        <span>Transaksi Selesai</span>
+                        <Receipt className="h-4 w-4 text-blue-400" />
+                      </div>
+                      <div className="text-xl font-bold text-white">
+                        {rekapData.summary.totalTransaksiSelesai} Transaksi
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
+                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                        <span>Total Omset Layanan</span>
+                        <TrendingUp className="h-4 w-4 text-cyan-400" />
+                      </div>
+                      <div className="text-xl font-bold text-white">
+                        {formatRupiah(rekapData.summary.totalOmset)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rekap Table */}
+                <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
+                  <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-white">Rekapitulasi Komisi Capster</h2>
+                      <p className="text-xs text-slate-400">
+                        Akumulasi komisi capster yang dihitung dari transaksi layanan completed.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchRekap()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isLoadingRekap ? "animate-spin" : ""}`} />
+                      <span>Muat Ulang</span>
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                        <tr>
+                          <th className="px-5 py-3.5 w-14">NO.</th>
+                          <th className="px-5 py-3.5">NAMA CAPSTER</th>
+                          <th className="px-5 py-3.5 text-center">TRANSAKSI</th>
+                          <th className="px-5 py-3.5 text-right">DASAR KOMISI</th>
+                          <th className="px-5 py-3.5 text-center">KOMISI (%)</th>
+                          <th className="px-5 py-3.5 text-right">TOTAL KOMISI</th>
+                          <th className="px-5 py-3.5 text-right">BELUM DIBAYAR</th>
+                          <th className="px-5 py-3.5">STATUS KOMISI</th>
+                          <th className="px-5 py-3.5">TERAKHIR</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {isLoadingRekap ? (
+                          <tr>
+                            <td colSpan={9} className="px-5 py-12 text-center text-slate-400 text-xs">
+                              Memuat rekapitulasi komisi...
+                            </td>
+                          </tr>
+                        ) : rekapData?.items?.length ? (
+                          rekapData.items.map((item: any, idx: number) => (
+                            <tr key={item.capsterId} className="hover:bg-slate-800/30 transition-colors">
+                              <td className="px-5 py-4 text-xs font-mono text-slate-400">{idx + 1}</td>
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">
+                                    {item.avatarLetter}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-white text-sm">{item.capsterName}</div>
+                                    <div className="text-[11px] text-slate-400">{item.noPegawai || "-"}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-center font-semibold text-white">
+                                {item.jumlahTransaksi}
+                              </td>
+                              <td className="px-5 py-4 text-right text-slate-300">
+                                {formatRupiah(item.dasarKomisi)}
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                  {item.persentaseKomisi}%
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-right font-bold text-white">
+                                {formatRupiah(item.nominalKomisi)}
+                              </td>
+                              <td className="px-5 py-4 text-right font-semibold text-amber-400">
+                                {formatRupiah(item.komisiBelumDibayar)}
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                    item.statusKomisi === "Sudah Terbayarkan"
+                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      : item.statusKomisi === "Belum Dibayar"
+                                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                      : "bg-slate-800 text-slate-400"
+                                  }`}
+                                >
+                                  {item.statusKomisi}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-slate-400 font-mono text-xs">
+                                {item.tanggalTerakhirFormatted}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={9} className="px-5 py-12 text-center text-slate-500 text-xs">
+                              Tidak ada data komisi untuk periode ini.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 3: RIWAYAT PEMBAYARAN */}
+            {/* ========================================================================= */}
+            {activeTab === "riwayat" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
+                  <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-white">Riwayat Pembayaran Komisi</h2>
+                      <p className="text-xs text-slate-400">
+                        Daftar komisi yang telah berhasil dibayarkan kepada capster.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchHistory()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isLoadingHistory ? "animate-spin" : ""}`} />
+                      <span>Muat Ulang</span>
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                        <tr>
+                          <th className="px-5 py-3.5 w-14">NO.</th>
+                          <th className="px-5 py-3.5">NAMA CAPSTER</th>
+                          <th className="px-5 py-3.5">NOMINAL DIBAYAR</th>
+                          <th className="px-5 py-3.5">TANGGAL PEMBAYARAN</th>
+                          <th className="px-5 py-3.5">METODE</th>
+                          <th className="px-5 py-3.5">REFERENSI</th>
+                          <th className="px-5 py-3.5">STATUS</th>
+                          <th className="px-5 py-3.5 text-right w-24">AKSI</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {isLoadingHistory ? (
+                          <tr>
+                            <td colSpan={8} className="px-5 py-12 text-center text-slate-400 text-xs">
+                              Memuat riwayat pembayaran komisi...
+                            </td>
+                          </tr>
+                        ) : historyList.length > 0 ? (
+                          historyList.map((item, idx) => (
+                            <tr key={item.idPembayaran} className="hover:bg-slate-800/30 transition-colors">
+                              <td className="px-5 py-4 text-xs font-mono text-slate-400">{idx + 1}</td>
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
+                                    {item.avatarLetter}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-white text-sm">{item.capsterName}</div>
+                                    <div className="text-[11px] text-slate-400">{item.capsterPhone || "-"}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 font-bold text-white">
+                                {formatRupiah(item.jumlahBayar)}
+                              </td>
+                              <td className="px-5 py-4 text-slate-300 font-mono text-xs">
+                                {item.dibayarAtFormatted}
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="uppercase text-xs font-medium text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
+                                  {item.metodePembayaran}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 font-mono text-xs text-slate-400">
+                                {item.referensi}
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  {item.statusLabel}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveTab("pengajuan");
+                                    setSelectedPengajuanId(item.idPengajuan);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                                >
+                                  Lihat
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="px-5 py-12 text-center text-slate-500 text-xs">
+                              Belum ada pembayaran komisi yang tercatat.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* MODAL 1: SETUJUI PENGAJUAN (SCREEN 3) */}
+        {/* ========================================================================= */}
+        {isApproveModalOpen && detailData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
+              <div className="h-16 w-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+                <Check className="h-8 w-8 stroke-[3]" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  Setujui Penarikan Komisi?
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Anda akan menyetujui penarikan komisi sebesar{" "}
+                  <span className="font-bold text-white">
+                    {formatRupiah(detailData.pengajuan.jumlah)}
+                  </span>{" "}
+                  untuk <span className="font-semibold text-white">{detailData.capster.name}</span>.
+                </p>
+                <p className="text-xs text-slate-400">
+                  Setelah disetujui, pengajuan masuk ke tahap pembayaran.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsCommissionModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 font-semibold text-xs transition-colors"
+                  onClick={() => setIsApproveModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/25 transition-all active:scale-95"
+                  type="button"
+                  onClick={handleApprove}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
                 >
-                  Simpan
+                  {isSubmitting ? "Menyetujui..." : "Setujui Pengajuan"}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 2: TOLAK PENGAJUAN (SCREEN 4) */}
+        {/* ========================================================================= */}
+        {isRejectModalOpen && detailData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5">
+              <div className="h-16 w-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+                <AlertTriangle className="h-8 w-8 stroke-[2.5]" />
+              </div>
+
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  Tolak Pengajuan?
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Masukkan alasan penolakan pengajuan komisi dari{" "}
+                  <span className="font-semibold text-white">{detailData.capster.name}</span>.
+                </p>
+              </div>
+
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-semibold text-slate-300">
+                  Alasan Penolakan <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value.slice(0, 200))}
+                  placeholder="Contoh: Nominal pengajuan tidak sesuai dengan komisi yang tersedia."
+                  rows={4}
+                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
+                />
+                <div className="text-right text-[11px] text-slate-500 font-mono">
+                  {rejectReason.length}/200
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsRejectModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReject}
+                  disabled={isSubmitting || !rejectReason.trim()}
+                  className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+                >
+                  {isSubmitting ? "Menolak..." : "Tolak Pengajuan"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 3: NOTICE SETELAH DISETUJUI (SCREEN 5) */}
+        {/* ========================================================================= */}
+        {isPostApproveModalOpen && detailData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
+              <div className="h-16 w-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
+                <Clock className="h-8 w-8 stroke-[2.5]" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  Pengajuan Telah Disetujui
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Komisi sebesar{" "}
+                  <span className="font-bold text-white">
+                    {formatRupiah(detailData.pengajuan.jumlah)}
+                  </span>{" "}
+                  untuk <span className="font-semibold text-white">{detailData.capster.name}</span>{" "}
+                  telah disetujui. Silakan lakukan pembayaran dan konfirmasi setelah komisi diberikan kepada Capster.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPostApproveModalOpen(false);
+                    setIsPayModalOpen(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                >
+                  Konfirmasi Komisi Sudah Dibayarkan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPostApproveModalOpen(false)}
+                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 4: KONFIRMASI PEMBAYARAN (SCREEN 6) */}
+        {/* ========================================================================= */}
+        {isPayModalOpen && detailData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
+              <div className="h-16 w-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
+                <CreditCard className="h-8 w-8 stroke-[2]" />
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  Konfirmasi Komisi Terbayarkan?
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Pastikan komisi telah diberikan kepada{" "}
+                  <span className="font-semibold text-white">{detailData.capster.name}</span> sebelum melakukan konfirmasi.
+                </p>
+              </div>
+
+              {/* Details card inside modal */}
+              <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 text-left text-xs space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Capster</span>
+                  <span className="font-semibold text-white">{detailData.capster.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Jumlah</span>
+                  <span className="font-bold text-white text-sm">
+                    {formatRupiah(detailData.pengajuan.jumlah)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Status</span>
+                  <span className="text-cyan-400 font-semibold">Menunggu Pembayaran</span>
+                </div>
+                <div className="pt-2 border-t border-slate-800/80">
+                  <label className="text-[11px] text-slate-400 block mb-1">
+                    Metode Pembayaran
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["transfer", "tunai", "qris"] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setPayMethod(m)}
+                        className={`py-1.5 rounded-lg text-xs font-semibold uppercase transition-all cursor-pointer ${
+                          payMethod === m
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            : "bg-slate-800 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPayModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePay}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Konfirmasi Sudah Dibayarkan"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 5: ATUR KOMISI */}
+        {/* ========================================================================= */}
+        {isCommissionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <SlidersHorizontal className="h-5 w-5 text-blue-400" />
+                  <div>
+                    <h3 className="text-base font-bold text-white">Atur Komisi Capster</h3>
+                    <p className="text-xs text-slate-400">
+                      Tentukan persentase komisi per capster. Berlaku snapshot pada transaksi baru.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCommissionModalOpen(false)}
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {isLoadingCapsters ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  <RefreshCw className="h-6 w-6 text-blue-500 animate-spin mx-auto mb-2" />
+                  Memuat daftar capster...
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                  {capsters.map((c) => (
+                    <div
+                      key={c.id_capster}
+                      className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">
+                          {c.name ? c.name.charAt(0).toUpperCase() : "C"}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-sm">{c.name}</div>
+                          <div className="text-[11px] text-slate-400">{c.no_pegawai || c.role}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {editingCapster?.id === c.id_capster ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="relative w-20">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={inputPercentage}
+                                onChange={(e) => setInputPercentage(e.target.value)}
+                                className="w-full bg-slate-800 border border-blue-500 rounded-lg px-2.5 py-1 text-xs text-white text-center focus:outline-none"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                                %
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const val = Number(inputPercentage);
+                                if (!isNaN(val) && val >= 0 && val <= 100) {
+                                  handleSavePercentage(c.id_capster, val);
+                                  setEditingCapster(null);
+                                } else {
+                                  toast.error("Persentase harus antara 0 dan 100.");
+                                }
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer"
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCapster(null)}
+                              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs cursor-pointer"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              {c.persentase_komisi || "15"}%
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingCapster({
+                                  id: c.id_capster,
+                                  name: c.name,
+                                  percentage: Number(c.persentase_komisi || 15),
+                                });
+                                setInputPercentage(String(c.persentase_komisi || 15));
+                              }}
+                              className="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                            >
+                              Ubah
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => setIsCommissionModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </OwnerAuthGuard>
   );
 }

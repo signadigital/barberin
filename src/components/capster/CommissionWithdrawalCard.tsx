@@ -47,7 +47,7 @@ export function CommissionWithdrawalCard({
       await requestCommissionWithdrawal({
         data: {
           capsterId: data.capsterId,
-          barbershopSlug,
+          ...(barbershopSlug ? { barbershopSlug } : {}),
         },
       });
       toast.success("Pengajuan penarikan komisi berhasil dikirim ke Owner!");
