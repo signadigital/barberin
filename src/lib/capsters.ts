@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq, ne, count } from "drizzle-orm";
+import { and, eq, inArray, ne, count } from "drizzle-orm";
 import { db } from "@/db";
 import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
@@ -329,7 +329,7 @@ export const getOwnerCapsters = createServerFn({
       .where(
         and(
           eq(shiftCapster.id_capster, c.id_capster),
-          eq(transaksi.status_transaksi, "paid"),
+          inArray(transaksi.status_transaksi, ["paid", "completed"]),
           eq(transaksi.id_barbershop, barbershopId),
         ),
       );

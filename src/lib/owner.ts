@@ -8,10 +8,12 @@ import {
   capster,
   detailBooking,
   layanan,
+  notifikasi,
   pelanggan,
   pembayaran,
   pembatalan,
   pemeriksaanKeuangan,
+  pengajuanKomisi,
   shiftCapster,
   struk,
   transaksi,
@@ -92,7 +94,13 @@ export type OwnerNotificationType =
   | "tx_success"
   | "tx_cancelled"
   | "capster_checkin"
-  | "capster_shift_end";
+  | "capster_shift_end"
+  | "pengajuan_komisi"
+  | "persetujuan_komisi"
+  | "penolakan_komisi"
+  | "pembayaran_komisi"
+  | "info"
+  | "transaksi";
 
 export type OwnerNotificationItem = {
   id: string;
@@ -379,11 +387,13 @@ export const getOwnerDashboardMetrics = createServerFn({
       ]);
 
     // 2. Kalkulasi Ringkasan Pendapatan & Transaksi
-    // Total Pendapatan HANYA dari transaksi yang statusnya 'paid'
+    // Total Pendapatan dari transaksi yang statusnya 'paid' atau 'completed'
     const validCurrentPaidTxs = currentTxs.filter(
-      (t) => t.status_transaksi === "paid",
+      (t) => t.status_transaksi === "paid" || t.status_transaksi === "completed",
     );
-    const validPrevPaidTxs = prevTxs.filter((t) => t.status_transaksi === "paid");
+    const validPrevPaidTxs = prevTxs.filter(
+      (t) => t.status_transaksi === "paid" || t.status_transaksi === "completed",
+    );
 
     const currentRevenue = validCurrentPaidTxs.reduce(
       (sum, t) => sum + Number(t.total || 0),
@@ -460,7 +470,7 @@ export const getOwnerDashboardMetrics = createServerFn({
           eq(transaksi.id_barbershop, targetShopId),
           gte(transaksi.created_at, chartStartDate),
           lte(transaksi.created_at, endDate),
-          eq(transaksi.status_transaksi, "paid"),
+          inArray(transaksi.status_transaksi, ["paid", "completed"]),
         ),
       );
 
@@ -709,7 +719,7 @@ export const getOwnerDashboardMetrics = createServerFn({
           status = "Batal";
         } else if (tx.status_transaksi === "pending") {
           status = "Menunggu";
-        } else if (tx.status_transaksi === "paid") {
+        } else if (tx.status_transaksi === "paid" || tx.status_transaksi === "completed") {
           status = "Selesai";
         }
 
@@ -790,7 +800,7 @@ export const getOwnerDashboardMetrics = createServerFn({
           eq(transaksi.id_barbershop, targetShopId),
           gte(transaksi.created_at, startDate),
           lte(transaksi.created_at, endDate),
-          eq(transaksi.status_transaksi, "paid"),
+          inArray(transaksi.status_transaksi, ["paid", "completed"]),
         ),
       );
 
@@ -1261,7 +1271,7 @@ export const getOwnerAuditActivities = createServerFn({
       const capsterName = t.capsterId ? capsterMap.get(t.capsterId) || "Capster" : "Capster";
       const shortId = formatTransactionId(t.id_transaksi, t.created_at);
       const services = serviceNameMap.get(t.id_transaksi) || "Gentleman Cut";
-      const isCompleted = t.status_transaksi === "paid";
+      const isCompleted = t.status_transaksi === "paid" || t.status_transaksi === "completed";
       const isCancelled = t.status_transaksi === "cancelled";
 
       rawEvents.push({
@@ -1779,11 +1789,15 @@ export const getOwnerAuditFinance = createServerFn({
     }
 
     // Process transactions
-    const successfulTxs = currentTxs.filter((t) => t.status_transaksi === "paid");
+    const successfulTxs = currentTxs.filter(
+      (t) => t.status_transaksi === "paid" || t.status_transaksi === "completed",
+    );
     const cancelledTxs = currentTxs.filter((t) => t.status_transaksi === "cancelled");
     const totalRevenue = successfulTxs.reduce((sum, t) => sum + Number(t.total), 0);
 
-    const prevSuccessfulTxs = prevTxs.filter((t) => t.status_transaksi === "paid");
+    const prevSuccessfulTxs = prevTxs.filter(
+      (t) => t.status_transaksi === "paid" || t.status_transaksi === "completed",
+    );
     const prevRevenue = prevSuccessfulTxs.reduce((sum, t) => sum + Number(t.total), 0);
 
     // Payment Methods Breakdown (Only paid transactions)
@@ -1880,14 +1894,14 @@ export const getOwnerAuditFinance = createServerFn({
               : "Tunai";
 
         const statusTransaksi: "Berhasil" | "Dibatalkan" | "Menunggu" =
-          t.status_transaksi === "paid"
+          t.status_transaksi === "paid" || t.status_transaksi === "completed"
             ? "Berhasil"
             : t.status_transaksi === "cancelled"
               ? "Dibatalkan"
               : "Menunggu";
 
         const statusPembayaran: "Lunas" | "Refund" | "Pending" =
-          t.status_transaksi === "paid"
+          t.status_transaksi === "paid" || t.status_transaksi === "completed"
             ? "Lunas"
             : t.status_transaksi === "cancelled"
               ? "Refund"
@@ -2231,7 +2245,85 @@ export const getOwnerNotifications = createServerFn({
           }
         });
 
-        // 2. Transaksi Berhasil (paid) for this barbershop
+        // 2. Notifikasi Database dari tabel NOTIFIKASI
+        const dbNotifs = await db
+          .select({
+            id_notifikasi: notifikasi.id_notifikasi,
+            id_user: notifikasi.id_user,
+            tipe: notifikasi.tipe,
+            judul: notifikasi.judul,
+            pesan: notifikasi.pesan,
+            is_read: notifikasi.is_read,
+            created_at: notifikasi.created_at,
+          })
+          .from(notifikasi)
+          .where(eq(notifikasi.id_barbershop, targetShopId))
+          .orderBy(desc(notifikasi.created_at))
+          .limit(25)
+          .catch(() => []);
+
+        const dbNotifItems: OwnerNotificationItem[] = dbNotifs.map((n) => {
+          let link = "/owner/dashboard";
+          if (
+            n.tipe === "pengajuan_komisi" ||
+            n.tipe === "persetujuan_komisi" ||
+            n.tipe === "penolakan_komisi" ||
+            n.tipe === "pembayaran_komisi"
+          ) {
+            link = "/owner/komisi";
+          }
+          return {
+            id: `db-notif-${n.id_notifikasi}`,
+            type: n.tipe as OwnerNotificationType,
+            title: n.judul,
+            message: n.pesan,
+            timeAgo: formatWaktuRelatif(n.created_at),
+            timestamp: n.created_at.toISOString(),
+            link,
+          };
+        });
+
+        // 3. Fallback: Pengajuan Komisi Pending dari tabel PENGAJUAN_KOMISI
+        const pendingPengajuan = await db
+          .select({
+            id_pengajuan: pengajuanKomisi.id_pengajuan,
+            jumlah_pengajuan: pengajuanKomisi.jumlah_pengajuan,
+            diajukan_at: pengajuanKomisi.diajukan_at,
+            nama_capster: capster.nama_capster,
+          })
+          .from(pengajuanKomisi)
+          .innerJoin(capster, eq(pengajuanKomisi.id_capster, capster.id_capster))
+          .where(
+            and(
+              eq(pengajuanKomisi.id_barbershop, targetShopId),
+              eq(pengajuanKomisi.status, "pending"),
+            ),
+          )
+          .catch(() => []);
+
+        const pengajuanItems: OwnerNotificationItem[] = [];
+        pendingPengajuan.forEach((p) => {
+          const alreadyInDbNotifs = dbNotifs.some(
+            (dn) =>
+              dn.tipe === "pengajuan_komisi" &&
+              dn.pesan.includes(p.nama_capster),
+          );
+          if (!alreadyInDbNotifs) {
+            pengajuanItems.push({
+              id: `pengajuan-pending-${p.id_pengajuan}`,
+              type: "pengajuan_komisi",
+              title: "Pengajuan Penarikan Komisi",
+              message: `Capster ${p.nama_capster} mengajukan penarikan komisi sebesar ${formatRupiah(Number(p.jumlah_pengajuan))}.`,
+              detail: "Menunggu Persetujuan Owner",
+              timeAgo: formatWaktuRelatif(p.diajukan_at || new Date()),
+              timestamp: (p.diajukan_at || new Date()).toISOString(),
+              link: "/owner/komisi",
+              amount: Number(p.jumlah_pengajuan),
+            });
+          }
+        });
+
+        // 4. Transaksi Berhasil (paid / completed) for this barbershop
         const paidTxs = await db
           .select({
             id_transaksi: transaksi.id_transaksi,
@@ -2249,7 +2341,7 @@ export const getOwnerNotifications = createServerFn({
           .where(
             and(
               eq(transaksi.id_barbershop, targetShopId),
-              eq(transaksi.status_transaksi, "paid"),
+              inArray(transaksi.status_transaksi, ["paid", "completed"]),
             ),
           )
           .orderBy(desc(transaksi.created_at))
@@ -2476,6 +2568,8 @@ export const getOwnerNotifications = createServerFn({
 
         // Gabungkan semua notifikasi dan urutkan berdasarkan timestamp terbaru
         const allNotifications = [
+          ...dbNotifItems,
+          ...pengajuanItems,
           ...txSuccessItems,
           ...txCancelledItems,
           ...capsterCheckinItems,
@@ -2499,4 +2593,19 @@ export const getOwnerNotifications = createServerFn({
       }
     },
   );
+
+export const markNotificationAsRead = createServerFn({
+  method: "POST",
+})
+  .validator((data: { notificationId: string }) => data)
+  .handler(async ({ data }) => {
+    const rawId = data.notificationId.replace("db-notif-", "");
+    await db
+      .update(notifikasi)
+      .set({ is_read: true })
+      .where(eq(notifikasi.id_notifikasi, rawId))
+      .catch(() => {});
+    return { success: true };
+  });
+
 

@@ -51,6 +51,7 @@ import {
   type OwnerNotificationItem,
   type OwnerNotificationType,
   getOwnerNotifications,
+  markNotificationAsRead,
 } from "@/lib/owner";
 import { ownerActions, useOwner, getOwnerAuth } from "@/lib/owner-store";
 import { useSuperadmin, superadminActions } from "@/lib/superadmin-store";
@@ -241,7 +242,9 @@ export function OwnerNotificationBell({
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<OwnerNotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "transaksi" | "pembatalan" | "shift">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "komisi" | "transaksi" | "pembatalan" | "shift"
+  >("all");
   const [readIds, setReadIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -308,30 +311,41 @@ export function OwnerNotificationBell({
     saveReadIds(allIds);
   };
 
+  const isCommissionType = (type: string) =>
+    type === "pengajuan_komisi" ||
+    type === "persetujuan_komisi" ||
+    type === "penolakan_komisi" ||
+    type === "pembayaran_komisi";
+
   const handleItemClick = (item: OwnerNotificationItem) => {
     const updated = new Set(readIds);
     updated.add(item.id);
     saveReadIds(updated);
+    if (item.id.startsWith("db-notif-")) {
+      markNotificationAsRead({ data: { notificationId: item.id } }).catch(() => {});
+    }
     setIsOpen(false);
-    navigate({ to: item.link as any });
+    navigate({ to: getTenantPath(slug, item.link) as any });
   };
 
   const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
+  const countKomisi = notifications.filter((n) => isCommissionType(n.type)).length;
+  const countTx = notifications.filter((n) => n.type === "tx_success").length;
+  const countCancel = notifications.filter((n) => n.type === "tx_cancelled").length;
+  const countShift = notifications.filter(
+    (n) => n.type === "capster_checkin" || n.type === "capster_shift_end",
+  ).length;
+
   const filteredNotifs = notifications.filter((item) => {
     if (activeTab === "all") return true;
+    if (activeTab === "komisi") return isCommissionType(item.type);
     if (activeTab === "transaksi") return item.type === "tx_success";
     if (activeTab === "pembatalan") return item.type === "tx_cancelled";
     if (activeTab === "shift")
       return item.type === "capster_checkin" || item.type === "capster_shift_end";
     return true;
   });
-
-  const countTx = notifications.filter((n) => n.type === "tx_success").length;
-  const countCancel = notifications.filter((n) => n.type === "tx_cancelled").length;
-  const countShift = notifications.filter(
-    (n) => n.type === "capster_checkin" || n.type === "capster_shift_end",
-  ).length;
 
   return (
     <div className="relative">
@@ -447,6 +461,18 @@ export function OwnerNotificationBell({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab("komisi")}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === "komisi"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                Komisi ({countKomisi})
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab("transaksi")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "transaksi"
@@ -474,11 +500,11 @@ export function OwnerNotificationBell({
                 onClick={() => setActiveTab("shift")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "shift"
-                    ? "bg-amber-600 text-white shadow-sm"
+                    ? "bg-blue-600 text-white shadow-sm"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                 }`}
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
                 Shift Capster ({countShift})
               </button>
             </div>
@@ -495,7 +521,7 @@ export function OwnerNotificationBell({
                   <CheckCircle2 className="mx-auto h-7 w-7 text-slate-500 mb-2 opacity-60" />
                   <p className="text-xs font-semibold text-slate-300">Belum Ada Notifikasi</p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Aktivitas transaksi dan shift capster akan muncul di sini.
+                    Aktivitas transaksi, komisi capster, dan shift akan muncul di sini.
                   </p>
                 </div>
               ) : (
@@ -503,7 +529,13 @@ export function OwnerNotificationBell({
                   const isRead = readIds.has(item.id);
 
                   let iconBadge;
-                  if (item.type === "tx_success") {
+                  if (isCommissionType(item.type)) {
+                    iconBadge = (
+                      <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                        <Wallet className="h-4 w-4" />
+                      </div>
+                    );
+                  } else if (item.type === "tx_success") {
                     iconBadge = (
                       <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                         <CheckCircle2 className="h-4 w-4" />
@@ -523,7 +555,7 @@ export function OwnerNotificationBell({
                     );
                   } else {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-slate-500/15 border border-slate-500/30 flex items-center justify-center text-slate-400 shrink-0">
                         <LogOut className="h-4 w-4" />
                       </div>
                     );
@@ -549,13 +581,15 @@ export function OwnerNotificationBell({
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={`text-xs font-semibold truncate ${
-                              item.type === "tx_success"
-                                ? "text-emerald-400"
-                                : item.type === "tx_cancelled"
-                                  ? "text-rose-400"
-                                  : item.type === "capster_checkin"
-                                    ? "text-blue-400"
-                                    : "text-amber-400"
+                              isCommissionType(item.type)
+                                ? "text-amber-400"
+                                : item.type === "tx_success"
+                                  ? "text-emerald-400"
+                                  : item.type === "tx_cancelled"
+                                    ? "text-rose-400"
+                                    : item.type === "capster_checkin"
+                                      ? "text-blue-400"
+                                      : "text-slate-400"
                             }`}
                           >
                             {item.title}

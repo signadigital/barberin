@@ -219,7 +219,7 @@ export const getOwnerSalaryData = createServerFn({
 
     // Build conditions for transactions strictly scoped to current owner's barbershop
     const txConditions = [
-      eq(transaksi.status_transaksi, "paid"),
+      inArray(transaksi.status_transaksi, ["paid", "completed"]),
       eq(transaksi.id_barbershop, barbershopId),
     ];
     if (startDate) {
@@ -469,7 +469,8 @@ export const getOwnerCapsterBaseTransactions = createServerFn({
       if (rawMethod === "qris") paymentMethod = "QRIS";
       else if (rawMethod === "transfer") paymentMethod = "Transfer";
 
-      const isPaid = tx.status_transaksi === "paid";
+      const isPaid =
+        tx.status_transaksi === "paid" || tx.status_transaksi === "completed";
       const isCancelled =
         tx.status_transaksi === "cancelled" || tx.status_transaksi === "refunded";
 
