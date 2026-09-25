@@ -30,11 +30,17 @@ function PaymentConfirmationRedirect() {
             to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
           });
         } else {
-          navigate({ to: `/${barbershopSlug}/customer/service-execution` as any });
+          navigate({
+            to: `/${barbershopSlug}/customer/service-execution` as any,
+            search: { tx: transactionId } as any,
+          });
         }
       })
       .catch(() => {
-        navigate({ to: `/${barbershopSlug}/customer/service-execution` as any });
+        navigate({
+          to: `/${barbershopSlug}/customer/service-execution` as any,
+          search: { tx: transactionId } as any,
+        });
       });
   }, [transactionId, barbershopSlug, navigate]);
 

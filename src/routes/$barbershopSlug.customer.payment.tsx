@@ -81,9 +81,16 @@ function PaymentPage() {
         },
       });
 
-      actions.createTransaction(result.transactionId);
+      actions.createTransaction(result.transactionId, barbershopSlug);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`barberin_active_customer_tx_${barbershopSlug}`, result.transactionId);
+        sessionStorage.setItem(`barberin_active_customer_tx_${barbershopSlug}`, result.transactionId);
+      }
       setProcessing(false);
-      navigate({ to: `/${barbershopSlug}/customer/service-execution` as any });
+      navigate({
+        to: `/${barbershopSlug}/customer/service-execution` as any,
+        search: { tx: result.transactionId } as any,
+      });
     } catch (err) {
       console.error("Gagal membuat pesanan:", err);
       setError(

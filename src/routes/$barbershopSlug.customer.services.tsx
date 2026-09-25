@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   Check,
+  ChevronRight,
   Plus,
   Scissors,
   ShoppingCart,
@@ -28,6 +29,7 @@ import { actions, cartCount, cartTotal, useBarberin, type Service } from "@/lib/
 import { getServices } from "@/lib/services";
 import { getPublicBarbershopInfo } from "@/lib/barbershop-operating";
 import { isBarbershopOpen, type PublicBarbershopInfo } from "@/lib/operating-hours";
+import { getTransactionDetail } from "@/lib/bookings";
 
 function formatWaNumber(phone: string): string {
   const digits = phone.replace(/\D/g, "");
@@ -109,6 +111,39 @@ function ServicesPage() {
 
   const [loading, setLoading] = useState(serviceList.length === 0);
   const [error, setError] = useState<string | null>(null);
+  const [activeOngoingTx, setActiveOngoingTx] = useState<{ id: string; status: string } | null>(null);
+
+  // Cek apakah ada layanan aktif yang sedang berlangsung
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedTxId =
+      localStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+      sessionStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+      localStorage.getItem("barberin_active_customer_tx");
+
+    if (storedTxId) {
+      getTransactionDetail({ data: { transactionId: storedTxId, barbershopSlug } })
+        .then((detail) => {
+          if (
+            detail &&
+            (detail.bookingStatus === "in_service" ||
+              detail.bookingStatus === "waiting" ||
+              detail.bookingStatus === "confirmed" ||
+              detail.bookingStatus === "pending_confirmation" ||
+              detail.bookingStatus === "awaiting_payment") &&
+            detail.status !== "cancelled" &&
+            detail.status !== "completed" &&
+            detail.status !== "paid"
+          ) {
+            setActiveOngoingTx({ id: storedTxId, status: detail.bookingStatus });
+          } else {
+            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [barbershopSlug]);
 
   // Live Current Time & Open/Closed Status
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -214,6 +249,29 @@ function ServicesPage() {
             </p>
           </div>
         </div>
+
+        {/* Banner Layanan Aktif Jika Sedang Dalam Antrean / Dicukur */}
+        {activeOngoingTx && (
+          <Link
+            to={`/${barbershopSlug}/customer/service-execution` as any}
+            search={{ tx: activeOngoingTx.id } as any}
+            className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/20 via-sky-500/15 to-primary/20 p-3.5 shadow-lg shadow-primary/10 transition-all hover:bg-primary/25 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/25 text-primary-soft shadow-inner">
+                <Scissors className="h-4.5 w-4.5 animate-spin text-primary-soft" />
+              </span>
+              <div className="text-left min-w-0">
+                <p className="text-[13px] font-bold text-foreground truncate">Layanan Sedang Berlangsung</p>
+                <p className="text-[11px] text-muted-foreground truncate">Ketuk untuk kembali ke pemantauan cukur / antrean</p>
+              </div>
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-xs">
+              <span>Buka</span>
+              <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
+            </span>
+          </Link>
+        )}
 
         {/* Barbershop Profile Card from Owner Settings */}
         <div className="mt-4 rounded-2xl bg-[#0F1D33]/90 border border-slate-700/80 p-4 shadow-lg space-y-2.5 backdrop-blur-md">

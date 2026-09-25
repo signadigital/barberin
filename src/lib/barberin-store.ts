@@ -129,8 +129,20 @@ function persist() {
   if (typeof window === "undefined") return;
   try {
     const key = getCustomerStorageKey(state.shopSlug || state.shopId);
-    window.sessionStorage.setItem(key, JSON.stringify(state));
-    window.sessionStorage.setItem("barberin-customer-state", JSON.stringify(state));
+    const serialized = JSON.stringify(state);
+    window.sessionStorage.setItem(key, serialized);
+    window.sessionStorage.setItem("barberin-customer-state", serialized);
+    window.localStorage.setItem(key, serialized);
+    window.localStorage.setItem("barberin-customer-state", serialized);
+
+    if (state.transactionId) {
+      if (state.shopSlug) {
+        window.localStorage.setItem(`barberin_active_customer_tx_${state.shopSlug}`, state.transactionId);
+        window.sessionStorage.setItem(`barberin_active_customer_tx_${state.shopSlug}`, state.transactionId);
+      }
+      window.localStorage.setItem("barberin_active_customer_tx", state.transactionId);
+      window.sessionStorage.setItem("barberin_active_customer_tx", state.transactionId);
+    }
   } catch {
     /* ignore */
   }
@@ -143,9 +155,26 @@ function hydrate(targetSlugOrId?: string | null) {
   hydrated = true;
   try {
     const key = getCustomerStorageKey(targetSlugOrId || state.shopSlug || state.shopId);
-    const raw = window.sessionStorage.getItem(key);
+    const raw =
+      window.sessionStorage.getItem(key) ||
+      window.localStorage.getItem(key) ||
+      window.sessionStorage.getItem("barberin-customer-state") ||
+      window.localStorage.getItem("barberin-customer-state");
     if (raw) {
-      state = { ...initialState, ...(JSON.parse(raw) as BarberinState) };
+      const parsed = JSON.parse(raw) as BarberinState;
+      state = { ...initialState, ...parsed };
+    }
+
+    // Fallback transaksi aktif jika belum terisi di state
+    if (!state.transactionId) {
+      const activeTx =
+        (targetSlugOrId && (window.localStorage.getItem(`barberin_active_customer_tx_${targetSlugOrId}`) || window.sessionStorage.getItem(`barberin_active_customer_tx_${targetSlugOrId}`))) ||
+        (state.shopSlug && (window.localStorage.getItem(`barberin_active_customer_tx_${state.shopSlug}`) || window.sessionStorage.getItem(`barberin_active_customer_tx_${state.shopSlug}`))) ||
+        window.localStorage.getItem("barberin_active_customer_tx") ||
+        window.sessionStorage.getItem("barberin_active_customer_tx");
+      if (activeTx) {
+        state.transactionId = activeTx;
+      }
     }
   } catch {
     /* ignore */
@@ -234,13 +263,39 @@ export const actions = {
   setPaymentMethod(method: PaymentMethodId) {
     setState({ paymentMethod: method });
   },
-  createTransaction(transactionId: string) {
+  createTransaction(transactionId: string, shopSlug?: string) {
+    if (typeof window !== "undefined") {
+      try {
+        const slug = shopSlug || state.shopSlug || state.shopId;
+        if (slug) {
+          window.localStorage.setItem(`barberin_active_customer_tx_${slug}`, transactionId);
+          window.sessionStorage.setItem(`barberin_active_customer_tx_${slug}`, transactionId);
+        }
+        window.localStorage.setItem("barberin_active_customer_tx", transactionId);
+        window.sessionStorage.setItem("barberin_active_customer_tx", transactionId);
+      } catch {}
+    }
     setState({
       transactionId,
+      ...(shopSlug ? { shopSlug } : {}),
       transactionStatus: "PENDING",
       serviceExecutionStatus: "MENUNGGU",
       paymentConfirmationStatus: "MENUNGGU",
     });
+  },
+  clearActiveTransaction(shopSlug?: string) {
+    if (typeof window !== "undefined") {
+      try {
+        const slug = shopSlug || state.shopSlug;
+        if (slug) {
+          window.localStorage.removeItem(`barberin_active_customer_tx_${slug}`);
+          window.sessionStorage.removeItem(`barberin_active_customer_tx_${slug}`);
+        }
+        window.localStorage.removeItem("barberin_active_customer_tx");
+        window.sessionStorage.removeItem("barberin_active_customer_tx");
+      } catch {}
+    }
+    setState({ transactionId: null });
   },
   setServiceExecutionStatus(status: ServiceExecutionStatus) {
     setState({ serviceExecutionStatus: status });
@@ -270,6 +325,21 @@ export const actions = {
     });
   },
   reset() {
+    if (typeof window !== "undefined") {
+      try {
+        const key = getCustomerStorageKey(state.shopSlug || state.shopId);
+        window.sessionStorage.removeItem(key);
+        window.sessionStorage.removeItem("barberin-customer-state");
+        window.localStorage.removeItem(key);
+        window.localStorage.removeItem("barberin-customer-state");
+        if (state.shopSlug) {
+          window.localStorage.removeItem(`barberin_active_customer_tx_${state.shopSlug}`);
+          window.sessionStorage.removeItem(`barberin_active_customer_tx_${state.shopSlug}`);
+        }
+        window.localStorage.removeItem("barberin_active_customer_tx");
+        window.sessionStorage.removeItem("barberin_active_customer_tx");
+      } catch {}
+    }
     state = { ...initialState };
     persist();
     listeners.forEach((l) => l());

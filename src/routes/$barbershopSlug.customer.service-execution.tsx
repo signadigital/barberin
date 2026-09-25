@@ -33,7 +33,21 @@ import {
 } from "@/lib/bookings";
 import { cn } from "@/lib/utils";
 
+type ServiceExecutionSearch = {
+  tx?: string | undefined;
+  transactionId?: string | undefined;
+};
+
 export const Route = createFileRoute("/$barbershopSlug/customer/service-execution")({
+  validateSearch: (search: Record<string, unknown>): ServiceExecutionSearch => {
+    const rawTx = typeof search["tx"] === "string" ? search["tx"].trim() : undefined;
+    const rawTransactionId = typeof search["transactionId"] === "string" ? search["transactionId"].trim() : undefined;
+    const tx = rawTx || rawTransactionId || undefined;
+    return {
+      tx,
+      transactionId: tx,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Layanan Sedang Diproses — BARBERIN" },
@@ -110,12 +124,51 @@ export function ServiceExecutionStatusView({ status }: { status: ServiceExecutio
 function ServiceExecutionPage() {
   const navigate = useNavigate();
   const { barbershopSlug } = (Route as any).useParams();
+  const search = (Route as any).useSearch() as ServiceExecutionSearch;
   const {
     cartItems,
     serviceExecutionStatus,
-    transactionId,
+    transactionId: storeTxId,
     selectedCapster,
   } = useBarberin();
+
+  // Cari transactionId dari URL (?tx=), store in-memory, atau storage browser agar tahan refresh
+  const [resolvedTxId, setResolvedTxId] = useState<string | null>(() => {
+    if (search?.tx) return search.tx;
+    if (search?.transactionId) return search.transactionId;
+    if (storeTxId) return storeTxId;
+    if (typeof window !== "undefined") {
+      const saved =
+        localStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+        sessionStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+        localStorage.getItem("barberin_active_customer_tx") ||
+        sessionStorage.getItem("barberin_active_customer_tx");
+      if (saved) return saved;
+    }
+    return null;
+  });
+
+  const transactionId = resolvedTxId || storeTxId;
+
+  // Sinkronkan active transaction ke storage & pastikan URL selalu memiliki parameter ?tx=
+  useEffect(() => {
+    if (transactionId) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`barberin_active_customer_tx_${barbershopSlug}`, transactionId);
+        sessionStorage.setItem(`barberin_active_customer_tx_${barbershopSlug}`, transactionId);
+      }
+      if (!storeTxId) {
+        actions.createTransaction(transactionId, barbershopSlug);
+      }
+      if (!search?.tx && typeof window !== "undefined") {
+        navigate({
+          to: `/${barbershopSlug}/customer/service-execution` as any,
+          search: { tx: transactionId } as any,
+          replace: true,
+        });
+      }
+    }
+  }, [transactionId, barbershopSlug, storeTxId, search?.tx, navigate]);
 
   const [txDetail, setTxDetail] = useState<any>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -247,6 +300,18 @@ function ServiceExecutionPage() {
 
   useEffect(() => {
     if (!transactionId) {
+      let fallback: string | null = null;
+      if (typeof window !== "undefined") {
+        fallback =
+          localStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+          sessionStorage.getItem(`barberin_active_customer_tx_${barbershopSlug}`) ||
+          localStorage.getItem("barberin_active_customer_tx");
+      }
+      if (fallback) {
+        setResolvedTxId(fallback);
+        return;
+      }
+
       navigate({ to: `/${barbershopSlug}/customer/services` as any });
       return;
     }
@@ -265,6 +330,10 @@ function ServiceExecutionPage() {
         if (isCancelled) {
           toast.info("Pesanan telah dibatalkan.");
           actions.reset();
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          }
           navigate({ to: `/${barbershopSlug}/customer/services` as any });
           return;
         }
@@ -276,6 +345,10 @@ function ServiceExecutionPage() {
         if (isPaid) {
           actions.setPaymentConfirmationStatus("DIKONFIRMASI");
           actions.setServiceExecutionStatus("DISELESAIKAN");
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          }
 
           if (!hasNavigatedRef.current) {
             hasNavigatedRef.current = true;
@@ -342,6 +415,10 @@ function ServiceExecutionPage() {
         description: `Alasan: ${selectedReason}`,
       });
       actions.reset();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+        sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+      }
       setShowCancelModal(false);
       navigate({ to: `/${barbershopSlug}/customer/services` as any });
     } catch (err: any) {
@@ -537,6 +614,10 @@ function ServiceExecutionPage() {
                 type="button"
                 onClick={() => {
                   actions.reset();
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+                    sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+                  }
                   navigate({ to: `/${barbershopSlug}/customer/services` as any });
                 }}
                 className="inline-flex min-h-[40px] px-5 items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white hover:bg-primary/90"
@@ -609,6 +690,10 @@ function ServiceExecutionPage() {
             type="button"
             onClick={() => {
               actions.reset();
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+                sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+              }
               navigate({ to: `/${barbershopSlug}/customer/services` as any });
             }}
             className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
