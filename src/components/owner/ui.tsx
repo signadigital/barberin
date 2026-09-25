@@ -1018,7 +1018,7 @@ export function OwnerBottomNav({ activePath }: { activePath: string }) {
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0A1424]/95 backdrop-blur-md border-t border-slate-800 px-3 py-2 flex items-center justify-around">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = activePath === item.href;
+        const isActive = activePath === item.href || (Boolean(activePath) && item.href.endsWith(activePath));
         return (
           <Link
             key={item.href}

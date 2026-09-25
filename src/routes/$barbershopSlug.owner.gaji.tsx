@@ -416,7 +416,7 @@ function OwnerGajiPage() {
           />
 
           {/* Main Body */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 pb-24 lg:pb-8">
             {/* Top Page Header & Atur Komisi Button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -1293,6 +1293,9 @@ function OwnerGajiPage() {
               </div>
             )}
           </main>
+
+          {/* Mobile Bottom Navigation */}
+          <OwnerBottomNav activePath="/owner/gaji" />
         </div>
 
         {/* ========================================================================= */}
