@@ -8,7 +8,6 @@ import {
   Clock,
   FileText,
   Phone,
-  Receipt,
   Scissors,
   User,
   Wallet,
@@ -234,7 +233,7 @@ function CapsterTransactionDetailPage() {
     <CapsterAuthGuard>
       {loading ? (
         <MobileShell>
-          <CapsterHeader title="Detail Transaksi" backTo={`/${barbershopSlug}/capster/dashboard`} showBack={true} />
+          <CapsterHeader title="Detail Transaksi" backTo={`/${barbershopSlug}/capster/transactions`} showBack={true} />
           <main className="flex-1 space-y-3 p-4">
             <SkeletonCard />
             <SkeletonCard />
@@ -242,7 +241,7 @@ function CapsterTransactionDetailPage() {
         </MobileShell>
       ) : trx && loggedInCapsterId && trx.capsterId && trx.capsterId !== loggedInCapsterId ? (
         <MobileShell>
-          <CapsterHeader title="Akses Ditolak" backTo={`/${barbershopSlug}/capster/dashboard`} showBack={true} />
+          <CapsterHeader title="Akses Ditolak" backTo={`/${barbershopSlug}/capster/transactions`} showBack={true} />
           <main className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-danger/20 text-danger ring-1 ring-danger/40">
               <AlertCircle className="h-7 w-7" />
@@ -252,20 +251,20 @@ function CapsterTransactionDetailPage() {
               Transaksi ini milik capster lain. Anda tidak berhak melihat atau mengonfirmasi transaksi ini.
             </p>
             <div className="pt-2 w-full max-w-[200px]">
-              <PrimaryButton onClick={() => navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })}>
-                Kembali ke Dashboard
+              <PrimaryButton onClick={() => navigate({ to: `/${barbershopSlug}/capster/transactions` as any })}>
+                Kembali ke Daftar Transaksi
               </PrimaryButton>
             </div>
           </main>
         </MobileShell>
       ) : !trx ? (
         <MobileShell>
-          <CapsterHeader title="Detail Transaksi" backTo={`/${barbershopSlug}/capster/dashboard`} showBack={true} />
+          <CapsterHeader title="Detail Transaksi" backTo={`/${barbershopSlug}/capster/transactions`} showBack={true} />
           <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <p className="text-muted-foreground">Transaksi tidak ditemukan.</p>
             <div className="mt-4 w-full max-w-[200px]">
-              <PrimaryButton onClick={() => navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })}>
-                Kembali ke Dashboard
+              <PrimaryButton onClick={() => navigate({ to: `/${barbershopSlug}/capster/transactions` as any })}>
+                Kembali ke Daftar Transaksi
               </PrimaryButton>
             </div>
           </main>
@@ -275,7 +274,7 @@ function CapsterTransactionDetailPage() {
       <CapsterHeader
         title="Detail Transaksi"
         subtitle={`#${formatTransactionId(trx.id, trx.date)}`}
-        backTo={`/${barbershopSlug}/capster/dashboard`}
+        backTo={`/${barbershopSlug}/capster/transactions`}
         showBack={true}
         showActions={false}
       />
@@ -493,26 +492,14 @@ function CapsterTransactionDetailPage() {
             </SecondaryButton>
           </div>
         ) : trx.status === "Selesai" ? (
-          <div className="flex flex-col gap-2 w-full">
-            <PrimaryButton
-              onClick={() =>
-                navigate({
-                  to: `/${barbershopSlug}/capster/transactions/${trx.id}/receipt` as any,
-                })
-              }
-            >
-              <Receipt className="h-4 w-4" strokeWidth={2} />
-              LIHAT STRUK
-            </PrimaryButton>
-            <SecondaryButton
-              onClick={() =>
-                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
-              }
-            >
-              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
-              KEMBALI KE DASHBOARD
-            </SecondaryButton>
-          </div>
+          <PrimaryButton
+            onClick={() =>
+              navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
+            }
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+            KEMBALI KE DASHBOARD
+          </PrimaryButton>
         ) : trx.status === "Kedaluwarsa" ? (
           <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center justify-center gap-2 rounded-[12px] border border-rose-500/35 bg-rose-900/20 p-3 text-[13px] font-bold text-rose-400">
