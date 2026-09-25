@@ -35,36 +35,41 @@ function CapsterLoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const isAuthed = isLoggedIn || (typeof window !== "undefined" && getCapsterAuth(barbershopSlug));
+    const isAuthed =
+      (isLoggedIn && Boolean(capsterId) && Boolean(capsterName)) ||
+      (typeof window !== "undefined" && getCapsterAuth(barbershopSlug));
+
     if (isAuthed) {
+      // Jika data capster tidak lengkap, anggap ghost session dan reset agar form login tampil
+      if (!capsterId || !capsterName) {
+        capsterActions.logout(barbershopSlug);
+        return;
+      }
+
       if (shiftInfo.isCheckedIn && !shiftInfo.isShiftEnded) {
         navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
         return;
       }
 
-      if (capsterId) {
-        getActiveShift({
-          data: { capsterId, capsterName },
-        })
-          .then((active) => {
-            if (active) {
-              capsterActions.checkIn(active.id_shift);
-              navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
-            } else {
-              navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
-            }
-          })
-          .catch(() => {
+      getActiveShift({
+        data: { capsterId, capsterName },
+      })
+        .then((active) => {
+          if (active) {
+            capsterActions.checkIn(active.id_shift);
+            navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
+          } else {
             navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
-          });
-      } else {
-        navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
-      }
+          }
+        })
+        .catch(() => {
+          navigate({ to: `/${barbershopSlug}/capster/check-in` as any, replace: true });
+        });
       return;
     }
   }, [isLoggedIn, shiftInfo.isCheckedIn, shiftInfo.isShiftEnded, capsterId, capsterName, barbershopSlug, navigate]);
 
-  if (isLoggedIn || (typeof window !== "undefined" && getCapsterAuth(barbershopSlug))) {
+  if (isLoggedIn && capsterId && capsterName) {
     return null;
   }
 

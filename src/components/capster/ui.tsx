@@ -70,7 +70,7 @@ export function getCapsterTenantPath(slug: string, path: string): string {
 // ============================================================================
 export function CapsterAuthGuard({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const { isLoggedIn } = useCapster();
+  const { isLoggedIn, capsterId, capsterName } = useCapster();
   const navigate = useNavigate();
   const slug = useCapsterTenantSlug();
 
@@ -78,13 +78,16 @@ export function CapsterAuthGuard({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
+  const hasAuth =
+    (isLoggedIn && Boolean(capsterId) && Boolean(capsterName)) ||
+    getCapsterAuth(slug || undefined);
+
   useEffect(() => {
     if (!mounted) return;
-    const hasAuth = isLoggedIn || getCapsterAuth(slug || undefined);
     if (!hasAuth) {
       navigate({ to: getCapsterTenantPath(slug, "/capster/login") as any, replace: true });
     }
-  }, [mounted, isLoggedIn, slug, navigate]);
+  }, [mounted, hasAuth, slug, navigate]);
 
   if (!mounted) {
     return (
@@ -97,7 +100,6 @@ export function CapsterAuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const hasAuth = isLoggedIn || getCapsterAuth(slug || undefined);
   if (!hasAuth) {
     return (
       <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">

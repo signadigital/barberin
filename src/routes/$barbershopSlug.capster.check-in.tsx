@@ -33,6 +33,11 @@ function CheckInPage() {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
+    if (!capsterId) {
+      navigate({ to: `/${barbershopSlug}/capster/login` as any, replace: true });
+      return;
+    }
+
     // Jika capster sudah check in dan belum akhiri shift, langsung ke dashboard
     if (shiftInfo.isCheckedIn && !shiftInfo.isShiftEnded) {
       navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
@@ -41,7 +46,7 @@ function CheckInPage() {
 
     getActiveShift({
       data: {
-        ...(capsterId ? { capsterId } : {}),
+        capsterId,
         capsterName,
       },
     })
@@ -52,9 +57,13 @@ function CheckInPage() {
         }
       })
       .catch((e) => console.error(e));
-  }, [capsterId, capsterName, shiftInfo.isCheckedIn, shiftInfo.isShiftEnded, navigate]);
+  }, [capsterId, capsterName, shiftInfo.isCheckedIn, shiftInfo.isShiftEnded, barbershopSlug, navigate]);
 
   const handleCheckIn = async () => {
+    if (!capsterId) {
+      navigate({ to: `/${barbershopSlug}/capster/login` as any, replace: true });
+      return;
+    }
     if (shiftInfo.isCheckedIn) {
       navigate({ to: `/${barbershopSlug}/capster/dashboard` as any, replace: true });
       return;
@@ -62,7 +71,7 @@ function CheckInPage() {
     setChecking(true);
     try {
       const active = await checkInShift({
-        data: { capsterId: capsterId ?? "4bac18cd-d0c8-4933-a24b-2eacf56294ac" },
+        data: { capsterId },
       });
       if (active) {
         capsterActions.checkIn(active.id_shift);

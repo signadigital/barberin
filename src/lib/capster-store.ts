@@ -205,6 +205,21 @@ const initialCapsterState: CapsterState = {
   lastCreatedTransaction: null,
 };
 
+export function getUrlTenantSlug(): string | null {
+  if (typeof window === "undefined") return null;
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  if (
+    parts.length > 0 &&
+    parts[0] !== "owner" &&
+    parts[0] !== "capster" &&
+    parts[0] !== "customer" &&
+    parts[0] !== "superadmin"
+  ) {
+    return parts[0];
+  }
+  return null;
+}
+
 export function getCapsterScopedKey(slugOrId?: string | null, capsterId?: string | null): string {
   if (slugOrId && capsterId) {
     return `barberin_capster_state_${slugOrId}_${capsterId}`;
@@ -219,33 +234,52 @@ const COOKIE_KEY = "barberin_capster_logged_in";
 
 export function getCapsterAuth(barbershopSlug?: string): boolean {
   if (typeof window === "undefined") return false;
-  if (!barbershopSlug) return false;
+  const targetSlug = barbershopSlug || getUrlTenantSlug();
+  if (!targetSlug) return false;
 
   try {
-    // 1. Cek dari state in-memory jika cocok dengan barbershopSlug
-    if (state.isLoggedIn && (state.barbershopSlug === barbershopSlug || state.barbershopId === barbershopSlug)) {
+    // 1. Cek dari state in-memory jika cocok dengan barbershopSlug dan memiliki data capster valid
+    if (
+      state.isLoggedIn &&
+      Boolean(state.capsterId) &&
+      Boolean(state.capsterName) &&
+      (state.barbershopSlug === targetSlug || state.barbershopId === targetSlug)
+    ) {
       return true;
     }
 
     // 2. Cek dari storage dengan key yang scoped per barbershop & capster
-    const scopedKey = getCapsterScopedKey(barbershopSlug, state.capsterId);
+    const scopedKey = getCapsterScopedKey(targetSlug, state.capsterId);
     const rawScoped = localStorage.getItem(scopedKey) || sessionStorage.getItem(scopedKey);
     if (rawScoped) {
       const parsed = JSON.parse(rawScoped);
-      if (parsed?.isLoggedIn && (parsed.barbershopSlug === barbershopSlug || parsed.barbershopId === barbershopSlug)) {
+      if (
+        parsed?.isLoggedIn &&
+        Boolean(parsed.capsterId) &&
+        Boolean(parsed.capsterName) &&
+        (parsed.barbershopSlug === targetSlug || parsed.barbershopId === targetSlug)
+      ) {
         return true;
       }
     }
 
-    // 3. Scan key yang cocok dengan slug
-    for (let i = 0; i < localStorage.length; i++) {
+    // 3. Scan key yang cocok dengan slug, bersihkan ghost session yang tidak memiliki nama/ID
+    for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(`barberin_capster_state_${barbershopSlug}`)) {
+      if (k && k.startsWith(`barberin_capster_state_${targetSlug}`)) {
         const val = localStorage.getItem(k);
         if (val) {
           const parsed = JSON.parse(val);
-          if (parsed?.isLoggedIn && (parsed.barbershopSlug === barbershopSlug || parsed.barbershopId === barbershopSlug)) {
+          if (
+            parsed?.isLoggedIn &&
+            Boolean(parsed.capsterId) &&
+            Boolean(parsed.capsterName) &&
+            (parsed.barbershopSlug === targetSlug || parsed.barbershopId === targetSlug)
+          ) {
             return true;
+          } else if (parsed && (!parsed.capsterId || !parsed.capsterName)) {
+            // Hapus ghost/corrupted session yang tersisa di browser
+            localStorage.removeItem(k);
           }
         }
       }
@@ -264,17 +298,66 @@ function loadInitialState(): CapsterState {
     const sessionRaw = sessionStorage.getItem("barberin_capster_state_session");
     if (sessionRaw) {
       const parsed = JSON.parse(sessionRaw) as CapsterState;
-      const today = getTodayShiftDate();
-      return {
-        ...initialCapsterState,
-        ...parsed,
-        shiftInfo: {
-          ...initialCapsterState.shiftInfo,
-          ...(parsed.shiftInfo || {}),
-          date: today.date,
-          day: today.day,
-        },
-      };
+      if (parsed?.isLoggedIn && parsed.capsterId && parsed.capsterName) {
+        const today = getTodayShiftDate();
+        return {
+          ...initialCapsterState,
+          ...parsed,
+          shiftInfo: {
+            ...initialCapsterState.shiftInfo,
+            ...(parsed.shiftInfo || {}),
+            date: today.date,
+            day: today.day,
+          },
+        };
+      }
+    }
+
+    // Jika sessionStorage kosong (tab baru / refresh), coba pulihkan dari localStorage
+    const slug = getUrlTenantSlug();
+    if (slug) {
+      const scopedRaw = localStorage.getItem(getCapsterScopedKey(slug));
+      if (scopedRaw) {
+        const parsed = JSON.parse(scopedRaw) as CapsterState;
+        if (parsed?.isLoggedIn && parsed.capsterId && parsed.capsterName) {
+          const today = getTodayShiftDate();
+          return {
+            ...initialCapsterState,
+            ...parsed,
+            shiftInfo: {
+              ...initialCapsterState.shiftInfo,
+              ...(parsed.shiftInfo || {}),
+              date: today.date,
+              day: today.day,
+            },
+          };
+        }
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(`barberin_capster_state_${slug}`)) {
+          const val = localStorage.getItem(k);
+          if (val) {
+            const parsed = JSON.parse(val) as CapsterState;
+            if (parsed?.isLoggedIn && parsed.capsterId && parsed.capsterName) {
+              const today = getTodayShiftDate();
+              return {
+                ...initialCapsterState,
+                ...parsed,
+                shiftInfo: {
+                  ...initialCapsterState.shiftInfo,
+                  ...(parsed.shiftInfo || {}),
+                  date: today.date,
+                  day: today.day,
+                },
+              };
+            } else if (parsed && (!parsed.capsterId || !parsed.capsterName)) {
+              localStorage.removeItem(k);
+            }
+          }
+        }
+      }
     }
   } catch {}
   return initialCapsterState;
@@ -286,9 +369,9 @@ const listeners = new Set<() => void>();
 function persist() {
   if (typeof window === "undefined") return;
   try {
-    if (state.isLoggedIn) {
+    if (state.isLoggedIn && state.capsterId) {
       const serialized = JSON.stringify(state);
-      const targetSlug = state.barbershopSlug || state.barbershopId;
+      const targetSlug = state.barbershopSlug || state.barbershopId || getUrlTenantSlug();
       const keyWithCapster = getCapsterScopedKey(targetSlug, state.capsterId);
       const keyWithSlug = getCapsterScopedKey(targetSlug);
 
@@ -298,7 +381,7 @@ function persist() {
 
       document.cookie = `${COOKIE_KEY}=1; path=/; max-age=2592000; SameSite=Lax`;
     } else {
-      const targetSlug = state.barbershopSlug || state.barbershopId;
+      const targetSlug = state.barbershopSlug || state.barbershopId || getUrlTenantSlug();
       if (targetSlug) {
         localStorage.removeItem(getCapsterScopedKey(targetSlug, state.capsterId));
         localStorage.removeItem(getCapsterScopedKey(targetSlug));
@@ -314,12 +397,27 @@ function persist() {
 function hydrate(targetSlug?: string | null) {
   if (typeof window === "undefined") return;
   try {
-    const slug = targetSlug || state.barbershopSlug || state.barbershopId;
+    const slug = targetSlug || state.barbershopSlug || state.barbershopId || getUrlTenantSlug();
     let raw = null;
     if (slug) {
       raw =
         localStorage.getItem(getCapsterScopedKey(slug, state.capsterId)) ||
         localStorage.getItem(getCapsterScopedKey(slug));
+      if (!raw) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(`barberin_capster_state_${slug}`)) {
+            const candidate = localStorage.getItem(k);
+            if (candidate) {
+              const parsedCandidate = JSON.parse(candidate);
+              if (parsedCandidate?.isLoggedIn && parsedCandidate.capsterId && parsedCandidate.capsterName) {
+                raw = candidate;
+                break;
+              }
+            }
+          }
+        }
+      }
     }
     if (!raw) {
       raw = sessionStorage.getItem("barberin_capster_state_session");
@@ -327,17 +425,19 @@ function hydrate(targetSlug?: string | null) {
 
     if (raw) {
       const parsed = JSON.parse(raw) as CapsterState;
-      const today = getTodayShiftDate();
-      state = {
-        ...initialCapsterState,
-        ...parsed,
-        shiftInfo: {
-          ...initialCapsterState.shiftInfo,
-          ...(parsed.shiftInfo || {}),
-          date: today.date,
-          day: today.day,
-        },
-      };
+      if (parsed?.isLoggedIn && parsed.capsterId && parsed.capsterName) {
+        const today = getTodayShiftDate();
+        state = {
+          ...initialCapsterState,
+          ...parsed,
+          shiftInfo: {
+            ...initialCapsterState.shiftInfo,
+            ...(parsed.shiftInfo || {}),
+            date: today.date,
+            day: today.day,
+          },
+        };
+      }
     }
   } catch {
     /* ignore */
@@ -420,7 +520,27 @@ export const capsterActions = {
     }
   },
 
-  logout() {
+  logout(targetSlug?: string | null) {
+    const slug = targetSlug || state.barbershopSlug || state.barbershopId || getUrlTenantSlug();
+    const capId = state.capsterId;
+    if (typeof window !== "undefined") {
+      try {
+        if (slug) {
+          localStorage.removeItem(getCapsterScopedKey(slug, capId));
+          localStorage.removeItem(getCapsterScopedKey(slug));
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(`barberin_capster_state_${slug}`)) {
+              localStorage.removeItem(k);
+            }
+          }
+        }
+        sessionStorage.removeItem("barberin_capster_state_session");
+        document.cookie = `${COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+      } catch {
+        /* ignore */
+      }
+    }
     state = {
       ...initialCapsterState,
     };

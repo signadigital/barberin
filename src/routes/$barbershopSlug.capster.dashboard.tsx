@@ -47,9 +47,12 @@ function CapsterDashboardPage() {
   const [showEndShiftModal, setShowEndShiftModal] = useState(false);
   const [commissionData, setCommissionData] = useState<CapsterCommissionDashboardData | null>(null);
 
-  // Verifikasi shift aktif: jika belum check in, alihkan ke halaman check-in
+  // Verifikasi shift aktif: jika belum login/tidak ada capsterId, alihkan ke login; jika belum check in, alihkan ke halaman check-in
   useEffect(() => {
-    if (!capsterId) return;
+    if (!capsterId) {
+      navigate({ to: `/${barbershopSlug}/capster/login` as any, replace: true });
+      return;
+    }
     let mounted = true;
 
     getActiveShift({
@@ -167,7 +170,7 @@ function CapsterDashboardPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[20px] font-extrabold text-foreground">
-              Halo, {(capsterName || "Admin").split(" ")[0]}! 👋
+              Halo, {(capsterName || "Capster").split(" ")[0]}! 👋
             </h2>
             <p className="text-[13px] text-muted-foreground">
               Kamu ke dashboard capster mu.
