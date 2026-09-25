@@ -416,39 +416,47 @@ export const capsterConfirmBooking = createServerFn({
       throw new Error(`Permintaan tidak dapat dikonfirmasi karena status saat ini: ${b.status}`);
     }
 
-    // Set status ke WAITING dan catat waktu_konfirmasi
+    // Pastikan jika ada booking in_service sebelumnya dari capster ini, transisikan ke awaiting_payment
+    if (b.id_capster) {
+      await db
+        .update(booking)
+        .set({
+          status: "awaiting_payment",
+          updated_at: now,
+        })
+        .where(
+          and(
+            eq(booking.id_capster, b.id_capster),
+            eq(booking.status, "in_service"),
+            ne(booking.id_booking, b.id_booking),
+          ),
+        );
+    }
+
+    // Konfirmasi Layanan = Capster langsung memulai proses menyukur (in_service)
     await db
       .update(booking)
       .set({
-        status: "waiting",
+        status: "in_service",
         waktu_konfirmasi: now,
+        waktu_mulai_layanan: now,
         updated_at: now,
       })
       .where(eq(booking.id_booking, b.id_booking));
 
-    // Hitung estimasi waktu tunggu otomatis
-    let waitTimeMinutes = 0;
-    let estimatedStartTime = now;
-    if (b.id_capster) {
-      const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, now);
-      const myEst = queue.find((q) => q.bookingId === b.id_booking);
-      if (myEst) {
-        waitTimeMinutes = myEst.waitTimeMinutes;
-        estimatedStartTime = myEst.estimatedStartTime;
-        await db
-          .update(booking)
-          .set({
-            estimasi_tunggu_menit: waitTimeMinutes,
-            estimasi_mulai: estimatedStartTime,
-          })
-          .where(eq(booking.id_booking, b.id_booking));
-      }
-    }
+    // Update status transaksi -> ongoing
+    await db
+      .update(transaksi)
+      .set({
+        status_transaksi: "ongoing",
+        updated_at: now,
+      })
+      .where(eq(transaksi.id_booking, b.id_booking));
 
     // Catat Audit Log
     await logAudit({
       barbershopId: b.id_barbershop,
-      aksi: "confirm request",
+      aksi: "confirm and start service",
       entityType: "permintaan_layanan",
       entityId: b.id_booking,
     });
@@ -456,9 +464,8 @@ export const capsterConfirmBooking = createServerFn({
     return {
       success: true,
       bookingId: b.id_booking,
-      status: "waiting",
-      waitTimeMinutes,
-      estimatedStartTime: estimatedStartTime.toISOString(),
+      status: "in_service",
+      startedAt: now.toISOString(),
     };
   });
 
@@ -784,9 +791,15 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
         .from(booking)
         .where(eq(booking.id_booking, txRecord.id_booking))
         .limit(1);
-      if (bRecord && bRecord.status !== "awaiting_payment" && bRecord.status !== "in_service") {
+      if (
+        bRecord &&
+        bRecord.status !== "awaiting_payment" &&
+        bRecord.status !== "in_service" &&
+        bRecord.status !== "waiting" &&
+        bRecord.status !== "confirmed"
+      ) {
         throw new Error(
-          `Transaksi tidak dapat dikonfirmasi pembayaran karena status saat ini: ${bRecord.status}. Menunggu tahap pelayanan selesai.`,
+          `Transaksi tidak dapat dikonfirmasi pembayaran karena status saat ini: ${bRecord.status}.`,
         );
       }
     }
@@ -824,6 +837,7 @@ export const confirmPaymentAndGenerateStruk = createServerFn({
       .update(transaksi)
       .set({
         status_transaksi: "completed",
+        waktu_selesai_layanan: txRecord.waktu_selesai_layanan ?? now,
         updated_at: now,
       })
       .where(eq(transaksi.id_transaksi, data.transactionId))

@@ -45,11 +45,12 @@ export async function calculateQueueEstimations(
   // 1. Bersihkan request yang kadaluwarsa terlebih dahulu
   await sweepExpiredRequestsAndPayments(barbershopId);
 
-  // 2. Ambil seluruh permintaan layanan aktif untuk capster di barbershop ini
-  const activeStatuses: ("in_service" | "confirmed" | "waiting")[] = [
+  // 2. Ambil seluruh permintaan layanan aktif untuk capster di barbershop ini (termasuk yang baru masuk / pending_confirmation)
+  const activeStatuses: ("in_service" | "confirmed" | "waiting" | "pending_confirmation")[] = [
     "in_service",
     "confirmed",
     "waiting",
+    "pending_confirmation",
   ];
 
   const activeBookings = await db
@@ -253,8 +254,13 @@ export async function getBookingEstimation(
     return null;
   }
 
-  // Jika booking sudah aktif dalam antrean (in_service, waiting, confirmed)
-  if (b.status === "in_service" || b.status === "waiting" || b.status === "confirmed") {
+  // Jika booking sudah aktif dalam antrean (in_service, waiting, confirmed, pending_confirmation)
+  if (
+    b.status === "in_service" ||
+    b.status === "waiting" ||
+    b.status === "confirmed" ||
+    b.status === "pending_confirmation"
+  ) {
     const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
     const found = queue.find((q) => q.bookingId === bookingId);
     if (found) return found;

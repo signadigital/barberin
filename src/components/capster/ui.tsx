@@ -915,11 +915,11 @@ export function UnconfirmedTransactionsSection({
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-[8px] bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-bold shadow-[0_2px_8px_rgba(78,120,255,0.35)] group-hover:bg-primary/90 transition-all">
                     <span>
-                      {trx.bookingStatus === "awaiting_payment"
-                        ? "KONFIRMASI PEMBAYARAN"
-                        : trx.bookingStatus === "pending_confirmation"
+                      {trx.bookingStatus === "pending_confirmation"
                         ? "KONFIRMASI LAYANAN"
-                        : "MULAI LAYANAN"}
+                        : trx.bookingStatus === "in_service" || trx.bookingStatus === "awaiting_payment"
+                        ? "KONFIRMASI PEMBAYARAN"
+                        : "LIHAT DETAIL"}
                     </span>
                     <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
                   </span>

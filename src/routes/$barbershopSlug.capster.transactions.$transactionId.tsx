@@ -35,8 +35,6 @@ import {
 import {
   confirmPaymentAndGenerateStruk,
   capsterConfirmBooking,
-  capsterStartService,
-  capsterFinishService,
   cancelBookingOrTransaction,
   getTransactionDetail,
 } from "@/lib/bookings";
@@ -62,8 +60,6 @@ function CapsterTransactionDetailPage() {
   const [trx, setTrx] = useState<CapsterTransaction | null>(storeTrx ?? null);
   const [loading, setLoading] = useState(!storeTrx);
   const [confirming, setConfirming] = useState(false);
-  const [startingService, setStartingService] = useState(false);
-  const [finishingService, setFinishingService] = useState(false);
   const [confirmingBooking, setConfirmingBooking] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -175,46 +171,18 @@ function CapsterTransactionDetailPage() {
     if (!trx?.bookingId) return;
     setConfirmingBooking(true);
     try {
-      await capsterConfirmBooking({ data: { bookingId: trx.bookingId } });
-      toast.success("Layanan berhasil dikonfirmasi!");
-      await fetchDetail(false);
-    } catch (err: any) {
-      toast.error(err?.message || "Gagal mengonfirmasi booking");
-    } finally {
-      setConfirmingBooking(false);
-    }
-  };
-
-  const handleStartService = async () => {
-    if (!trx?.bookingId) return;
-    setStartingService(true);
-    try {
-      await capsterStartService({
+      await capsterConfirmBooking({
         data: {
           bookingId: trx.bookingId,
           ...(loggedInCapsterId ? { capsterId: loggedInCapsterId } : {}),
         },
       });
-      toast.success("Layanan dimulai!");
+      toast.success("Layanan dikonfirmasi & proses mencukur dimulai!");
       await fetchDetail(false);
     } catch (err: any) {
-      toast.error(err?.message || "Gagal memulai layanan");
+      toast.error(err?.message || "Gagal mengonfirmasi layanan");
     } finally {
-      setStartingService(false);
-    }
-  };
-
-  const handleFinishService = async () => {
-    if (!trx?.bookingId) return;
-    setFinishingService(true);
-    try {
-      await capsterFinishService({ data: { bookingId: trx.bookingId } });
-      toast.success("Pelayanan selesai! Menunggu pembayaran.");
-      await fetchDetail(false);
-    } catch (err: any) {
-      toast.error(err?.message || "Gagal menyelesaikan layanan");
-    } finally {
-      setFinishingService(false);
+      setConfirmingBooking(false);
     }
   };
 
@@ -487,54 +455,18 @@ function CapsterTransactionDetailPage() {
               BATALKAN PESANAN
             </button>
           </div>
-        ) : trx.bookingStatus === "waiting" || trx.bookingStatus === "confirmed" ? (
+        ) : (trx.bookingStatus === "in_service" ||
+            trx.bookingStatus === "waiting" ||
+            trx.bookingStatus === "confirmed" ||
+            trx.bookingStatus === "awaiting_payment" ||
+            trx.status === "Sedang Dilayani" ||
+            trx.status === "Menunggu") &&
+          trx.status !== "Selesai" &&
+          trx.status !== "Batal" &&
+          trx.status !== "Kedaluwarsa" ? (
           <div className="flex flex-col gap-2 w-full">
-            <PrimaryButton
-              loading={startingService}
-              onClick={handleStartService}
-            >
-              <Scissors className="h-4 w-4" strokeWidth={2} />
-              MULAI LAYANAN
-            </PrimaryButton>
-            <button
-              type="button"
-              onClick={() => setShowCancelModal(true)}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
-            >
-              <XCircle className="h-4 w-4" strokeWidth={2} />
-              BATALKAN PESANAN
-            </button>
-          </div>
-        ) : trx.bookingStatus === "in_service" ? (
-          <div className="flex flex-col gap-2 w-full">
-            <PrimaryButton
-              loading={finishingService}
-              onClick={handleFinishService}
-            >
-              <CheckCircle className="h-4 w-4" strokeWidth={2} />
-              SELESAI PELAYANAN
-            </PrimaryButton>
-            <button
-              type="button"
-              onClick={() => setShowCancelModal(true)}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
-            >
-              <XCircle className="h-4 w-4" strokeWidth={2} />
-              BATALKAN PESANAN
-            </button>
-            <SecondaryButton
-              onClick={() =>
-                navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })
-              }
-            >
-              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
-              KEMBALI KE DASHBOARD
-            </SecondaryButton>
-          </div>
-        ) : trx.bookingStatus === "awaiting_payment" ? (
-          <div className="flex flex-col gap-2 w-full">
-            <div className="text-[11px] font-semibold text-primary-soft text-center">
-              Batas konfirmasi pembayaran: 2 jam setelah pelayanan selesai
+            <div className="text-[11px] font-semibold text-emerald-400 text-center">
+              Layanan sedang berlangsung di kursi
             </div>
             <PrimaryButton
               loading={confirming}
@@ -543,6 +475,14 @@ function CapsterTransactionDetailPage() {
               <CheckCircle className="h-4 w-4" strokeWidth={2} />
               KONFIRMASI PEMBAYARAN
             </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/40 bg-danger/10 text-[13px] font-bold text-danger hover:bg-danger/20 transition-all active:scale-[0.98]"
+            >
+              <XCircle className="h-4 w-4" strokeWidth={2} />
+              BATALKAN PESANAN
+            </button>
             <SecondaryButton
               onClick={() =>
                 navigate({ to: `/${barbershopSlug}/capster/dashboard` as any })

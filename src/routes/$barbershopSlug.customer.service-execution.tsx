@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   Check,
   CheckCircle2,
-  CheckSquare,
   Clock,
   Loader2,
   Scissors,
@@ -30,7 +29,6 @@ import {
 } from "@/lib/barberin-store";
 import {
   cancelCustomerTransaction,
-  customerFinishService,
   getTransactionDetail,
 } from "@/lib/bookings";
 import { cn } from "@/lib/utils";
@@ -124,7 +122,6 @@ function ServiceExecutionPage() {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [otherReason, setOtherReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
-  const [finishing, setFinishing] = useState(false);
 
   // Real-time Countdown untuk State 2 (Sudah Dikonfirmasi Capster)
   const [countdown, setCountdown] = useState<{
@@ -144,6 +141,7 @@ function ServiceExecutionPage() {
   useEffect(() => {
     if (!txDetail) return;
     const isWaiting =
+      txDetail.bookingStatus === "pending_confirmation" ||
       txDetail.bookingStatus === "waiting" ||
       txDetail.bookingStatus === "confirmed";
     if (!isWaiting) return;
@@ -159,6 +157,8 @@ function ServiceExecutionPage() {
     } else {
       const baseTime = txDetail.waktuKonfirmasi
         ? new Date(txDetail.waktuKonfirmasi).getTime()
+        : txDetail.createdAt
+        ? new Date(txDetail.createdAt).getTime()
         : Date.now();
       targetTime = baseTime + estMinutes * 60 * 1000;
     }
@@ -204,6 +204,7 @@ function ServiceExecutionPage() {
     txDetail?.estimation?.estimasiMulai,
     txDetail?.estimation?.estimasiTungguMenit,
     txDetail?.waktuKonfirmasi,
+    txDetail?.createdAt,
   ]);
 
   // Real-time Countdown untuk In Service (Sedang Dilayani di Kursi)
@@ -292,7 +293,11 @@ function ServiceExecutionPage() {
           actions.setServiceExecutionStatus("DIKERJAKAN");
         } else if (detail.bookingStatus === "awaiting_payment") {
           actions.setServiceExecutionStatus("HAMPIR_SELESAI");
-        } else if (detail.bookingStatus === "confirmed" || detail.bookingStatus === "waiting") {
+        } else if (
+          detail.bookingStatus === "confirmed" ||
+          detail.bookingStatus === "waiting" ||
+          detail.bookingStatus === "pending_confirmation"
+        ) {
           actions.setServiceExecutionStatus("MENUNGGU");
         }
       } catch (err) {
@@ -348,35 +353,6 @@ function ServiceExecutionPage() {
     }
   };
 
-  const handleFinishService = async () => {
-    if (!transactionId) return;
-    setFinishing(true);
-    try {
-      await customerFinishService({
-        data: {
-          transactionId,
-          bookingId: txDetail?.bookingId,
-        },
-      });
-      toast.success("Pelayanan Selesai!", {
-        description: "Layanan telah selesai. Silakan menuju kasir untuk melakukan pembayaran.",
-      });
-      const detail = await getTransactionDetail({
-        data: { transactionId, barbershopSlug },
-      });
-      if (detail) {
-        setTxDetail(detail);
-      }
-    } catch (err: any) {
-      console.error("Gagal menyelesaikan layanan:", err);
-      toast.error("Gagal Menyelesaikan Layanan", {
-        description: err?.message || "Terjadi kendala saat menyelesaikan layanan.",
-      });
-    } finally {
-      setFinishing(false);
-    }
-  };
-
   return (
     <MobileShell>
       {/* Header tanpa tombol kembali */}
@@ -403,31 +379,21 @@ function ServiceExecutionPage() {
         />
 
         {/* ================================================== */}
-        {/* STATE 1 — MENUNGGU KONFIRMASI CAPSTER              */}
+        {/* STATE ESTIMASI MENUNGGU (TERMASUK PENDING/CONFIRMED) */}
+        {/* Pelanggan otomatis tahu estimasi tanpa menunggu konfirmasi */}
         {/* ================================================== */}
-        {txDetail?.bookingStatus === "pending_confirmation" && (
-          <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-3.5 border-amber-500/25 bg-amber-500/5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
-              <span>Menghubungi Capster...</span>
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="text-[18px] font-bold text-foreground">
-                Menunggu Konfirmasi Capster
-              </h2>
-              <p className="text-[13px] text-muted-foreground max-w-[290px] leading-relaxed mx-auto">
-                Permintaan layanan kamu sedang menunggu konfirmasi dari Capster.
-              </p>
-            </div>
-          </GlassCard>
-        )}
-
-        {/* ================================================== */}
-        {/* STATE 2 — SUDAH DIKONFIRMASI CAPSTER               */}
-        {/* ================================================== */}
-        {(txDetail?.bookingStatus === "waiting" || txDetail?.bookingStatus === "confirmed") && (
+        {(txDetail?.bookingStatus === "pending_confirmation" ||
+          txDetail?.bookingStatus === "waiting" ||
+          txDetail?.bookingStatus === "confirmed") && (
           <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-4 border-primary/25 bg-gradient-to-b from-primary/10 via-slate-900/60 to-slate-950">
-            {/* Visual Countdown Badge Ring (inspired by reference image, adapted to BARBERIN) */}
+            {txDetail?.bookingStatus === "pending_confirmation" && (
+              <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                <span>Menunggu Konfirmasi Capster</span>
+              </div>
+            )}
+
+            {/* Visual Countdown Badge Ring */}
             <div className="relative flex flex-col items-center justify-center my-1">
               <div className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-white/10 bg-slate-950/90 shadow-[0_0_35px_rgba(56,189,248,0.22)]">
                 {/* SVG Progress Arc */}
@@ -475,10 +441,12 @@ function ServiceExecutionPage() {
             {/* Teks Status */}
             <div className="space-y-1.5">
               <h2 className="text-[18px] font-bold text-foreground">
-                Menunggu Estimasi Waktu Habis
+                Estimasi Waktu Menunggu
               </h2>
               <p className="text-[13px] text-muted-foreground max-w-[310px] leading-relaxed mx-auto">
-                Capster sudah mengonfirmasi layanan kamu. Silakan tunggu sampai estimasi waktu selesai.
+                {txDetail?.bookingStatus === "pending_confirmation"
+                  ? "Estimasi antrean Anda telah dihitung otomatis. Silakan bersiap-siap menuju kursi saat giliran Anda tiba."
+                  : "Capster siap melayani Anda. Silakan bersiap-siap menuju kursi saat giliran Anda tiba."}
               </p>
             </div>
 
@@ -649,28 +617,14 @@ function ServiceExecutionPage() {
           </button>
         ) : txDetail?.bookingStatus === "in_service" ? (
           <div className="flex flex-col gap-2 w-full">
-            <button
-              type="button"
-              disabled={finishing}
-              onClick={handleFinishService}
-              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-white shadow-[0_4px_16px_rgba(78,120,255,0.35)] transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
-            >
-              {finishing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
-                  <span>Menyelesaikan Layanan...</span>
-                </>
-              ) : (
-                <>
-                  <CheckSquare className="h-4 w-4" strokeWidth={2} />
-                  <span>SELESAI LAYANAN</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center justify-center min-h-[44px] w-full rounded-[12px] bg-emerald-500/15 border border-emerald-500/30 text-[13px] font-bold text-emerald-400">
+              <Scissors className="mr-2 h-4 w-4 animate-spin text-emerald-400" />
+              <span>Layanan Sedang Berlangsung di Kursi</span>
+            </div>
             <button
               type="button"
               onClick={() => setShowCancelModal(true)}
-              className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[12px] border border-danger/30 bg-danger/5 text-[12px] font-semibold text-danger/80 hover:bg-danger/15 transition-all active:scale-[0.98]"
+              className="inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] border border-danger/30 bg-danger/5 text-[12px] font-semibold text-danger/80 hover:bg-danger/15 transition-all active:scale-[0.98]"
             >
               <XCircle className="h-3.5 w-3.5" strokeWidth={2.2} />
               <span>Batalkan Pesanan</span>
