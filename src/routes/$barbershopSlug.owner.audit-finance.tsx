@@ -23,7 +23,9 @@ import {
   X,
   AlertCircle,
   Scissors,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   OwnerAuthGuard,
@@ -130,6 +132,107 @@ function OwnerAuditFinancePage() {
       console.error("Gagal menyimpan audit kas fisik:", err);
     } finally {
       setSavingCash(false);
+    }
+  };
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    try {
+      setIsExporting(true);
+      if (!data || data.totalTransactionsCount === 0) {
+        toast.error("Tidak ada data transaksi untuk diekspor.");
+        return;
+      }
+
+      // Ambil seluruh data transaksi sesuai filter yang sedang aktif
+      let listToExport: OwnerFinanceTransactionItem[] = [];
+      if (data.totalTransactionsCount <= data.transactions.length) {
+        listToExport = data.transactions;
+      } else {
+        const res = await getOwnerAuditFinance({
+          data: {
+            period,
+            paymentMethod,
+            status,
+            search,
+            page: 1,
+            pageSize: Math.max(data.totalTransactionsCount, 10000),
+          },
+        });
+        listToExport = res?.transactions ?? data.transactions;
+      }
+
+      if (!listToExport || listToExport.length === 0) {
+        toast.error("Tidak ada data transaksi yang cocok dengan filter.");
+        return;
+      }
+
+      const headers = [
+        "No",
+        "No. Transaksi",
+        "ID Transaksi",
+        "Tanggal & Waktu",
+        "Nama Pelanggan",
+        "Layanan",
+        "Capster",
+        "Nominal (Rp)",
+        "Metode Pembayaran",
+        "Status Transaksi",
+        "Status Pembayaran",
+        "Catatan Pemeriksaan",
+      ];
+
+      const escapeCsv = (val: string | number | undefined | null) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).trim();
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      const csvRows = [
+        headers.map(escapeCsv).join(","),
+        ...listToExport.map((tx, idx) =>
+          [
+            idx + 1,
+            tx.shortId,
+            tx.id,
+            tx.dateTime,
+            tx.customerName,
+            tx.serviceNames,
+            tx.capsterName,
+            tx.amount,
+            tx.paymentMethod,
+            tx.statusTransaksi,
+            tx.statusPembayaran,
+            tx.catatanPemeriksaan || "-",
+          ]
+            .map(escapeCsv)
+            .join(","),
+        ),
+      ];
+
+      const csvContent = "\uFEFF" + csvRows.join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const safeSlug = (barbershopSlug || "barberin").replace(/[^a-zA-Z0-9_-]/g, "");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `audit-keuangan-${safeSlug}-${period}-${dateStr}.csv`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Berhasil mengekspor ${listToExport.length} transaksi ke CSV.`);
+    } catch (err: any) {
+      console.error("Gagal mengekspor CSV:", err);
+      toast.error(err?.message || "Gagal mengekspor data transaksi.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -460,11 +563,17 @@ function OwnerAuditFinancePage() {
 
                 <button
                   type="button"
-                  onClick={() => alert("Fitur Export CSV data transaksi siap.")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                  disabled={isExporting || loading || !data || data.totalTransactionsCount === 0}
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Export data transaksi ke file CSV"
                 >
-                  <Download className="h-3.5 w-3.5 text-blue-400" />
-                  <span>Export</span>
+                  {isExporting ? (
+                    <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 text-blue-400" />
+                  )}
+                  <span>{isExporting ? "Mengekspor..." : "Export"}</span>
                 </button>
               </div>
             </div>
