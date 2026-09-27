@@ -113,7 +113,7 @@ function CapsterPage() {
       <CustomerHeader
         title="Pilih Capster"
         subtitle="Pilih capster yang ingin melayani Anda."
-        backTo={shopSlug ? `/customer/services?shop=${shopSlug}` : "/customer/services"}
+        backTo={`/${barbershopSlug}/customer/services`}
       />
 
       <main className="flex-1 space-y-3 px-4 pb-6 pt-4">
