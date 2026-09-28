@@ -136,6 +136,334 @@ function OwnerAuditFinancePage() {
   };
 
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPDF = async () => {
+    try {
+      setIsExportingPdf(true);
+      if (!data || data.totalTransactionsCount === 0) {
+        toast.error("Tidak ada data transaksi untuk diekspor.");
+        return;
+      }
+
+      // Ambil seluruh data transaksi sesuai filter yang sedang aktif
+      let listToExport: OwnerFinanceTransactionItem[] = [];
+      if (data.totalTransactionsCount <= data.transactions.length) {
+        listToExport = data.transactions;
+      } else {
+        const res = await getOwnerAuditFinance({
+          data: {
+            period,
+            paymentMethod,
+            status,
+            search,
+            page: 1,
+            pageSize: Math.max(data.totalTransactionsCount, 10000),
+          },
+        });
+        listToExport = res?.transactions ?? data.transactions;
+      }
+
+      if (!listToExport || listToExport.length === 0) {
+        toast.error("Tidak ada data transaksi yang cocok dengan filter.");
+        return;
+      }
+
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: "a4",
+      });
+
+      const pageWidth = 841.89;
+      const pageHeight = 595.28;
+      const marginX = 36;
+      const contentWidth = pageWidth - marginX * 2;
+
+      // Color palette
+      const slateMuted = [100, 116, 139];
+      const slateText = [51, 65, 85];
+      const borderLight = [226, 232, 240];
+      const bgZebra = [248, 250, 252];
+      const primaryBlue = [37, 99, 235];
+      const emeraldGreen = [16, 185, 129];
+      const roseRed = [225, 29, 72];
+      const amberOrange = [217, 119, 6];
+
+      let currentY = 32;
+
+      // 1. Header Banner Box
+      doc.setFillColor(13, 21, 39); // Deep dark navy
+      doc.roundedRect(marginX, currentY, contentWidth, 54, 6, 6, "F");
+
+      // Brand Logo / Name
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(229, 166, 94); // Gold / Amber
+      doc.text("BARBERIN", marginX + 16, currentY + 24);
+
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(148, 163, 184);
+      doc.text("Modern Barbershop Management System", marginX + 16, currentY + 39);
+
+      // Report Title on Right
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.text(
+        "LAPORAN AUDIT TRANSAKSI KEUANGAN",
+        marginX + contentWidth - 16,
+        currentY + 23,
+        { align: "right" }
+      );
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(203, 213, 225);
+      const printDate = new Date().toLocaleString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const periodName =
+        period === "today"
+          ? "Hari Ini"
+          : period === "7d"
+            ? "7 Hari Terakhir"
+            : period === "30d"
+              ? "30 Hari Terakhir"
+              : "Semua Waktu";
+      doc.text(
+        `Barbershop: ${barbershopSlug || "Semua"}   |   Periode: ${periodName}   |   Waktu Unduh: ${printDate}`,
+        marginX + contentWidth - 16,
+        currentY + 39,
+        { align: "right" }
+      );
+
+      currentY += 64;
+
+      // 2. Statistics Summary Cards
+      if (data?.stats) {
+        const kpiWidth = (contentWidth - 30) / 4;
+        const kpis = [
+          {
+            label: "Total Transaksi",
+            value: `${data.stats.totalTransactions} Transaksi`,
+            color: [15, 23, 42],
+          },
+          {
+            label: "Transaksi Berhasil",
+            value: `${data.stats.successfulTransactions} Transaksi`,
+            color: emeraldGreen,
+          },
+          {
+            label: "Transaksi Dibatalkan",
+            value: `${data.stats.cancelledTransactions} Transaksi`,
+            color: roseRed,
+          },
+          {
+            label: "Total Pendapatan",
+            value: formatRupiah(data.stats.totalRevenue),
+            color: primaryBlue,
+          },
+        ];
+
+        kpis.forEach((item, i) => {
+          const boxX = marginX + i * (kpiWidth + 10);
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+          doc.roundedRect(boxX, currentY, kpiWidth, 34, 4, 4, "FD");
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.setTextColor(slateMuted[0], slateMuted[1], slateMuted[2]);
+          doc.text(item.label, boxX + 10, currentY + 13);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(item.color[0], item.color[1], item.color[2]);
+          doc.text(item.value, boxX + 10, currentY + 27);
+        });
+
+        currentY += 44;
+      }
+
+      // Table Columns Configuration
+      const columns = [
+        { header: "No", width: 26, align: "center" as const },
+        { header: "No. Transaksi", width: 80, align: "left" as const },
+        { header: "Tanggal & Waktu", width: 92, align: "left" as const },
+        { header: "Pelanggan", width: 86, align: "left" as const },
+        { header: "Layanan", width: 136, align: "left" as const },
+        { header: "Capster", width: 75, align: "left" as const },
+        { header: "Nominal", width: 80, align: "right" as const },
+        { header: "Metode", width: 55, align: "center" as const },
+        { header: "Status Transaksi", width: 75, align: "center" as const },
+        { header: "Status Bayar", width: 65, align: "center" as const },
+      ];
+
+      const drawTableHeader = (y: number) => {
+        doc.setFillColor(30, 41, 59); // Slate-800
+        doc.rect(marginX, y, contentWidth, 22, "F");
+
+        let curX = marginX;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+
+        columns.forEach((col) => {
+          let textX = curX + 6;
+          if (col.align === "center") {
+            textX = curX + col.width / 2;
+          } else if (col.align === "right") {
+            textX = curX + col.width - 6;
+          }
+          doc.text(col.header, textX, y + 14, { align: col.align });
+          curX += col.width;
+        });
+
+        return y + 22;
+      };
+
+      currentY = drawTableHeader(currentY);
+
+      const rowHeight = 19;
+      const truncate = (str: string | undefined | null, len: number) => {
+        if (!str) return "-";
+        return str.length > len ? str.slice(0, len - 1) + "…" : str;
+      };
+
+      listToExport.forEach((tx, idx) => {
+        if (currentY + rowHeight > pageHeight - 45) {
+          doc.addPage();
+          currentY = 36;
+          currentY = drawTableHeader(currentY);
+        }
+
+        const isEven = idx % 2 === 0;
+        if (isEven) {
+          doc.setFillColor(255, 255, 255);
+        } else {
+          doc.setFillColor(bgZebra[0], bgZebra[1], bgZebra[2]);
+        }
+        doc.rect(marginX, currentY, contentWidth, rowHeight, "F");
+
+        // Border line under row
+        doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+        doc.setLineWidth(0.5);
+        doc.line(marginX, currentY + rowHeight, marginX + contentWidth, currentY + rowHeight);
+
+        let curX = marginX;
+
+        // 1. No
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(slateMuted[0], slateMuted[1], slateMuted[2]);
+        doc.text(String(idx + 1), curX + columns[0].width / 2, currentY + 12.5, { align: "center" });
+        curX += columns[0].width;
+
+        // 2. No. Transaksi
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+        doc.text(tx.shortId || "-", curX + 6, currentY + 12.5);
+        curX += columns[1].width;
+
+        // 3. Tanggal & Waktu
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(slateText[0], slateText[1], slateText[2]);
+        doc.text(truncate(tx.dateTime, 18), curX + 6, currentY + 12.5);
+        curX += columns[2].width;
+
+        // 4. Pelanggan
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(slateText[0], slateText[1], slateText[2]);
+        doc.text(truncate(tx.customerName, 17), curX + 6, currentY + 12.5);
+        curX += columns[3].width;
+
+        // 5. Layanan
+        doc.text(truncate(tx.serviceNames, 28), curX + 6, currentY + 12.5);
+        curX += columns[4].width;
+
+        // 6. Capster
+        doc.text(truncate(tx.capsterName, 15), curX + 6, currentY + 12.5);
+        curX += columns[5].width;
+
+        // 7. Nominal
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(15, 23, 42);
+        doc.text(formatRupiah(tx.amount), curX + columns[6].width - 6, currentY + 12.5, { align: "right" });
+        curX += columns[6].width;
+
+        // 8. Metode
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(slateText[0], slateText[1], slateText[2]);
+        doc.text(tx.paymentMethod || "-", curX + columns[7].width / 2, currentY + 12.5, { align: "center" });
+        curX += columns[7].width;
+
+        // 9. Status Transaksi
+        if (tx.statusTransaksi === "Berhasil") {
+          doc.setTextColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+        } else if (tx.statusTransaksi === "Dibatalkan") {
+          doc.setTextColor(roseRed[0], roseRed[1], roseRed[2]);
+        } else {
+          doc.setTextColor(amberOrange[0], amberOrange[1], amberOrange[2]);
+        }
+        doc.setFont("helvetica", "bold");
+        doc.text(tx.statusTransaksi || "-", curX + columns[8].width / 2, currentY + 12.5, { align: "center" });
+        curX += columns[8].width;
+
+        // 10. Status Bayar
+        if (tx.statusPembayaran === "Lunas") {
+          doc.setTextColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+        } else if (tx.statusPembayaran === "Refund") {
+          doc.setTextColor(roseRed[0], roseRed[1], roseRed[2]);
+        } else {
+          doc.setTextColor(amberOrange[0], amberOrange[1], amberOrange[2]);
+        }
+        doc.setFont("helvetica", "bold");
+        doc.text(tx.statusPembayaran || "-", curX + columns[9].width / 2, currentY + 12.5, { align: "center" });
+
+        currentY += rowHeight;
+      });
+
+      // Pagination Footers
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+
+        doc.text(
+          "BARBERIN — Laporan Resmi Audit Keuangan & Transaksi",
+          marginX,
+          pageHeight - 20
+        );
+
+        doc.text(
+          `Halaman ${p} dari ${totalPages}`,
+          pageWidth - marginX,
+          pageHeight - 20,
+          { align: "right" }
+        );
+      }
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const safeSlug = (barbershopSlug || "barberin").replace(/[^a-zA-Z0-9_-]/g, "");
+      doc.save(`audit-transaksi-${safeSlug}-${period}-${dateStr}.pdf`);
+
+      toast.success(`Berhasil mengunduh PDF (${listToExport.length} transaksi).`);
+    } catch (err: any) {
+      console.error("Gagal mengekspor PDF:", err);
+      toast.error(err?.message || "Gagal membuat berkas PDF.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const handleExportCSV = async () => {
     try {
@@ -561,19 +889,36 @@ function OwnerAuditFinancePage() {
                   <option value="pending">Menunggu</option>
                 </select>
 
+                {/* Export PDF Button (Primary) */}
+                <button
+                  type="button"
+                  disabled={isExportingPdf || loading || !data || data.totalTransactionsCount === 0}
+                  onClick={handleExportPDF}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 rounded-xl text-xs font-semibold text-blue-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                  title="Unduh laporan transaksi dalam format dokumen PDF"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5 text-blue-400" />
+                  )}
+                  <span>{isExportingPdf ? "Membuat PDF..." : "Export PDF"}</span>
+                </button>
+
+                {/* Export CSV Button (Secondary) */}
                 <button
                   type="button"
                   disabled={isExporting || loading || !data || data.totalTransactionsCount === 0}
                   onClick={handleExportCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  title="Export data transaksi ke file CSV"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Unduh data mentah transaksi dalam format CSV"
                 >
                   {isExporting ? (
-                    <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 text-slate-400 animate-spin" />
                   ) : (
-                    <Download className="h-3.5 w-3.5 text-blue-400" />
+                    <Download className="h-3.5 w-3.5 text-slate-400" />
                   )}
-                  <span>{isExporting ? "Mengekspor..." : "Export"}</span>
+                  <span>CSV</span>
                 </button>
               </div>
             </div>
