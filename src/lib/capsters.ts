@@ -405,8 +405,17 @@ export const createOwnerCapster = createServerFn({
         .select({ no_pegawai: capster.no_pegawai })
         .from(capster)
         .where(eq(capster.id_barbershop, barbershopId));
-      const nextNum = shopCapsters.length + 1;
-      noPegawai = `CAP-${String(nextNum).padStart(3, "0")}`;
+
+      let maxNum = 0;
+      for (const sc of shopCapsters) {
+        if (sc.no_pegawai && sc.no_pegawai.startsWith("CAP-")) {
+          const num = parseInt(sc.no_pegawai.replace("CAP-", ""), 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+      noPegawai = `CAP-${String(maxNum + 1).padStart(3, "0")}`;
     } else {
       // Check if no_pegawai is duplicate in this barbershop
       const [existingNo] = await db
@@ -525,22 +534,26 @@ export const updateOwnerCapster = createServerFn({
       throw new Error("Email sudah digunakan oleh akun lain.");
     }
 
-    // Check if no_pegawai taken by another capster
-    const noPegawai = data.no_pegawai?.trim().toUpperCase() || target.no_pegawai;
-    if (noPegawai) {
-      const [noCollision] = await db
-        .select({ id_capster: capster.id_capster })
-        .from(capster)
-        .where(
-          and(
-            eq(capster.no_pegawai, noPegawai),
-            ne(capster.id_capster, target.id_capster),
-          ),
-        )
-        .limit(1);
+    // Nomor pegawai is an immutable identifier established upon creation.
+    // If a different employee number is submitted, validate against other capsters within this tenant.
+    if (data.no_pegawai) {
+      const candidateNo = data.no_pegawai.trim().toUpperCase();
+      if (candidateNo !== target.no_pegawai) {
+        const [noCollision] = await db
+          .select({ id_capster: capster.id_capster })
+          .from(capster)
+          .where(
+            and(
+              eq(capster.no_pegawai, candidateNo),
+              eq(capster.id_barbershop, barbershopId),
+              ne(capster.id_capster, target.id_capster),
+            ),
+          )
+          .limit(1);
 
-      if (noCollision) {
-        throw new Error(`Nomor pegawai "${noPegawai}" sudah digunakan oleh capster lain.`);
+        if (noCollision) {
+          throw new Error(`Nomor pegawai "${candidateNo}" sudah digunakan oleh capster lain.`);
+        }
       }
     }
 
@@ -564,15 +577,20 @@ export const updateOwnerCapster = createServerFn({
       .set(userUpdateData)
       .where(eq(users.id_user, target.id_user));
 
-    // Update capster
+    // Update capster (preserve immutable existing no_pegawai)
     await db
       .update(capster)
       .set({
-        no_pegawai: noPegawai,
+        no_pegawai: target.no_pegawai,
         status,
         updated_at: new Date(),
       })
-      .where(eq(capster.id_capster, target.id_capster));
+      .where(
+        and(
+          eq(capster.id_capster, target.id_capster),
+          eq(capster.id_barbershop, barbershopId),
+        ),
+      );
 
     // If deactivated, close ongoing shifts
     if (status === "inactive") {

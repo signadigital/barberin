@@ -201,7 +201,6 @@ function OwnerCapstersPage() {
           nama_lengkap: formName.trim(),
           email: formEmail.trim().toLowerCase(),
           no_hp: formPhone.trim() || undefined,
-          no_pegawai: formNoPegawai.trim().toUpperCase() || undefined,
           password: formPassword.trim() || undefined,
           status: formStatus,
         },
@@ -697,7 +696,7 @@ function OwnerCapstersPage() {
                 <div>
                   <h3 className="text-sm font-bold text-white">Edit Profil Capster</h3>
                   <p className="text-xs text-slate-400">
-                    Perbarui nama, kontak, no pegawai, atau kata sandi akun.
+                    Perbarui nama, kontak, kata sandi, atau status akun capster.
                   </p>
                 </div>
               </div>
@@ -727,15 +726,18 @@ function OwnerCapstersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Nomor Pegawai <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span>Nomor Pegawai</span>
+                    <span className="text-[10px] text-slate-500 font-normal">(Identitas Tetap)</span>
                   </label>
                   <input
                     type="text"
-                    required
+                    readOnly
+                    disabled
+                    tabIndex={-1}
                     value={formNoPegawai}
-                    onChange={(e) => setFormNoPegawai(e.target.value)}
-                    className="w-full bg-[#070D18] border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
+                    title="Nomor pegawai adalah identitas tetap dan tidak dapat diubah"
+                    className="w-full bg-[#0A1424] border border-slate-700/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-400 font-mono cursor-not-allowed select-none focus:outline-none uppercase opacity-80"
                   />
                 </div>
 
