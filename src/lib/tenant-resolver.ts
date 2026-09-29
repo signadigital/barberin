@@ -60,17 +60,14 @@ export function invalidateTenantCache(slug?: string) {
 }
 
 /**
- * Server function to resolve a barbershop strictly by its slug,
+ * Direct function to resolve a barbershop strictly by its slug,
  * including its persistent branding configuration (White Labeling).
  */
-export const resolveBarbershopBySlug = createServerFn({
-  method: "GET",
-})
-  .validator((slug: string) => (slug || "").trim().toLowerCase())
-  .handler(async ({ data: slug }): Promise<ResolvedBarbershop | null> => {
-    if (!slug) return null;
+export async function getTenantBarbershop(slug: string): Promise<ResolvedBarbershop | null> {
+  const cleanSlug = (slug || "").trim().toLowerCase();
+  if (!cleanSlug) return null;
 
-    const cached = shopCache.get(slug);
+  const cached = shopCache.get(cleanSlug);
     let found: CachedShopRecord | null | undefined =
       cached && Date.now() - cached.timestamp < CACHE_TTL_MS ? cached.data : null;
 
@@ -169,6 +166,18 @@ export const resolveBarbershopBySlug = createServerFn({
       currentWibTime,
       branding: brandingConfig,
     };
+  }
+
+/**
+ * Server function to resolve a barbershop strictly by its slug,
+ * including its persistent branding configuration (White Labeling).
+ */
+export const resolveBarbershopBySlug = createServerFn({
+  method: "GET",
+})
+  .validator((slug: string) => (slug || "").trim().toLowerCase())
+  .handler(async ({ data: slug }): Promise<ResolvedBarbershop | null> => {
+    return getTenantBarbershop(slug);
   });
 
 /**

@@ -248,8 +248,8 @@ function CapsterCommissionsPage() {
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-[18px] px-4 font-bold text-[13px] transition-all shrink-0 select-none",
                 data?.canWithdraw
-                  ? "bg-[#2563EB] text-white hover:bg-blue-600 active:scale-[0.98] shadow-[0_4px_16px_rgba(37,99,235,0.4)] cursor-pointer"
-                  : "bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-700/40 opacity-70",
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] shadow-md shadow-primary/30 cursor-pointer"
+                  : "bg-muted text-muted-foreground cursor-not-allowed border border-border opacity-70",
               )}
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
@@ -442,7 +442,7 @@ function CapsterCommissionsPage() {
                   type="button"
                   disabled={isSubmittingWithdraw}
                   onClick={handleConfirmWithdrawal}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-[14px] bg-[#2563EB] hover:bg-blue-600 py-2.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_16px_rgba(37,99,235,0.4)] disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-[14px] bg-primary hover:bg-primary/90 py-2.5 text-[13px] font-bold text-primary-foreground transition-all shadow-md shadow-primary/30 disabled:opacity-50"
                 >
                   {isSubmittingWithdraw ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />

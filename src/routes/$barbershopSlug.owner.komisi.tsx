@@ -198,7 +198,7 @@ function OwnerKomisiPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased font-sans">
       <OwnerSidebar activePath="/owner/gaji" />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -304,7 +304,7 @@ function OwnerKomisiPage() {
                             <button
                               type="button"
                               onClick={() => handleOpenCommissionModal(c)}
-                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                              className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-xs font-semibold shadow-xs transition-colors"
                             >
                               Atur Komisi
                             </button>
@@ -331,7 +331,7 @@ function OwnerKomisiPage() {
                     className="py-3.5 flex items-center justify-between gap-3 cursor-pointer active:bg-slate-800/40 rounded-xl px-2 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
+                      <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/30 text-primary font-bold flex items-center justify-center text-sm">
                         {c.avatarLetter}
                       </div>
                       <div>
@@ -374,7 +374,7 @@ function OwnerKomisiPage() {
                 >
                   &lt;
                 </button>
-                <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold shadow-xs">
+                <span className="px-3 py-1 rounded-lg bg-primary text-primary-foreground font-semibold shadow-xs">
                   1
                 </span>
                 <button
@@ -550,7 +550,7 @@ function OwnerKomisiPage() {
 
             <form onSubmit={handleSaveCommission} className="p-6 space-y-4 text-xs">
               <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#0A1424] border border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-sm">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/30 text-primary font-bold flex items-center justify-center text-sm">
                   {editingCapster.avatarLetter}
                 </div>
                 <div>
@@ -572,9 +572,9 @@ function OwnerKomisiPage() {
                     value={inputPercentage}
                     onChange={(e) => setInputPercentage(e.target.value)}
                     placeholder="15"
-                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-700 bg-[#0A1424] text-white font-semibold text-sm outline-hidden focus:border-blue-500"
+                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-border bg-card text-foreground font-semibold text-sm outline-hidden focus:border-primary"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">
                     %
                   </span>
                 </div>
@@ -593,7 +593,7 @@ function OwnerKomisiPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/25 transition-all active:scale-95"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-lg shadow-primary/25 transition-all active:scale-95"
                 >
                   Simpan
                 </button>

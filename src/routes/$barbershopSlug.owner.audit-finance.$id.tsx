@@ -87,7 +87,7 @@ function OwnerAuditFinanceDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       <OwnerSidebar activePath="/owner/audit-finance" />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -119,7 +119,7 @@ function OwnerAuditFinanceDetailPage() {
               <button
                 type="button"
                 onClick={() => navigate({ to: `/${barbershopSlug}/owner/audit-finance` as any })}
-                className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground"
               >
                 Kembali
               </button>
@@ -130,7 +130,7 @@ function OwnerAuditFinanceDetailPage() {
               <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="h-12 w-12 rounded-2xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center shrink-0 text-blue-400">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
                       <Receipt className="h-6 w-6" />
                     </div>
                     <div>
@@ -313,7 +313,7 @@ function OwnerAuditFinanceDetailPage() {
                       type="button"
                       disabled={savingNote}
                       onClick={handleSaveNotes}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white shadow-md shadow-blue-600/25 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-colors disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
                       <span>{savingNote ? "Menyimpan..." : "Simpan Catatan"}</span>

@@ -160,7 +160,7 @@ function OwnerHelpPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased font-sans">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased font-sans">
         {/* Sidebar Desktop */}
         <OwnerSidebar activePath={getTenantPath(barbershopSlug, "/owner/help")} />
 
@@ -214,7 +214,7 @@ function OwnerHelpPage() {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className="h-9 w-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                        <div className="h-9 w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                           <BookOpen className="h-4 w-4" />
                         </div>
                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/50">
@@ -473,7 +473,7 @@ function OwnerHelpPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30">
                   <WhatsAppIcon className="h-7 w-7 fill-white" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-md ring-2 ring-[#0F172A]">
+                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[#0F172A]">
                   <Send className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -495,7 +495,7 @@ function OwnerHelpPage() {
                 <div className="relative flex items-center justify-between">
                   {/* Step 1: Menyiapkan Tautan */}
                   <div className="flex flex-col items-center gap-1.5 z-10">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-md text-xs font-bold">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md text-xs font-bold">
                       <Check className="h-4 w-4" />
                     </div>
                     <span className="text-[10px] text-slate-300 font-medium">
@@ -504,15 +504,15 @@ function OwnerHelpPage() {
                   </div>
 
                   {/* Connecting Line 1-2 */}
-                  <div className="absolute left-[20%] right-[50%] top-3.5 h-0.5 bg-blue-600" />
+                  <div className="absolute left-[20%] right-[50%] top-3.5 h-0.5 bg-primary" />
 
                   {/* Step 2: Membuka WhatsApp */}
                   <div className="flex flex-col items-center gap-1.5 z-10">
-                    <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-md text-xs font-bold">
+                    <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md text-xs font-bold">
                       <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse" />
-                      <span className="absolute inset-0 rounded-full border border-blue-400 animate-ping opacity-60" />
+                      <span className="absolute inset-0 rounded-full border border-primary animate-ping opacity-60" />
                     </div>
-                    <span className="text-[10px] text-blue-400 font-bold">
+                    <span className="text-[10px] text-primary font-bold">
                       Membuka WhatsApp
                     </span>
                   </div>
@@ -623,7 +623,7 @@ function OwnerHelpPage() {
                 </button>
                 <a
                   href={getTenantPath(barbershopSlug, activeGuide.href)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-xs font-bold text-primary-foreground transition-colors"
                 >
                   <span>Buka Halaman {activeGuide.tag}</span>
                   <ArrowRight className="h-3.5 w-3.5" />

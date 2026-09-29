@@ -400,7 +400,7 @@ function OwnerGajiPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="flex h-screen bg-[#070D18] text-slate-100 overflow-hidden font-sans">
+      <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
         {/* Sidebar */}
         <OwnerSidebar activePath={getTenantPath(barbershopSlug, "/owner/gaji")} />
 
@@ -434,7 +434,7 @@ function OwnerGajiPage() {
                   fetchCapsters();
                   setIsCommissionModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all self-start sm:self-auto shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/25 transition-all self-start sm:self-auto shrink-0 cursor-pointer"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span>Atur Komisi</span>
@@ -725,7 +725,7 @@ function OwnerGajiPage() {
                               <button
                                 type="button"
                                 onClick={() => setIsApproveModalOpen(true)}
-                                className="w-full sm:flex-1 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                                className="w-full sm:flex-1 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                               >
                                 Setujui Pengajuan
                               </button>
@@ -735,8 +735,8 @@ function OwnerGajiPage() {
                           {detailData.pengajuan.uiStatus === "approved" && (
                             <div className="space-y-4">
                               {/* Screen 5 Banner */}
-                              <div className="rounded-2xl bg-blue-950/40 border border-blue-800/50 p-5 flex items-start gap-4">
-                                <div className="h-10 w-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                              <div className="rounded-2xl bg-primary/10 border border-primary/30 p-5 flex items-start gap-4">
+                                <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
                                   <Clock className="h-5 w-5" />
                                 </div>
                                 <div className="space-y-1">
@@ -756,7 +756,7 @@ function OwnerGajiPage() {
                               <button
                                 type="button"
                                 onClick={() => setIsPayModalOpen(true)}
-                                className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                                className="w-full py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                               >
                                 Konfirmasi Komisi Sudah Dibayarkan
                               </button>
@@ -860,7 +860,7 @@ function OwnerGajiPage() {
                         onClick={() => setStatusFilter("all")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "all"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                             : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
                         }`}
                       >
@@ -872,7 +872,7 @@ function OwnerGajiPage() {
                         onClick={() => setStatusFilter("pending")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "pending"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                             : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
                         }`}
                       >
@@ -884,7 +884,7 @@ function OwnerGajiPage() {
                         onClick={() => setStatusFilter("approved")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "approved"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                             : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
                         }`}
                       >
@@ -896,7 +896,7 @@ function OwnerGajiPage() {
                         onClick={() => setStatusFilter("rejected")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "rejected"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                             : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
                         }`}
                       >
@@ -908,7 +908,7 @@ function OwnerGajiPage() {
                         onClick={() => setStatusFilter("paid")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "paid"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                             : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
                         }`}
                       >

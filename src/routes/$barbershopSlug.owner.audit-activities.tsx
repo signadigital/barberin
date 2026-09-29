@@ -139,7 +139,7 @@ function OwnerAuditActivitiesPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       <OwnerSidebar activePath="/owner/audit-activities" />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -192,7 +192,7 @@ function OwnerAuditActivitiesPage() {
                         }}
                         className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors ${
                           period === opt.key
-                            ? "bg-blue-600 text-white font-semibold"
+                            ? "bg-primary text-primary-foreground font-semibold"
                             : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                         }`}
                       >
@@ -283,7 +283,7 @@ function OwnerAuditActivitiesPage() {
               <button
                 type="button"
                 onClick={handleApplyFilter}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white transition-colors shadow-md shadow-blue-600/20"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground transition-colors shadow-md shadow-primary/20"
               >
                 Terapkan Filter
               </button>
@@ -306,7 +306,7 @@ function OwnerAuditActivitiesPage() {
               className="flex-1 flex items-center justify-between px-4 py-2.5 bg-[#0F1D33] border border-slate-800 rounded-xl text-xs font-medium text-slate-300"
             >
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-blue-400" />
+                <SlidersHorizontal className="h-4 w-4 text-primary" />
                 <span>Filter & Pencarian</span>
               </div>
               <ChevronDown className="h-4 w-4 text-slate-400" />
@@ -318,7 +318,7 @@ function OwnerAuditActivitiesPage() {
             {/* Card 1: Total Aktivitas */}
             <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
               <div className="flex items-start justify-between">
-                <div className="h-9 w-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                   <Activity className="h-4 w-4" />
                 </div>
               </div>
@@ -595,7 +595,7 @@ function OwnerAuditActivitiesPage() {
                             onClick={() => setPage(pNum)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                               page === pNum
-                                ? "bg-blue-600 text-white font-bold shadow-xs"
+                                ? "bg-primary text-primary-foreground font-bold shadow-xs"
                                 : "bg-[#0A1424] border border-slate-800 text-slate-400 hover:text-white"
                             }`}
                           >
@@ -730,7 +730,7 @@ function OwnerAuditActivitiesPage() {
               <button
                 type="button"
                 onClick={handleApplyFilter}
-                className="flex-1 py-2.5 bg-blue-600 rounded-xl text-xs font-semibold text-white"
+                className="flex-1 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground"
               >
                 Terapkan
               </button>

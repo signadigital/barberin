@@ -248,7 +248,7 @@ function OwnerCapstersPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       <OwnerSidebar activePath="/owner/capsters" />
       <div className="flex-1 flex flex-col min-w-0">
         <OwnerMobileHeader activePath="/owner/capsters" />
@@ -268,7 +268,7 @@ function OwnerCapstersPage() {
             <button
               type="button"
               onClick={handleOpenCreateModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white transition-all self-start sm:self-auto shadow-lg shadow-blue-600/25 active:scale-95"
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground transition-all self-start sm:self-auto shadow-lg shadow-primary/25 active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>Tambah Capster</span>
@@ -285,7 +285,7 @@ function OwnerCapstersPage() {
                 placeholder="Cari capster berdasarkan nama, no. pegawai, atau kontak..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#070D18] border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-[#070D18] border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
                 <button
@@ -305,7 +305,7 @@ function OwnerCapstersPage() {
                 onClick={() => setStatusFilter("all")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
                   statusFilter === "all"
-                    ? "bg-blue-600 text-white shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-[#070D18] text-slate-400 hover:text-white border border-slate-800"
                 }`}
               >
@@ -381,7 +381,7 @@ function OwnerCapstersPage() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="mt-4 px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-600/30 transition-colors"
+                  className="mt-4 px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-medium hover:bg-primary/25 transition-colors"
                 >
                   Reset Pencarian
                 </button>
@@ -406,16 +406,16 @@ function OwnerCapstersPage() {
                       {/* Top Row: Avatar, Info, Status & Actions */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-2xl bg-blue-600/25 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-base shadow-sm">
+                          <div className="h-11 w-11 rounded-2xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center font-bold text-base shadow-sm">
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <h3 className="text-base font-bold text-white flex items-center gap-1.5">
                               <span>{c.name}</span>
-                              <BadgeCheck className="h-4 w-4 text-blue-400" />
+                              <BadgeCheck className="h-4 w-4 text-primary" />
                             </h3>
                             <div className="text-xs text-slate-400 font-mono mt-0.5">
-                              <span className="text-blue-400 font-semibold">{c.no_pegawai || "CAP-000"}</span>
+                              <span className="text-primary font-semibold">{c.no_pegawai || "CAP-000"}</span>
                               {" • "}
                               <span>{c.role}</span>
                             </div>
@@ -428,7 +428,7 @@ function OwnerCapstersPage() {
                             type="button"
                             onClick={() => handleOpenEditModal(c)}
                             title="Edit Akun Capster"
-                            className="p-1.5 rounded-lg bg-[#070D18] hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 border border-slate-800 transition-colors"
+                            className="p-1.5 rounded-lg bg-[#070D18] hover:bg-primary/15 text-slate-400 hover:text-primary border border-slate-800 transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>

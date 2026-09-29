@@ -376,7 +376,7 @@ function OwnerServicesPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       {/* Sidebar Desktop */}
       <OwnerSidebar activePath="/owner/services" />
 
@@ -443,7 +443,7 @@ function OwnerServicesPage() {
                     onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                     className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all shadow-sm ${
                       selectedCategory !== "all" || selectedStatus !== "all"
-                        ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
+                        ? "bg-primary/20 border-primary/40 text-primary"
                         : "bg-[#14233D] border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-700/50"
                     }`}
                   >
@@ -454,9 +454,9 @@ function OwnerServicesPage() {
 
                   {/* Filter Popover Menu */}
                   {isFilterDropdownOpen && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 bg-[#0F1D33] border border-slate-700 rounded-2xl shadow-2xl z-30 p-4 space-y-4 animate-in fade-in zoom-in-95 text-slate-200">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                        <span className="text-xs font-bold text-white">Filter Layanan</span>
+                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 bg-card border border-border rounded-2xl shadow-2xl z-30 p-4 space-y-4 animate-in fade-in zoom-in-95 text-card-foreground">
+                      <div className="flex items-center justify-between pb-2 border-b border-border">
+                        <span className="text-xs font-bold text-foreground">Filter Layanan</span>
                         {(selectedCategory !== "all" || selectedStatus !== "all") && (
                           <button
                             type="button"
@@ -464,7 +464,7 @@ function OwnerServicesPage() {
                               setSelectedCategory("all");
                               setSelectedStatus("all");
                             }}
-                            className="text-[11px] text-blue-400 hover:underline font-medium"
+                            className="text-[11px] text-primary hover:underline font-medium"
                           >
                             Reset
                           </button>
@@ -473,7 +473,7 @@ function OwnerServicesPage() {
 
                       {/* Status Filter */}
                       <div>
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">
                           Status Layanan
                         </label>
                         <div className="grid grid-cols-3 gap-1.5 text-xs">
@@ -487,7 +487,7 @@ function OwnerServicesPage() {
                               }}
                               className={`py-1.5 px-2 rounded-lg font-medium text-center transition-all ${
                                 selectedStatus === st
-                                  ? "bg-blue-600 text-white font-semibold shadow-sm"
+                                  ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                                   : "bg-[#14233D] text-slate-400 hover:text-white border border-slate-700/60"
                               }`}
                             >
@@ -499,7 +499,7 @@ function OwnerServicesPage() {
 
                       {/* Category Filter */}
                       <div>
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">
                           Kategori
                         </label>
                         <div className="flex flex-wrap gap-1.5 text-xs max-h-44 overflow-y-auto pr-1">
@@ -511,7 +511,7 @@ function OwnerServicesPage() {
                             }}
                             className={`py-1 px-2.5 rounded-lg text-xs font-medium transition-all ${
                               selectedCategory === "all"
-                                ? "bg-blue-600 text-white font-semibold"
+                                ? "bg-primary text-primary-foreground font-semibold"
                                 : "bg-[#14233D] text-slate-300 hover:text-white border border-slate-700/60"
                             }`}
                           >
@@ -527,7 +527,7 @@ function OwnerServicesPage() {
                               }}
                               className={`py-1 px-2.5 rounded-lg text-xs font-medium transition-all ${
                                 selectedCategory === cat
-                                  ? "bg-blue-600 text-white font-semibold"
+                                  ? "bg-primary text-primary-foreground font-semibold"
                                   : "bg-[#14233D] text-slate-300 hover:text-white border border-slate-700/60"
                               }`}
                             >
@@ -546,7 +546,7 @@ function OwnerServicesPage() {
                 <button
                   type="button"
                   onClick={handleOpenCreateModal}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-600/25"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-primary/25"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Tambah Layanan</span>
@@ -557,27 +557,27 @@ function OwnerServicesPage() {
             {/* Content Display: Loading, Empty, or Table/Cards */}
             {loading ? (
               <div className="p-16 text-center flex flex-col items-center justify-center gap-3">
-                <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-                <p className="text-sm font-semibold text-slate-200">Memuat data layanan...</p>
-                <p className="text-xs text-slate-500">Sinkronisasi katalog dari database</p>
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <p className="text-sm font-semibold text-foreground">Memuat data layanan...</p>
+                <p className="text-xs text-muted-foreground">Sinkronisasi katalog dari database</p>
               </div>
             ) : totalItems === 0 ? (
               /* EMPTY STATE */
               <div className="p-12 sm:p-16 text-center flex flex-col items-center justify-center gap-3.5 max-w-sm mx-auto">
-                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-1">
+                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary border border-primary/20 mb-1">
                   <FileText className="h-9 w-9" />
-                  <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                  <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
                     <Plus className="h-4 w-4" />
                   </div>
                 </div>
-                <h3 className="text-base font-bold text-white">Belum ada layanan</h3>
-                <p className="text-xs text-slate-400 -mt-1 leading-relaxed">
+                <h3 className="text-base font-bold text-foreground">Belum ada layanan</h3>
+                <p className="text-xs text-muted-foreground -mt-1 leading-relaxed">
                   Mulai tambahkan layanan pertama Anda di sini.
                 </p>
                 <button
                   type="button"
                   onClick={handleOpenCreateModal}
-                  className="mt-2 w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-600/25 flex items-center justify-center gap-2"
+                  className="mt-2 w-full py-2.5 px-4 bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Tambah Layanan</span>
@@ -871,7 +871,7 @@ function OwnerServicesPage() {
                     <button
                       type="button"
                       onClick={handleOpenCreateModal}
-                      className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-600/25 flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground rounded-xl text-sm font-semibold transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Tambah Layanan</span>
@@ -909,7 +909,7 @@ function OwnerServicesPage() {
                         onClick={() => setCurrentPage(pg)}
                         className={`h-8 w-8 rounded-lg font-bold text-xs transition-all ${
                           validPage === pg
-                            ? "bg-blue-600 text-white shadow-sm"
+                            ? "bg-primary text-primary-foreground shadow-sm"
                             : "border border-slate-700 bg-[#14233D] text-slate-300 hover:bg-slate-700"
                         }`}
                       >
@@ -1108,7 +1108,7 @@ function OwnerServicesPage() {
                       setFormStatus((s) => (s === "active" ? "inactive" : "active"))
                     }
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formStatus === "active" ? "bg-blue-600" : "bg-slate-700"
+                      formStatus === "active" ? "bg-primary" : "bg-slate-700"
                     }`}
                   >
                     <span
@@ -1136,7 +1136,7 @@ function OwnerServicesPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/25 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-md shadow-primary/25 flex items-center gap-2"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <span>Simpan</span>
@@ -1324,7 +1324,7 @@ function OwnerServicesPage() {
                       setFormStatus((s) => (s === "active" ? "inactive" : "active"))
                     }
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formStatus === "active" ? "bg-blue-600" : "bg-slate-700"
+                      formStatus === "active" ? "bg-primary" : "bg-slate-700"
                     }`}
                   >
                     <span
@@ -1352,7 +1352,7 @@ function OwnerServicesPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/25 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-md shadow-primary/25 flex items-center gap-2"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <span>Simpan</span>
@@ -1526,7 +1526,7 @@ function OwnerServicesPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(detailService)}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/25 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-md shadow-primary/25 flex items-center gap-2"
                 >
                   <Pencil className="h-4 w-4" />
                   <span>Edit</span>

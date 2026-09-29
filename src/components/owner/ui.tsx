@@ -156,15 +156,15 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-[#0A1424] border-r border-slate-800/80 h-screen sticky top-0 text-slate-300 p-5 select-none shrink-0 z-40 overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0 text-card-foreground p-5 select-none shrink-0 z-40 overflow-y-auto">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-6 shrink-0">
         <BarberinLogo className="h-10 w-10 shrink-0" />
         <div>
-          <div className="font-extrabold tracking-wider text-white text-base leading-none">
+          <div className="font-extrabold tracking-wider text-foreground text-base leading-none">
             BARBERIN
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 leading-tight font-medium">
+          <div className="text-[11px] text-muted-foreground mt-1 leading-tight font-medium">
             Modern Barbershop
             <br />
             Management System
@@ -183,8 +183,8 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
               to={item.href}
               className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  ? "bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/30"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -195,7 +195,7 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
       </nav>
 
       {/* Divider */}
-      <div className="h-px bg-slate-800/80 my-4 shrink-0" />
+      <div className="h-px bg-border my-4 shrink-0" />
 
       {/* Bottom Nav */}
       <div className="space-y-1.5 shrink-0">
@@ -208,8 +208,8 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
               to={item.href}
               className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-slate-800 text-white font-semibold"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                  ? "bg-muted text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -720,11 +720,7 @@ export function OwnerHeader({
       <header
         className={`hidden lg:flex items-center ${
           searchPlaceholder ? "justify-between" : "justify-end"
-        } px-8 py-3.5 sticky top-0 z-40 transition-colors ${
-          isLight
-            ? "bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs"
-            : "bg-[#0A1424] border-b border-slate-800/80"
-        }`}
+        } px-8 py-3.5 sticky top-0 z-40 transition-colors bg-card/95 backdrop-blur-md border-b border-border text-card-foreground shadow-xs`}
       >
       {/* Optional Left Search Bar (Wireframe-compliant) */}
       {searchPlaceholder ? (
@@ -748,14 +744,10 @@ export function OwnerHeader({
       <div className="flex items-center gap-4">
         {/* Live Date & Time WIB */}
         <div
-          className={`hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium border ${
-            isLight
-              ? "bg-slate-100/80 border-slate-200 text-slate-700"
-              : "bg-[#0F1D33] border-slate-800 text-slate-300 shadow-xs"
-          }`}
+          className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium border bg-muted/60 border-border text-foreground shadow-xs"
           title="Waktu Indonesia Barat (WIB)"
         >
-          <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+          <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
           <span className="font-mono tracking-tight font-semibold">
             {formatWibClock(liveTime, { withSeconds: true, withDay: true, withDate: true, withYear: true })}
           </span>
@@ -782,20 +774,12 @@ export function OwnerHeader({
         <OwnerNotificationBell variant={variant} />
 
         {/* Owner Profile */}
-        <div
-          className={`flex items-center gap-3 pl-3 border-l ${
-            isLight ? "border-slate-200" : "border-slate-800"
-          }`}
-        >
-          <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
+        <div className="flex items-center gap-3 pl-3 border-l border-border">
+          <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-md shadow-primary/20">
             {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
           </div>
           <div className="text-left">
-            <div
-              className={`text-sm font-semibold leading-tight ${
-                isLight ? "text-slate-900" : "text-white"
-              }`}
-            >
+            <div className="text-sm font-semibold leading-tight text-foreground">
               {user.nama_lengkap || "Owner"}
             </div>
             <div
@@ -857,13 +841,7 @@ export function OwnerMobileHeader({
   return (
     <>
       <ImpersonateBanner />
-      <header
-        className={`lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-40 transition-colors ${
-          isLight
-            ? "bg-white border-b border-slate-200 shadow-xs text-slate-900"
-            : "bg-[#0A1424] border-b border-slate-800 text-white"
-        }`}
-      >
+      <header className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-40 transition-colors bg-card/95 backdrop-blur-md border-b border-border text-card-foreground shadow-xs">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -908,7 +886,7 @@ export function OwnerMobileHeader({
           {/* Notification Bell */}
           <OwnerNotificationBell variant={variant} isMobile />
 
-          <div className="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-blue-500/20">
+          <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shadow-sm shadow-primary/20">
             {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
           </div>
         </div>
@@ -921,11 +899,11 @@ export function OwnerMobileHeader({
             className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="relative w-72 bg-[#0A1424] border-r border-slate-800 h-full p-5 flex flex-col z-10 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="relative w-72 bg-card border-r border-border h-full p-5 flex flex-col z-10 shadow-2xl text-card-foreground">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-2.5">
                 <BarberinLogo className="h-8 w-8 shrink-0" />
-                <div className="font-extrabold text-white text-base">BARBERIN</div>
+                <div className="font-extrabold text-foreground text-base">BARBERIN</div>
               </div>
               <button
                 type="button"
@@ -955,8 +933,8 @@ export function OwnerMobileHeader({
                     onClick={() => setDrawerOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/30"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -1018,7 +996,7 @@ export function OwnerBottomNav({ activePath }: { activePath: string }) {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0A1424]/95 backdrop-blur-md border-t border-slate-800 px-3 py-2 flex items-center justify-around">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border px-3 py-2 flex items-center justify-around shadow-lg">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activePath === item.href || (Boolean(activePath) && item.href.endsWith(activePath));
@@ -1027,7 +1005,7 @@ export function OwnerBottomNav({ activePath }: { activePath: string }) {
             key={item.href}
             to={item.href}
             className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[11px] font-medium transition-colors ${
-              isActive ? "text-blue-400 font-semibold" : "text-slate-400 hover:text-slate-200"
+              isActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Icon className="h-5 w-5 shrink-0" />
@@ -1062,7 +1040,7 @@ export function OwnerSummaryCard({
   trendUp?: boolean | undefined;
 }) {
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 flex flex-col justify-between shadow-sm hover:border-slate-700 transition-colors">
+    <div className="bg-card border border-border rounded-2xl p-4 md:p-5 flex flex-col justify-between shadow-sm hover:border-border/80 transition-colors text-card-foreground">
       <div className="flex items-start justify-between gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
           <Icon className="h-5 w-5" />
@@ -1114,7 +1092,7 @@ export function RevenueChartCard({
   const total = (data || []).reduce((sum, d) => sum + (Number(d?.revenue) || 0), 0);
 
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-white">Grafik Pendapatan</h3>
@@ -1233,7 +1211,7 @@ export function PaymentMethodsDonutCard({
   const hasData = (methods || []).some((m) => (m?.count || 0) > 0);
 
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between text-card-foreground">
       <div className="mb-3">
         <h3 className="text-base font-semibold text-white">Metode Pembayaran</h3>
         <p className="text-xs text-slate-400 mt-0.5">
@@ -1316,7 +1294,7 @@ export function RecentTransactionsTable({
   onSelectTransaction?: (tx: OwnerRecentTransaction) => void;
 }) {
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm">
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-white">Transaksi Terbaru</h3>
@@ -1423,7 +1401,7 @@ export function CapsterPerformanceTable({
   performance: OwnerCapsterPerformance[];
 }) {
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm">
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-white">Performa Capster</h3>
@@ -1504,7 +1482,7 @@ export function RecentCancellationsTable({
   cancellations: OwnerRecentCancellation[];
 }) {
   return (
-    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 shadow-sm">
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-white">Pembatalan Terbaru</h3>
@@ -1582,7 +1560,7 @@ export function TransactionDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-[#0F1D33] border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+      <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl p-6 relative text-card-foreground">
         <button
           type="button"
           onClick={onClose}

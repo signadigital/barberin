@@ -656,7 +656,7 @@ function OwnerAuditFinancePage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       <OwnerSidebar activePath="/owner/audit-finance" />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -777,7 +777,7 @@ function OwnerAuditFinancePage() {
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     period === b.key || (b.key === "custom" && period === "custom")
-                      ? "bg-blue-600 text-white font-semibold shadow-xs"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
@@ -796,7 +796,7 @@ function OwnerAuditFinancePage() {
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleApplyFilter()}
                   placeholder="Cari transaksi..."
-                  className="w-full pl-9 pr-3 py-2 bg-[#0A1424] border border-slate-700/60 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full pl-9 pr-3 py-2 bg-[#0A1424] border border-slate-700/60 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -805,7 +805,7 @@ function OwnerAuditFinancePage() {
             <button
               type="button"
               onClick={handleApplyFilter}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white transition-colors shadow-md shadow-blue-600/20"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground transition-colors shadow-md shadow-primary/20"
             >
               Terapkan Filter
             </button>
@@ -816,7 +816,7 @@ function OwnerAuditFinancePage() {
             {/* Total Transaksi */}
             <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                   <Receipt className="h-5 w-5" />
                 </div>
               </div>
@@ -876,7 +876,7 @@ function OwnerAuditFinancePage() {
             {/* Total Pendapatan */}
             <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -1013,13 +1013,13 @@ function OwnerAuditFinancePage() {
                   type="button"
                   disabled={isExportingPdf || loading || !data || data.totalTransactionsCount === 0}
                   onClick={handleExportPDF}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 rounded-xl text-xs font-semibold text-blue-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/15 hover:bg-primary/25 border border-primary/40 rounded-xl text-xs font-semibold text-primary hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
                   title="Unduh laporan transaksi dalam format dokumen PDF"
                 >
                   {isExportingPdf ? (
-                    <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
                   ) : (
-                    <FileText className="h-3.5 w-3.5 text-blue-400" />
+                    <FileText className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span>{isExportingPdf ? "Membuat PDF..." : "Export PDF"}</span>
                 </button>
@@ -1191,7 +1191,7 @@ function OwnerAuditFinancePage() {
                           onClick={() => setPage(i + 1)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                             page === i + 1
-                              ? "bg-blue-600 text-white font-bold"
+                              ? "bg-primary text-primary-foreground font-bold"
                               : "bg-[#0A1424] border border-slate-800 text-slate-400 hover:text-white"
                           }`}
                         >
@@ -1239,7 +1239,7 @@ function OwnerAuditFinancePage() {
                     );
                     setIsCashModalOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white shadow-xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground shadow-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Input Uang Fisik</span>
@@ -1503,7 +1503,7 @@ function OwnerAuditFinancePage() {
                 <button
                   type="submit"
                   disabled={savingCash}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white transition-colors"
+                  className="flex-1 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground transition-colors"
                 >
                   {savingCash ? "Menyimpan..." : "Simpan Pemeriksaan"}
                 </button>

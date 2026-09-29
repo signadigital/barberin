@@ -15,6 +15,7 @@ import {
   getOwnerSession,
   requireSuperadmin,
 } from "@/lib/auth-session";
+import { invalidateTenantCache } from "@/lib/tenant-resolver";
 
 // ============================================================================
 // TYPES & ENUMS (BPMN / ERD SESUAI SPESIFIKASI)
@@ -346,6 +347,10 @@ export const saveOwnerBranding = createServerFn({
         });
       }
     });
+
+    // Invalidate in-memory tenant cache so loaders immediately return fresh branding
+    invalidateTenantCache(tenant.barbershopSlug);
+    invalidateTenantCache();
 
     return {
       success: true,

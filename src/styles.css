@@ -78,11 +78,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(60% 40% at 80% -5%, rgba(78, 120, 255, 0.28), transparent 70%),
-      radial-gradient(70% 45% at -10% 25%, rgba(122, 167, 255, 0.16), transparent 70%);
-    background-attachment: fixed;
     min-height: 100dvh;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   :focus-visible {
@@ -91,22 +88,170 @@
   }
 }
 
-/* Liquid glass surfaces */
+/* ============================================================
+ * DEFAULT NON-TENANT THEMING (BARBERIN LANDING & PUBLIC PAGES)
+ * ============================================================ */
+.dark-mode:not([data-tenant-theme="true"]),
+[data-display-mode="dark"]:not([data-tenant-theme="true"]) {
+  color-scheme: dark;
+  background-color: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(60% 40% at 80% -5%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%),
+    radial-gradient(70% 45% at -10% 25%, color-mix(in srgb, var(--primary-soft, var(--primary)) 14%, transparent), transparent 70%);
+  background-attachment: fixed;
+}
+
+.light-mode:not([data-tenant-theme="true"]),
+[data-display-mode="light"]:not([data-tenant-theme="true"]) {
+  color-scheme: light;
+  background-color: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(60% 40% at 80% -5%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 70%),
+    radial-gradient(70% 45% at -10% 25%, color-mix(in srgb, var(--primary-soft, var(--primary)) 6%, transparent), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* ============================================================
+ * TENANT WHITE LABEL THEME LAYER
+ * Connects --brand-* properties to semantic design tokens
+ * ============================================================ */
+
+[data-tenant-theme="true"] {
+  --primary: var(--brand-primary);
+  --primary-soft: color-mix(
+    in srgb,
+    var(--brand-primary) 70%,
+    white
+  );
+  --primary-foreground: #ffffff;
+
+  --deep: var(--brand-secondary);
+  --navy: var(--brand-background);
+  --slate: var(--brand-secondary);
+
+  --ring: var(--primary);
+}
+
+[data-tenant-theme="true"][data-display-mode="dark"] {
+  color-scheme: dark;
+
+  --background: var(--brand-background);
+  --foreground: #F8FAFC;
+
+  --card: color-mix(
+    in srgb,
+    var(--brand-background) 55%,
+    var(--brand-secondary)
+  );
+
+  --card-foreground: #F8FAFC;
+
+  --muted: color-mix(
+    in srgb,
+    var(--brand-secondary) 70%,
+    var(--brand-background)
+  );
+
+  --muted-foreground: #CBD5E1;
+
+  --border: color-mix(
+    in srgb,
+    var(--primary) 20%,
+    white 10%
+  );
+
+  --input: color-mix(
+    in srgb,
+    var(--primary) 25%,
+    transparent
+  );
+
+  --ring: var(--primary);
+
+  background-color: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(
+      60% 40% at 80% -5%,
+      color-mix(in srgb, var(--primary) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 45% at -10% 25%,
+      color-mix(in srgb, var(--primary-soft) 14%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+
+[data-tenant-theme="true"][data-display-mode="light"] {
+  color-scheme: light;
+
+  --background: color-mix(
+    in srgb,
+    white 94%,
+    var(--brand-primary) 6%
+  );
+
+  --foreground: #0F172A;
+
+  --card: #FFFFFF;
+
+  --card-foreground: #0F172A;
+
+  --muted: color-mix(
+    in srgb,
+    white 90%,
+    var(--brand-primary) 10%
+  );
+
+  --muted-foreground: #475569;
+
+  --border: color-mix(
+    in srgb,
+    var(--brand-primary) 18%,
+    #CBD5E1
+  );
+
+  --input: #E2E8F0;
+
+  --ring: var(--brand-primary);
+
+  background-color: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(
+      60% 40% at 80% -5%,
+      color-mix(in srgb, var(--primary) 8%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 45% at -10% 25%,
+      color-mix(in srgb, var(--primary-soft) 6%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+
+
+/* Liquid glass surfaces (Theme & Display-mode aware) */
 @utility glass-1 {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  border: 1px solid var(--border);
   backdrop-filter: blur(12px);
 }
 
 @utility glass-2 {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--card) 75%, transparent);
+  border: 1px solid var(--border);
   backdrop-filter: blur(16px);
 }
 
 @utility glass-3 {
-  background: rgba(13, 21, 38, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid var(--border);
   backdrop-filter: blur(24px);
 }
 
@@ -185,7 +330,7 @@
 .leaflet-container {
   width: 100% !important;
   height: 100% !important;
-  background-color: #0b1527 !important;
+  background-color: var(--background) !important;
   font-family: inherit !important;
   z-index: 1 !important;
 }
@@ -206,26 +351,26 @@
 }
 
 .leaflet-control-zoom {
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .leaflet-control-zoom a {
-  background-color: #0F1D33 !important;
-  color: #FFFFFF !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background-color: #1E293B !important;
-  color: #38BDF8 !important;
+  background-color: var(--muted) !important;
+  color: var(--primary) !important;
 }
 
 .leaflet-control-attribution {
-  background: rgba(15, 29, 51, 0.8) !important;
-  color: #94A3B8 !important;
+  background: color-mix(in srgb, var(--card) 85%, transparent) !important;
+  color: var(--muted-foreground) !important;
   font-size: 9px !important;
   backdrop-filter: blur(4px);
   border-top-left-radius: 6px;
@@ -233,6 +378,6 @@
 }
 
 .leaflet-control-attribution a {
-  color: #38BDF8 !important;
+  color: var(--primary) !important;
 }
 

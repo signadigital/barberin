@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import React, { useState, useEffect, useRef } from "react";
 import {
   Palette,
@@ -41,6 +41,7 @@ import {
   type BrandingStatus,
   type ColorPreset,
 } from "@/lib/branding-domains";
+import { PRESET_SEMANTIC_TOKENS } from "@/lib/tenant-theme";
 import { BPMNViewer } from "@/components/bpmn/bpmn-viewer";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/theme")({
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/$barbershopSlug/owner/theme")({
 });
 
 function OwnerWhiteLabelingPage() {
+  const router = useRouter();
   const { barbershopSlug } = (Route as any).useParams();
 
   // Form states
@@ -207,6 +209,8 @@ function OwnerWhiteLabelingPage() {
       setBrandingStatus(targetStatus);
       toast.success(res.message || "Konfigurasi branding berhasil disimpan!");
       setShowPreviewModal(false);
+      // Immediately invalidate router cache so parent layout & all pages reload the new branding
+      await router.invalidate();
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan konfigurasi branding.");
     } finally {
@@ -230,7 +234,7 @@ function OwnerWhiteLabelingPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] flex text-slate-100 selection:bg-blue-600 selection:text-white">
+      <div className="min-h-screen bg-background flex text-foreground selection:bg-primary selection:text-primary-foreground">
         {/* Desktop Sidebar */}
         <OwnerSidebar activePath={`/${barbershopSlug}/owner/theme`} />
 
@@ -243,29 +247,29 @@ function OwnerWhiteLabelingPage() {
             {/* Header & Breadcrumb (Image 3 Wireframe) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mb-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium mb-1">
                   <span>Pengaturan</span>
                   <span>›</span>
-                  <span className="text-blue-400 font-semibold">White Labeling</span>
+                  <span className="text-primary font-semibold">White Labeling</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-sm">
+                  <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shadow-sm">
                     <Palette className="h-5 w-5" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-3">
                     White Labeling
                     <span
                       className={`text-xs px-2.5 py-0.5 rounded-full font-mono uppercase font-bold border ${
                         brandingStatus === "active"
                           ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                          : "bg-slate-800 text-slate-400 border-slate-700"
+                          : "bg-muted text-muted-foreground border-border"
                       }`}
                     >
                       ● {brandingStatus}
                     </span>
                   </h1>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Sesuaikan identitas dan tampilan website barbershop Anda dengan brand Anda.
                 </p>
               </div>
@@ -275,7 +279,7 @@ function OwnerWhiteLabelingPage() {
                 <button
                   type="button"
                   onClick={() => setShowBpmnModal(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-blue-400 border border-blue-500/30 transition-all shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-primary border border-primary/30 transition-all shadow-sm active:scale-95"
                 >
                   <Layers className="h-4 w-4" />
                   <span>Lihat Alur BPMN</span>
@@ -284,7 +288,7 @@ function OwnerWhiteLabelingPage() {
                 <button
                   type="button"
                   onClick={openHistoryModal}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-all shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-muted-foreground border border-border transition-all shadow-sm active:scale-95"
                 >
                   <History className="h-4 w-4" />
                   <span>Riwayat</span>
@@ -293,9 +297,9 @@ function OwnerWhiteLabelingPage() {
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-foreground border border-border transition-all shadow-sm active:scale-95"
                 >
-                  <Eye className="h-4 w-4 text-purple-400" />
+                  <Eye className="h-4 w-4 text-primary" />
                   <span>Preview</span>
                 </button>
 
@@ -303,7 +307,7 @@ function OwnerWhiteLabelingPage() {
                   type="button"
                   disabled={saving || loading}
                   onClick={() => handleSave("active")}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30 active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-md shadow-primary/30 active:scale-95 disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
                   <span>{saving ? "Menyimpan..." : "Simpan Perubahan"}</span>
@@ -319,14 +323,14 @@ function OwnerWhiteLabelingPage() {
             ) : (
               <div className="space-y-6">
                 {/* CARD 1: Identitas Brand (Image 3) */}
-                <div className="bg-[#0B1424] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
-                  <div className="flex items-center gap-3 pb-3 border-b border-slate-800/80">
-                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-5 text-card-foreground">
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                       <Tag className="h-4 w-4" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-white">Identitas Brand</h2>
-                      <p className="text-xs text-slate-400">
+                      <h2 className="text-sm font-bold text-foreground">Identitas Brand</h2>
+                      <p className="text-xs text-muted-foreground">
                         Atur informasi dasar yang akan digunakan untuk menampilkan identitas barbershop Anda.
                       </p>
                     </div>
@@ -335,7 +339,7 @@ function OwnerWhiteLabelingPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Nama Brand */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                      <label className="text-xs font-semibold text-foreground flex items-center gap-1">
                         <span>Nama Brand</span>
                         <span className="text-rose-400">*</span>
                       </label>
@@ -345,25 +349,25 @@ function OwnerWhiteLabelingPage() {
                         onChange={(e) => setNamaBrand(e.target.value)}
                         placeholder="Contoh: Singgah Barbershop"
                         maxLength={100}
-                        className="w-full bg-[#070D18] border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-muted-foreground">
                         Nama utama yang akan tampil pada banner dan nota layanan.
                       </span>
                     </div>
 
                     {/* Tagline */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-300">Tagline</label>
+                      <label className="text-xs font-semibold text-foreground">Tagline</label>
                       <input
                         type="text"
                         value={tagline}
                         onChange={(e) => setTagline(e.target.value)}
                         placeholder="Contoh: Potong rapi, tampil percaya diri"
                         maxLength={150}
-                        className="w-full bg-[#070D18] border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-muted-foreground">
                         Slogan singkat di bawah nama brand barbershop.
                       </span>
                     </div>
@@ -521,14 +525,14 @@ function OwnerWhiteLabelingPage() {
                 </div>
 
                 {/* CARD 2: Tampilan (Image 3) */}
-                <div className="bg-[#0B1424] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
-                  <div className="flex items-center gap-3 pb-3 border-b border-slate-800/80">
-                    <div className="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-6 text-card-foreground">
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                       <Monitor className="h-4 w-4" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-white">Tampilan</h2>
-                      <p className="text-xs text-slate-400">
+                      <h2 className="text-sm font-bold text-foreground">Tampilan</h2>
+                      <p className="text-xs text-muted-foreground">
                         Pilih gaya tampilan yang sesuai dengan karakter brand barbershop Anda.
                       </p>
                     </div>
@@ -671,14 +675,14 @@ function OwnerWhiteLabelingPage() {
                       Pilih skema warna dasar tampilan website barbershop Anda.
                     </p>
 
-                    <div className="inline-flex items-center gap-2 bg-[#070D18] p-1.5 rounded-xl border border-slate-800">
+                    <div className="inline-flex items-center gap-2 bg-background p-1.5 rounded-xl border border-border">
                       <button
                         type="button"
                         onClick={() => setDisplayMode("light")}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                           displayMode === "light"
                             ? "bg-white text-slate-900 shadow-md font-bold"
-                            : "text-slate-400 hover:text-white"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         <Sun className="h-3.5 w-3.5 text-amber-500" />
@@ -689,8 +693,8 @@ function OwnerWhiteLabelingPage() {
                         onClick={() => setDisplayMode("dark")}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                           displayMode === "dark"
-                            ? "bg-purple-600 text-white shadow-md font-bold shadow-purple-600/30"
-                            : "text-slate-400 hover:text-white"
+                            ? "bg-primary text-primary-foreground shadow-md font-bold shadow-primary/30"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         <Moon className="h-3.5 w-3.5" />
@@ -703,10 +707,10 @@ function OwnerWhiteLabelingPage() {
                   {/* Warna Presets (Blue, Emerald, Purple, Rose, Amber, Slate) */}
                   <div className="pt-2 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-purple-400" />
-                      <span className="text-xs font-semibold text-white">Warna</span>
+                      <Palette className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-semibold text-foreground">Warna</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-muted-foreground">
                       Pilih kombinasi warna yang telah disediakan BARBERIN untuk tampilan website Anda.
                     </p>
 
@@ -720,8 +724,8 @@ function OwnerWhiteLabelingPage() {
                             onClick={() => setSelectedColorKey(preset.key)}
                             className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
                               isSelected
-                                ? "border-purple-500 bg-purple-950/30 text-white ring-2 ring-purple-500/40 shadow-md"
-                                : "border-slate-800 bg-[#070D18] text-slate-400 hover:text-white hover:border-slate-700"
+                                ? "border-primary bg-primary/20 text-foreground ring-2 ring-primary/40 shadow-md"
+                                : "border-border bg-background text-muted-foreground hover:text-foreground hover:border-muted"
                             }`}
                           >
                             {/* Color tri-swatch */}
@@ -752,11 +756,11 @@ function OwnerWhiteLabelingPage() {
                 </div>
 
                 {/* CARD 3: SEO & Watermark Settings */}
-                <div className="bg-[#0B1424] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-5 text-card-foreground">
+                  <div className="flex items-center justify-between pb-3 border-b border-border">
                     <div>
-                      <h2 className="text-sm font-bold text-white">SEO &amp; Visibilitas Brand</h2>
-                      <p className="text-xs text-slate-400">
+                      <h2 className="text-sm font-bold text-foreground">SEO &amp; Visibilitas Brand</h2>
+                      <p className="text-xs text-muted-foreground">
                         Pengaturan metadata pencarian Google dan opsi sembunyikan merek platform.
                       </p>
                     </div>
@@ -764,35 +768,35 @@ function OwnerWhiteLabelingPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-300">Meta Title</label>
+                      <label className="text-xs font-semibold text-foreground">Meta Title</label>
                       <input
                         type="text"
                         value={metaTitle}
                         onChange={(e) => setMetaTitle(e.target.value)}
                         placeholder="Contoh: Singgah Barbershop — Potong Rapi & Nyaman"
                         maxLength={150}
-                        className="w-full bg-[#070D18] border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
+                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-300">Meta Description</label>
+                      <label className="text-xs font-semibold text-foreground">Meta Description</label>
                       <input
                         type="text"
                         value={metaDescription}
                         onChange={(e) => setMetaDescription(e.target.value)}
                         placeholder="Deskripsi singkat yang muncul di hasil pencarian Google"
-                        className="w-full bg-[#070D18] border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
+                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between p-3.5 rounded-xl bg-[#070D18] border border-slate-800">
+                  <div className="pt-2 flex items-center justify-between p-3.5 rounded-xl bg-background border border-border">
                     <div>
-                      <div className="text-xs font-semibold text-white">
+                      <div className="text-xs font-semibold text-foreground">
                         Sembunyikan Label "Powered by BARBERIN"
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
                         Menghilangkan watermark brand platform dari footer halaman reservasi pelanggan.
                       </div>
                     </div>
@@ -803,7 +807,7 @@ function OwnerWhiteLabelingPage() {
                         onChange={(e) => setHideBarberinBrand(e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      <div className="w-11 h-6 bg-muted peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                 </div>
@@ -835,95 +839,110 @@ function OwnerWhiteLabelingPage() {
               </div>
 
               {/* Mockup preview canvas */}
-              <div
-                className="p-8 space-y-6 transition-colors"
-                style={{
-                  backgroundColor: currentColorPreset.background,
-                  color: currentColorPreset.textColor,
-                }}
-              >
-                {/* Header Mockup */}
-                <div
-                  className="p-4 rounded-2xl flex items-center justify-between border shadow-lg"
-                  style={{
-                    backgroundColor: currentColorPreset.cardBg,
-                    borderColor: currentColorPreset.secondary,
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded-lg" />
-                    ) : (
-                      <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md"
-                        style={{ backgroundColor: currentColorPreset.primary }}
-                      >
-                        {namaBrand ? namaBrand.charAt(0) : "B"}
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-extrabold text-base tracking-tight">
-                        {namaBrand || "Nama Barbershop"}
-                      </h3>
-                      <p className="text-xs opacity-75">{tagline || "Tagline barbershop Anda"}</p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md"
-                    style={{ backgroundColor: currentColorPreset.primary }}
+              {(() => {
+                const previewTokens =
+                  PRESET_SEMANTIC_TOKENS[selectedColorKey]?.[displayMode] ||
+                  PRESET_SEMANTIC_TOKENS["blue"]![displayMode];
+                return (
+                  <div
+                    className="p-8 space-y-6 transition-colors"
+                    style={{
+                      backgroundColor: previewTokens.background,
+                      color: previewTokens.foreground,
+                    }}
                   >
-                    Booking Sekarang
-                  </button>
-                </div>
-
-                {/* Service Card Mockup */}
-                <div
-                  className="p-5 rounded-2xl border space-y-3 shadow-md"
-                  style={{
-                    backgroundColor: currentColorPreset.cardBg,
-                    borderColor: currentColorPreset.secondary,
-                  }}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-sm">Gentlemen Haircut &amp; Wash</div>
-                      <div className="text-xs opacity-70">45 Menit • Termasuk pijat kepala</div>
-                    </div>
+                    {/* Header Mockup */}
                     <div
-                      className="font-extrabold text-sm font-mono px-3 py-1 rounded-lg text-white"
-                      style={{ backgroundColor: currentColorPreset.primary }}
+                      className="p-4 rounded-2xl flex items-center justify-between border shadow-lg"
+                      style={{
+                        backgroundColor: previewTokens.card,
+                        borderColor: previewTokens.border,
+                        color: previewTokens.cardForeground,
+                      }}
                     >
-                      Rp 75.000
+                      <div className="flex items-center gap-3">
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded-lg" />
+                        ) : (
+                          <div
+                            className="h-10 w-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md"
+                            style={{ backgroundColor: previewTokens.primary, color: previewTokens.primaryForeground }}
+                          >
+                            {namaBrand ? namaBrand.charAt(0) : "B"}
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-extrabold text-base tracking-tight">
+                            {namaBrand || "Nama Barbershop"}
+                          </h3>
+                          <p className="text-xs opacity-75">{tagline || "Tagline barbershop Anda"}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-xl text-xs font-bold shadow-md"
+                        style={{
+                          backgroundColor: previewTokens.primary,
+                          color: previewTokens.primaryForeground,
+                        }}
+                      >
+                        Booking Sekarang
+                      </button>
+                    </div>
+
+                    {/* Service Card Mockup */}
+                    <div
+                      className="p-5 rounded-2xl border space-y-3 shadow-md"
+                      style={{
+                        backgroundColor: previewTokens.card,
+                        borderColor: previewTokens.border,
+                        color: previewTokens.cardForeground,
+                      }}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-bold text-sm">Gentlemen Haircut &amp; Wash</div>
+                          <div className="text-xs opacity-70">45 Menit • Termasuk pijat kepala</div>
+                        </div>
+                        <div
+                          className="font-extrabold text-sm font-mono px-3 py-1 rounded-lg"
+                          style={{
+                            backgroundColor: previewTokens.primary,
+                            color: previewTokens.primaryForeground,
+                          }}
+                        >
+                          Rp 75.000
+                        </div>
+                      </div>
+                      <div className="h-2 w-full rounded-full opacity-20 bg-slate-500" />
+                    </div>
+
+                    {/* Footer Mockup */}
+                    <div className="text-center text-xs opacity-60 pt-4 border-t border-border">
+                      {hideBarberinBrand ? (
+                        <span>© 2026 {namaBrand || "Barbershop"}. All rights reserved.</span>
+                      ) : (
+                        <span>
+                          © 2026 {namaBrand || "Barbershop"} • Powered by{" "}
+                          <strong className="underline">BARBERIN</strong>
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="h-2 w-full rounded-full opacity-20 bg-slate-500" />
-                </div>
-
-                {/* Footer Mockup */}
-                <div className="text-center text-xs opacity-60 pt-4 border-t border-slate-800">
-                  {hideBarberinBrand ? (
-                    <span>© 2026 {namaBrand || "Barbershop"}. All rights reserved.</span>
-                  ) : (
-                    <span>
-                      © 2026 {namaBrand || "Barbershop"} • Powered by{" "}
-                      <strong className="underline">BARBERIN</strong>
-                    </span>
-                  )}
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Footer BPMN Decision: Sesuai? */}
-              <div className="p-4 bg-[#081220] border-t border-slate-800 flex items-center justify-between gap-4">
-                <div className="text-xs text-slate-400">
+              <div className="p-4 bg-card border-t border-border flex items-center justify-between gap-4 text-card-foreground">
+                <div className="text-xs text-muted-foreground">
                   <span className="text-amber-400 font-bold">Decision (BPMN):</span> Apakah tampilan sudah sesuai keinginan Anda?
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowPreviewModal(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground"
                   >
                     Kembali Edit
                   </button>
@@ -931,7 +950,7 @@ function OwnerWhiteLabelingPage() {
                     type="button"
                     disabled={saving}
                     onClick={() => handleSave("active")}
-                    className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30"
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/30"
                   >
                     {saving ? "Menyimpan..." : "Ya, Simpan Perubahan"}
                   </button>

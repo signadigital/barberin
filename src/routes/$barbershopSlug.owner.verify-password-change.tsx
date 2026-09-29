@@ -305,7 +305,7 @@ function OwnerVerifyPasswordChangePage() {
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/owner/login" as any, replace: true })}
-                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg shadow-blue-600/20"
+                  className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg shadow-primary/20"
                 >
                   <span>Login dengan Password Baru</span>
                   <ArrowRight className="h-4 w-4" />

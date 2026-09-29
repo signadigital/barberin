@@ -41,8 +41,8 @@ function OwnerDashboardError({ error, reset }: { error: Error; reset: () => void
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4 antialiased">
-      <div className="max-w-md w-full bg-[#0F1D33] border border-slate-800 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 antialiased text-foreground">
+      <div className="max-w-md w-full bg-card border border-border rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl text-card-foreground">
         <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
           <AlertCircle className="h-6 w-6" />
         </div>
@@ -71,7 +71,7 @@ function OwnerDashboardError({ error, reset }: { error: Error; reset: () => void
               ownerActions.logout();
               navigate({ to: "/owner/login" as any });
             }}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-md shadow-blue-600/30"
+            className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors shadow-md shadow-primary/30"
           >
             Login Ulang
           </button>
@@ -191,7 +191,7 @@ function OwnerDashboardPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       {/* Desktop Sidebar */}
       <OwnerSidebar activePath="/owner/dashboard" />
 
@@ -251,7 +251,7 @@ function OwnerDashboardPage() {
                           onClick={() => handlePeriodChange(opt.key)}
                           className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors ${
                             activePeriod === opt.key
-                              ? "bg-blue-600 text-white font-semibold"
+                              ? "bg-primary text-primary-foreground font-semibold"
                               : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                           }`}
                         >
@@ -327,8 +327,8 @@ function OwnerDashboardPage() {
                   value={formatRupiah(metrics.totalRevenue)}
                   subtitle={metrics.totalRevenueDeltaText}
                   icon={Wallet}
-                  iconColor="text-blue-400"
-                  iconBg="bg-blue-600/20"
+                  iconColor="text-primary"
+                  iconBg="bg-primary/15"
                   trend={
                     metrics.revenueDeltaPercent > 0
                       ? `${metrics.revenueDeltaPercent}%`
@@ -343,8 +343,8 @@ function OwnerDashboardPage() {
                   value={String(metrics.totalTransactions)}
                   subtitle={metrics.totalTransactionsDeltaText}
                   icon={Receipt}
-                  iconColor="text-blue-400"
-                  iconBg="bg-blue-600/20"
+                  iconColor="text-primary"
+                  iconBg="bg-primary/15"
                   trend={
                     metrics.transactionsDeltaPercent > 0
                       ? `${metrics.transactionsDeltaPercent}%`

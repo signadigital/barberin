@@ -484,7 +484,7 @@ function OwnerSettingsPage() {
 
   return (
     <OwnerAuthGuard>
-      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
         <OwnerSidebar activePath="/owner/settings" />
         <div className="flex-1 flex flex-col min-w-0">
           <OwnerMobileHeader activePath="/owner/settings" />
@@ -571,7 +571,7 @@ function OwnerSettingsPage() {
 
                       <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center ring-1 ring-blue-500/30 shadow-inner">
+                          <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center ring-1 ring-primary/30 shadow-inner">
                             <Store className="h-5 w-5" />
                           </div>
                           <div>

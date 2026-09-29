@@ -83,7 +83,7 @@ function OwnerAuditActivityDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased">
       <OwnerSidebar activePath="/owner/audit-activities" />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -113,7 +113,7 @@ function OwnerAuditActivityDetailPage() {
               <button
                 type="button"
                 onClick={() => navigate({ to: `/${barbershopSlug}/owner/audit-activities` as any })}
-                className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground"
               >
                 Kembali
               </button>
@@ -124,12 +124,12 @@ function OwnerAuditActivityDetailPage() {
               <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="h-12 w-12 rounded-2xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center shrink-0">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
                       {getActivityIcon(activity.activityType)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-blue-400">
+                        <span className="text-xs font-mono font-bold text-primary">
                           {activity.id}
                         </span>
                       </div>
@@ -253,7 +253,7 @@ function OwnerAuditActivityDetailPage() {
                 <button
                   type="button"
                   onClick={() => navigate({ to: `/${barbershopSlug}/owner/audit-activities` as any })}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white transition-colors shadow-md shadow-blue-600/25"
+                  className="w-full py-3 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground transition-colors shadow-md shadow-primary/25"
                 >
                   Tutup
                 </button>

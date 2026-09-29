@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, useMatch } from "@tanstack/react-router";
 import {
   Check,
   ChevronRight,
@@ -88,6 +88,8 @@ function ServicesPage() {
   const navigate = useNavigate();
   const { barbershopSlug } = (Route as any).useParams();
   const loaderData = Route.useLoaderData();
+  const parentMatch = useMatch({ from: "/$barbershopSlug", shouldThrow: false });
+  const tenantBranding = parentMatch?.loaderData?.shop?.branding;
   const { cartItems, shopSlug: storedShopSlug } = useBarberin();
   const [shopSlug, setShopSlug] = useState<string | undefined>(barbershopSlug);
 
@@ -264,11 +266,21 @@ function ServicesPage() {
       <header className="safe-top px-4 pb-2">
         {/* Brand Bar */}
         <div className="flex items-center gap-3">
-          <BarberinLogo className="h-10 w-10" />
+          {tenantBranding?.logo_url ? (
+            <img
+              src={tenantBranding.logo_url}
+              alt="Logo"
+              className="h-10 w-10 object-contain rounded-xl"
+            />
+          ) : (
+            <BarberinLogo className="h-10 w-10" />
+          )}
           <div className="min-w-0">
-            <p className="truncate text-[18px] font-bold leading-tight">BARBERIN</p>
+            <p className="truncate text-[18px] font-bold leading-tight text-foreground">
+              {tenantBranding?.nama_brand || shopInfo?.nama_barbershop || "BARBERIN"}
+            </p>
             <p className="truncate text-[12px] text-muted-foreground">
-              Modern Barbershop Management System
+              {tenantBranding?.tagline || "Modern Barbershop Management System"}
             </p>
           </div>
         </div>
@@ -297,14 +309,14 @@ function ServicesPage() {
         )}
 
         {/* Barbershop Profile Card from Owner Settings */}
-        <div className="mt-4 rounded-2xl bg-[#0F1D33]/90 border border-slate-700/80 p-4 shadow-lg space-y-2.5 backdrop-blur-md">
+        <div className="mt-4 rounded-2xl bg-card/90 border border-border p-4 shadow-lg space-y-2.5 backdrop-blur-md text-card-foreground">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[11px] text-blue-400 font-semibold uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[11px] text-primary font-semibold uppercase tracking-wider">
                 <Store className="h-3.5 w-3.5 shrink-0" />
                 <span>Profil Barbershop</span>
               </div>
-              <h2 className="text-[16px] font-bold text-white tracking-tight truncate mt-0.5">
+              <h2 className="text-[16px] font-bold text-foreground tracking-tight truncate mt-0.5">
                 {shopInfo?.nama_barbershop || "Barbershop"}
               </h2>
             </div>
@@ -323,7 +335,7 @@ function ServicesPage() {
             )}
           </div>
 
-          <div className="space-y-1.5 pt-1.5 border-t border-slate-800/80 text-xs text-slate-300">
+          <div className="space-y-1.5 pt-1.5 border-t border-border text-xs text-muted-foreground">
             {/* Alamat Barbershop (Clickable to Google Maps based on coordinates) */}
             <div className="flex items-start gap-2">
               <MapPin className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
@@ -332,13 +344,13 @@ function ServicesPage() {
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="line-clamp-2 leading-relaxed text-slate-300 hover:text-white underline decoration-slate-500/60 hover:decoration-blue-400 transition-colors cursor-pointer"
+                  className="line-clamp-2 leading-relaxed text-foreground/90 hover:text-foreground underline decoration-border hover:decoration-primary transition-colors cursor-pointer"
                   title="Buka titik lokasi barbershop di Google Maps"
                 >
                   {shopInfo?.alamat || "Lihat Peta Lokasi di Google Maps"}
                 </a>
               ) : (
-                <span className="line-clamp-2 leading-relaxed text-slate-300">
+                <span className="line-clamp-2 leading-relaxed text-foreground/90">
                   {shopInfo?.alamat || "Alamat belum diatur"}
                 </span>
               )}
@@ -346,7 +358,7 @@ function ServicesPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
               {/* Jam Operasional */}
-              <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+              <div className="flex items-center gap-1.5 text-foreground font-medium">
                 <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                 <span>
                   {displayJamBuka} - {displayJamTutup} WIB
@@ -374,7 +386,7 @@ function ServicesPage() {
         {/* Header Title when Open */}
         {isOpen && (
           <div className="mt-5">
-            <h1 className="text-[22px] font-bold text-white tracking-tight">Pilih Layanan</h1>
+            <h1 className="text-[22px] font-bold text-foreground tracking-tight">Pilih Layanan</h1>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Anda dapat memilih lebih dari satu layanan dalam satu transaksi.
             </p>
@@ -388,7 +400,7 @@ function ServicesPage() {
       {!isOpen ? (
         <>
           <main className="flex-1 space-y-4 px-4 pb-8 pt-2">
-            <div className="rounded-3xl bg-[#0F1D33]/95 border border-rose-500/30 p-6 text-center space-y-4 shadow-xl backdrop-blur-md animate-in fade-in duration-300">
+            <div className="rounded-3xl bg-card/95 border border-rose-500/30 p-6 text-center space-y-4 shadow-xl backdrop-blur-md animate-in fade-in duration-300 text-card-foreground">
               <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-inner">
                 <Moon className="h-8 w-8" />
               </div>
@@ -397,31 +409,31 @@ function ServicesPage() {
                 <span className="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold tracking-wider uppercase">
                   Toko Tutup
                 </span>
-                <h2 className="text-xl font-extrabold text-white tracking-tight">
+                <h2 className="text-xl font-extrabold text-foreground tracking-tight">
                   Barbershop Sedang Tutup
                 </h2>
-                <p className="text-xs text-slate-300 leading-relaxed max-w-[320px] mx-auto">
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-[320px] mx-auto">
                   Mohon maaf, pemesanan layanan saat ini tidak dapat dilakukan karena sedang berada
                   di luar jam operasional outlet.
                 </p>
               </div>
 
               {/* Operating Hours Details Box */}
-              <div className="bg-[#0A1424] border border-slate-700/60 rounded-2xl p-4 text-left space-y-2.5 text-xs">
-                <div className="flex items-center justify-between text-slate-300">
-                  <span className="text-slate-400">Jam Operasional:</span>
-                  <span className="font-bold text-white">
+              <div className="bg-muted/50 border border-border rounded-2xl p-4 text-left space-y-2.5 text-xs text-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Jam Operasional:</span>
+                  <span className="font-bold text-foreground">
                     {displayJamBuka} - {displayJamTutup} WIB
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-slate-300">
-                  <span className="text-slate-400">Waktu Sekarang:</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Waktu Sekarang:</span>
                   <span className="font-semibold text-amber-400 flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {currentWibTime} WIB
                   </span>
                 </div>
-                <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 text-center">
+                <div className="pt-2 border-t border-border text-[11px] text-muted-foreground text-center">
                   Pemesanan dibuka kembali pukul{" "}
                   <strong className="text-emerald-400 font-bold">{displayJamBuka} WIB</strong>
                 </div>

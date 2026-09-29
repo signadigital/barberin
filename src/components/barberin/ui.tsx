@@ -106,7 +106,7 @@ export function PrimaryButton({ className, children, loading, disabled, ...rest 
       {...rest}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary px-5 text-[15px] font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(78,120,255,0.35)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary px-5 text-[15px] font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
     >
