@@ -67,7 +67,7 @@ function EndShiftPage() {
 
         {/* Rekap Shift Hari Ini */}
         <GlassCard className="p-4 space-y-3">
-          <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground border-b border-white/10 pb-2">
+          <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
             Rekap Shift ({shiftInfo.date})
           </h3>
           <div className="space-y-2 text-[13px]">

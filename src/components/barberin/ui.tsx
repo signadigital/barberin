@@ -44,7 +44,7 @@ export function BackButton({ to }: { to?: string }) {
       type="button"
       aria-label="Kembali"
       onClick={() => (to ? router.navigate({ to }) : router.history.back())}
-      className="glass-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] transition-colors active:bg-white/15"
+      className="glass-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] transition-colors active:bg-muted"
     >
       <ArrowLeft className="h-5 w-5" strokeWidth={2} />
     </button>
@@ -89,7 +89,7 @@ export function GlassCard({
     <div
       className={cn(
         "glass-1 rounded-[18px] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all",
-        selected && "border-primary-soft bg-primary/15 ring-1 ring-primary-soft/60",
+        selected && "border-primary bg-primary/10 ring-1 ring-primary/40",
         className,
       )}
     >
@@ -152,11 +152,11 @@ export function StatusBadge({
   children: ReactNode;
 }) {
   const tones: Record<Tone, string> = {
-    info: "bg-info/15 text-info border-info/40",
-    success: "bg-success/15 text-success border-success/40",
-    warning: "bg-warning/15 text-warning border-warning/40",
-    danger: "bg-danger/15 text-danger border-danger/40",
-    neutral: "bg-white/10 text-muted-foreground border-white/20",
+    info: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+    success: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    warning: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    danger: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
+    neutral: "bg-muted text-muted-foreground border-border",
   };
   return (
     <span
@@ -183,23 +183,23 @@ export function QuantityControl({
   label: string;
 }) {
   return (
-    <div className="glass-2 flex items-center gap-1 rounded-[12px] p-1">
+    <div className="glass-2 flex items-center gap-1 rounded-[12px] p-1 border border-border">
       <button
         type="button"
         aria-label={`Kurangi jumlah ${label}`}
         onClick={onDecrease}
-        className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors active:bg-white/20"
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] text-foreground transition-colors active:bg-muted"
       >
         <Minus className="h-4 w-4" strokeWidth={2} />
       </button>
-      <span aria-live="polite" className="min-w-8 text-center text-[15px] font-semibold">
+      <span aria-live="polite" className="min-w-8 text-center text-[15px] font-semibold text-foreground">
         {quantity}
       </span>
       <button
         type="button"
         aria-label={`Tambah jumlah ${label}`}
         onClick={onIncrease}
-        className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors active:bg-white/20"
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] text-foreground transition-colors active:bg-muted"
       >
         <Plus className="h-4 w-4" strokeWidth={2} />
       </button>
@@ -222,8 +222,8 @@ export function CartItem({
     <GlassCard>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold leading-snug">{item.service.name}</p>
-          <p className="mt-1 text-[15px] font-bold text-primary-soft">
+          <p className="text-[15px] font-semibold leading-snug text-foreground">{item.service.name}</p>
+          <p className="mt-1 text-[15px] font-bold text-primary">
             {formatRupiah(item.service.price * item.quantity)}
           </p>
         </div>
@@ -231,7 +231,7 @@ export function CartItem({
           type="button"
           aria-label={`Hapus ${item.service.name}`}
           onClick={onRemove}
-          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-danger transition-colors hover:bg-danger/10 active:bg-danger/15"
+          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-rose-500 hover:text-rose-600 transition-colors hover:bg-rose-500/10 active:bg-rose-500/15"
         >
           <Trash2 className="h-5 w-5" strokeWidth={2} />
         </button>
@@ -243,18 +243,18 @@ export function CartItem({
 export function PriceSummary({ items, total }: { items: CartItemType[]; total: number }) {
   return (
     <GlassCard className="space-y-2">
-      <h2 className="text-[15px] font-semibold">Ringkasan Pembayaran</h2>
+      <h2 className="text-[15px] font-bold text-foreground">Ringkasan Pembayaran</h2>
       {items.map((i) => (
         <div key={i.service.id} className="flex justify-between gap-3 text-[13px]">
           <span className="min-w-0 truncate text-muted-foreground">
             {i.service.name} {i.quantity > 1 ? `(${i.quantity}x)` : ""}
           </span>
-          <span className="shrink-0">{formatRupiah(i.service.price * i.quantity)}</span>
+          <span className="shrink-0 font-medium text-foreground">{formatRupiah(i.service.price * i.quantity)}</span>
         </div>
       ))}
-      <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-3">
-        <span className="text-[14px] font-semibold">Total Pembayaran</span>
-        <span className="text-[18px] font-bold text-primary-soft">{formatRupiah(total)}</span>
+      <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
+        <span className="text-[14px] font-bold text-foreground">Total Pembayaran</span>
+        <span className="text-[18px] font-extrabold text-primary">{formatRupiah(total)}</span>
       </div>
     </GlassCard>
   );
@@ -273,10 +273,10 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="glass-2 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-        <Icon className="h-7 w-7 text-primary-soft" strokeWidth={2} />
+      <div className="glass-2 mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-border">
+        <Icon className="h-7 w-7 text-primary" strokeWidth={2} />
       </div>
-      <p className="text-[16px] font-semibold">{title}</p>
+      <p className="text-[16px] font-bold text-foreground">{title}</p>
       {description ? (
         <p className="mt-2 text-[14px] text-muted-foreground">{description}</p>
       ) : null}
@@ -292,14 +292,14 @@ export function LoadingState({ message = "Memuat..." }: { message?: string }) {
       aria-live="polite"
       className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
     >
-      <Loader2 className="h-7 w-7 animate-spin text-primary-soft" strokeWidth={2} />
+      <Loader2 className="h-7 w-7 animate-spin text-primary" strokeWidth={2} />
       <p className="text-[14px] text-muted-foreground">{message}</p>
     </div>
   );
 }
 
 export function SkeletonCard() {
-  return <div className="h-[104px] animate-pulse rounded-[18px] bg-white/8" />;
+  return <div className="h-[104px] animate-pulse rounded-[18px] bg-muted border border-border" />;
 }
 
 export function ErrorState({
@@ -313,10 +313,10 @@ export function ErrorState({
 }) {
   return (
     <div role="alert" className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger/15">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger/15 border border-danger/30">
         <AlertCircle className="h-7 w-7 text-danger" strokeWidth={2} />
       </div>
-      <p className="text-[16px] font-semibold">{title}</p>
+      <p className="text-[16px] font-bold text-foreground">{title}</p>
       <p className="mt-2 text-[14px] text-muted-foreground">{message}</p>
       {action ? <div className="mt-6 w-full max-w-[260px]">{action}</div> : null}
     </div>
@@ -329,7 +329,7 @@ export function SuccessState({ title, message }: { title: string; message: strin
       <div className="flex h-20 w-20 animate-in fade-in zoom-in items-center justify-center rounded-full bg-success/15 ring-1 ring-success/40">
         <CheckCircle2 className="h-10 w-10 text-success" strokeWidth={2} />
       </div>
-      <h2 className="mt-5 text-[22px] font-bold">{title}</h2>
+      <h2 className="mt-5 text-[22px] font-extrabold text-foreground">{title}</h2>
       <p className="mt-2 text-[14px] text-muted-foreground">{message}</p>
     </div>
   );
@@ -339,7 +339,7 @@ export function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 text-[14px]">
       <span className="text-muted-foreground">{label}</span>
-      <span className="min-w-0 break-words text-right font-semibold">{value}</span>
+      <span className="min-w-0 break-words text-right font-semibold text-foreground">{value}</span>
     </div>
   );
 }
@@ -363,7 +363,7 @@ export function StepBrand() {
   return (
     <Link to={target as any} className="flex items-center justify-center gap-2 py-4">
       <BarberinLogo className="h-7 w-7" />
-      <span className="text-[15px] font-bold tracking-wide">BARBERIN</span>
+      <span className="text-[15px] font-bold tracking-wide text-foreground">BARBERIN</span>
     </Link>
   );
 }
@@ -375,7 +375,7 @@ export function CapsterAvatar({ name, className }: { name: string; className?: s
     <div
       aria-hidden
       className={cn(
-        "glass-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-bold text-primary-soft",
+        "glass-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-bold text-primary border border-border",
         className,
       )}
     >
@@ -420,14 +420,14 @@ export function CapsterCard({
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <CapsterAvatar name={capster.name} />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold leading-snug">{capster.name}</p>
+            <p className="truncate text-[15px] font-bold text-foreground leading-snug">{capster.name}</p>
             <p className="truncate text-[13px] text-muted-foreground">{capster.role}</p>
             <span className="mt-2 inline-flex">
               <CapsterStatusBadge status={capster.status} />
             </span>
           </div>
           {selected ? (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success/20 text-success ring-1 ring-success/40">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/40">
               <Check className="h-4 w-4" strokeWidth={2} />
             </span>
           ) : (

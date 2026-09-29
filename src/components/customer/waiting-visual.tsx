@@ -29,22 +29,22 @@ export function WaitingVisual({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-900 shadow-2xl transition-all duration-300",
+        "relative w-full overflow-hidden rounded-[26px] border border-border bg-gradient-to-b from-card via-card/95 to-muted shadow-xl transition-all duration-300",
         "h-52 sm:h-60 flex flex-col items-center justify-center",
         className,
       )}
     >
       {/* Background Ambience & Lighting */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12)_0%,rgba(15,23,42,0)_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--primary)_15%,transparent)_0%,transparent_70%)]" />
       <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-32 w-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-slate-950/80 to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-card/80 to-transparent" />
 
       {/* Subtle Grid Accent */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+            "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}
       />
@@ -52,8 +52,8 @@ export function WaitingVisual({
       {/* Optional Top-Right Status Badge */}
       {badgeText && (
         <div className="absolute top-3.5 right-3.5 z-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-300 border border-white/10 uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary-soft animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold tracking-wider text-foreground border border-border uppercase shadow-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
             <span>{badgeText}</span>
           </span>
         </div>
@@ -79,16 +79,16 @@ export function WaitingVisual({
             <img
               src="/barberin-logo.png"
               alt="BARBERIN"
-              className="relative max-h-24 sm:max-h-28 w-auto object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:scale-105"
+              className="relative max-h-24 sm:max-h-28 w-auto object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.25)] transition-transform duration-300 hover:scale-105"
             />
           </div>
 
           <div className="mt-1 flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-primary-soft/60" />
-            <span className="text-[10px] font-bold tracking-[0.25em] text-slate-400 uppercase">
+            <span className="h-1 w-1 rounded-full bg-primary/60" />
+            <span className="text-[10px] font-bold tracking-[0.25em] text-muted-foreground uppercase">
               BARBERIN
             </span>
-            <span className="h-1 w-1 rounded-full bg-primary-soft/60" />
+            <span className="h-1 w-1 rounded-full bg-primary/60" />
           </div>
         </div>
       )}

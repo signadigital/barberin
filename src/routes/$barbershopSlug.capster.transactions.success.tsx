@@ -71,7 +71,7 @@ function ManualTransactionSuccessPage() {
 
         {/* Info Card */}
         <GlassCard className="p-4 space-y-3">
-          <div className="space-y-1.5 border-b border-white/10 pb-2.5">
+          <div className="space-y-1.5 border-b border-border pb-2.5">
             <div className="flex justify-between items-center text-[12px]">
               <span className="font-medium text-muted-foreground uppercase tracking-wider">
                 Pelanggan

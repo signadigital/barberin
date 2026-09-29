@@ -323,13 +323,13 @@ function ServicesPage() {
 
             {/* Status Badge: BUKA or TUTUP */}
             {isOpen ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[11px] font-bold shrink-0 shadow-xs">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold shrink-0 shadow-xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>BUKA</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[11px] font-bold shrink-0 shadow-xs">
-                <span className="h-2 w-2 rounded-full bg-rose-400" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400 text-[11px] font-bold shrink-0 shadow-xs">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
                 <span>TUTUP</span>
               </span>
             )}
@@ -338,7 +338,7 @@ function ServicesPage() {
           <div className="space-y-1.5 pt-1.5 border-t border-border text-xs text-muted-foreground">
             {/* Alamat Barbershop (Clickable to Google Maps based on coordinates) */}
             <div className="flex items-start gap-2">
-              <MapPin className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
+              <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
               {hasCoordinates && googleMapsUrl ? (
                 <a
                   href={googleMapsUrl}
@@ -359,7 +359,7 @@ function ServicesPage() {
             <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
               {/* Jam Operasional */}
               <div className="flex items-center gap-1.5 text-foreground font-medium">
-                <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span>
                   {displayJamBuka} - {displayJamTutup} WIB
                 </span>
@@ -373,7 +373,7 @@ function ServicesPage() {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-emerald-400 font-semibold hover:underline"
+                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                 >
                   <Phone className="h-3 w-3" />
                   <span>{shopInfo.no_hp}</span>
@@ -401,12 +401,12 @@ function ServicesPage() {
         <>
           <main className="flex-1 space-y-4 px-4 pb-8 pt-2">
             <div className="rounded-3xl bg-card/95 border border-rose-500/30 p-6 text-center space-y-4 shadow-xl backdrop-blur-md animate-in fade-in duration-300 text-card-foreground">
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-inner">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-inner">
                 <Moon className="h-8 w-8" />
               </div>
 
               <div className="space-y-1.5">
-                <span className="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold tracking-wider uppercase">
+                <span className="inline-block px-3 py-1 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold tracking-wider uppercase">
                   Toko Tutup
                 </span>
                 <h2 className="text-xl font-extrabold text-foreground tracking-tight">
@@ -428,14 +428,14 @@ function ServicesPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Waktu Sekarang:</span>
-                  <span className="font-semibold text-amber-400 flex items-center gap-1">
+                  <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {currentWibTime} WIB
                   </span>
                 </div>
                 <div className="pt-2 border-t border-border text-[11px] text-muted-foreground text-center">
                   Pemesanan dibuka kembali pukul{" "}
-                  <strong className="text-emerald-400 font-bold">{displayJamBuka} WIB</strong>
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{displayJamBuka} WIB</strong>
                 </div>
               </div>
 
@@ -462,7 +462,7 @@ function ServicesPage() {
           <BottomActionBar>
             <PrimaryButton
               disabled
-              className="opacity-60 cursor-not-allowed bg-slate-800 text-slate-400 border border-slate-700"
+              className="opacity-60 cursor-not-allowed bg-muted text-muted-foreground border border-border"
             >
               <Lock className="h-4 w-4" />
               <span>Barbershop Tutup (Buka {displayJamBuka} WIB)</span>

@@ -65,7 +65,7 @@ function CartPage() {
                   <button
                     type="button"
                     onClick={() => navigate({ to: `/${barbershopSlug}/customer/capster` as any })}
-                    className="rounded-[12px] px-2 py-1 text-[13px] font-semibold text-primary-soft transition-colors active:bg-white/10"
+                    className="rounded-[12px] px-2 py-1 text-[13px] font-semibold text-primary-soft transition-colors active:bg-muted"
                   >
                     Ganti Capster
                   </button>

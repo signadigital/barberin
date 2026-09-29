@@ -88,7 +88,7 @@ function CustomerInfoPage() {
               placeholder="Contoh: Andi Pratama"
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "nama-error" : undefined}
-              className="min-h-[48px] w-full rounded-[12px] border border-white/16 bg-white/8 px-4 text-[15px] text-foreground placeholder:text-muted-foreground/70"
+              className="min-h-[48px] w-full rounded-[12px] border border-input bg-background px-4 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-soft"
             />
             {error ? (
               <p id="nama-error" role="alert" className="mt-2 text-[13px] font-medium text-danger">

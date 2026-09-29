@@ -161,7 +161,7 @@ function ManualTransactionDetailPage() {
                   navigate({ to: `/${barbershopSlug}/capster/transactions/manual/capster` as any,
                   })
                 }
-                className="rounded-[12px] px-2 py-1 text-[13px] font-semibold text-primary-soft transition-colors active:bg-white/10"
+                className="rounded-[12px] px-2 py-1 text-[13px] font-semibold text-primary-soft transition-colors active:bg-muted"
               >
                 Ganti Capster
               </button>
@@ -184,7 +184,7 @@ function ManualTransactionDetailPage() {
                 navigate({ to: `/${barbershopSlug}/capster/transactions/manual/capster` as any,
                 })
               }
-              className="rounded-[10px] bg-primary px-3 py-1.5 text-[12px] font-bold text-white shadow"
+              className="rounded-[10px] bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-foreground shadow"
             >
               Pilih Capster
             </button>
@@ -193,7 +193,7 @@ function ManualTransactionDetailPage() {
 
         {/* Card Data Pelanggan */}
         <GlassCard className="space-y-3.5 p-4">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
             <User
               className="h-4 w-4 text-primary-soft"
               strokeWidth={2}
@@ -233,8 +233,8 @@ function ManualTransactionDetailPage() {
                 className={`min-h-[44px] w-full rounded-[10px] border ${
                   nameError
                     ? "border-danger focus:ring-danger"
-                    : "border-white/16 focus:ring-primary-soft"
-                } bg-white/8 pl-9 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1`}
+                    : "border-input focus:ring-primary-soft"
+                } bg-background pl-9 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1`}
               />
             </div>
 
@@ -248,7 +248,7 @@ function ManualTransactionDetailPage() {
 
         {/* Card Daftar Layanan & Rincian Biaya */}
         <GlassCard className="space-y-3 p-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="flex items-center gap-2">
               <Scissors
                 className="h-4 w-4 text-primary-soft"
@@ -304,7 +304,7 @@ function ManualTransactionDetailPage() {
             </div>
           )}
 
-          <div className="space-y-2 border-t border-white/10 pt-3 text-[13px]">
+          <div className="space-y-2 border-t border-border pt-3 text-[13px]">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
               <span>{formatRupiah(subtotal)}</span>
@@ -315,7 +315,7 @@ function ManualTransactionDetailPage() {
               <span>{formatRupiah(discount)}</span>
             </div>
 
-            <div className="flex items-center justify-between border-t border-white/10 pt-1 text-[15px]">
+            <div className="flex items-center justify-between border-t border-border pt-1 text-[15px]">
               <span className="font-bold text-foreground">
                 Total Bayar
               </span>

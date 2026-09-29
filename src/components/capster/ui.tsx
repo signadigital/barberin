@@ -91,10 +91,10 @@ export function CapsterAuthGuard({ children }: { children: ReactNode }) {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-xs text-slate-400 font-medium">Memuat sesi capster...</p>
+          <p className="text-xs text-muted-foreground font-medium">Memuat sesi capster...</p>
         </div>
       </div>
     );
@@ -102,10 +102,10 @@ export function CapsterAuthGuard({ children }: { children: ReactNode }) {
 
   if (!hasAuth) {
     return (
-      <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-xs text-slate-400 font-medium">Mengarahkan ke login capster...</p>
+          <p className="text-xs text-muted-foreground font-medium">Mengarahkan ke login capster...</p>
         </div>
       </div>
     );
@@ -192,7 +192,7 @@ function SwipeableNotificationCard({
           opacity: Math.max(0.35, 1 - Math.abs(offsetX) / 240),
           transition: isDragging ? "none" : "transform 0.2s ease, opacity 0.2s ease",
         }}
-        className="relative z-10 w-full text-left glass-2 rounded-[14px] p-3 border border-white/5 space-y-1.5 cursor-grab active:cursor-grabbing hover:bg-white/10 select-none transition-colors"
+        className="relative z-10 w-full text-left glass-2 rounded-[14px] p-3 border border-border space-y-1.5 cursor-grab active:cursor-grabbing hover:bg-muted/50 select-none transition-colors"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -216,7 +216,7 @@ function SwipeableNotificationCard({
                 setIsRemoving(true);
                 setTimeout(() => onDismiss(trx.id), 180);
               }}
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-muted-foreground hover:bg-white/25 hover:text-white transition-all active:scale-90"
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all active:scale-90"
             >
               <X className="h-3 w-3" />
             </button>
@@ -231,7 +231,7 @@ function SwipeableNotificationCard({
           {trx.serviceNames}
         </p>
 
-        <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[12px]">
+        <div className="flex items-center justify-between border-t border-border pt-2 text-[12px]">
           <div>
             <span className="text-[10px] font-semibold uppercase text-muted-foreground">
               {trx.paymentMethod}
@@ -560,8 +560,8 @@ export function CapsterHeader({
           />
 
           {/* Dialog Notifikasi */}
-          <div className="absolute left-3 right-3 top-[calc(100%+6px)] z-50 rounded-[20px] border border-white/15 bg-[#0F172A]/95 p-4 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="absolute left-3 right-3 top-[calc(100%+6px)] z-50 rounded-[20px] border border-border bg-card/95 text-card-foreground p-4 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-warning/20 text-warning">
                   <Bell className="h-4 w-4" />
@@ -586,7 +586,7 @@ export function CapsterHeader({
                 type="button"
                 aria-label="Tutup notifikasi"
                 onClick={() => setShowNotifications(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-muted-foreground hover:text-foreground active:scale-[0.95]"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground active:scale-[0.95]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -635,7 +635,7 @@ export function CapsterHeader({
             </div>
 
             {pendingCount > 0 && (
-              <div className="mt-2.5 border-t border-white/10 pt-2 text-center">
+              <div className="mt-2.5 border-t border-border pt-2 text-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -753,7 +753,7 @@ export function ShiftInfoCard({ shift }: { shift: ShiftInfo }) {
 
   return (
     <GlassCard className="space-y-3 p-4">
-      <div className="flex items-center gap-2 border-b border-white/10 pb-2.5">
+      <div className="flex items-center gap-2 border-b border-border pb-2.5">
         <Calendar className="h-4 w-4 text-primary-soft" strokeWidth={2} />
         <h2 className="text-[14px] font-bold">Informasi Shift Hari Ini</h2>
       </div>
@@ -768,7 +768,7 @@ export function ShiftInfoCard({ shift }: { shift: ShiftInfo }) {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Waktu Sekarang</span>
-          <span className="font-semibold text-emerald-400 font-mono">
+          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
             {formatWibClock(liveClock, { withDate: false, withSeconds: true })}
           </span>
         </div>
@@ -822,9 +822,9 @@ export function UnconfirmedTransactionsSection({
 }) {
   const slug = useCapsterTenantSlug();
   return (
-    <GlassCard className="space-y-3.5 p-4 rounded-[20px] border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
+    <GlassCard className="space-y-3.5 p-4 rounded-[20px] border border-border bg-card text-card-foreground shadow-md">
       {/* Header Section */}
-      <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
         <div className="flex items-center gap-2 min-w-0">
           <h2 className="text-[12px] sm:text-[13px] font-bold uppercase tracking-wider text-foreground">
             TRANSAKSI BELUM DIKONFIRMASI
@@ -862,10 +862,10 @@ export function UnconfirmedTransactionsSection({
             <Link
               key={trx.id}
               to={getCapsterTenantPath(slug, `/capster/transactions/${trx.id}`) as any}
-              className="group block rounded-[16px] p-3.5 bg-slate-900/40 hover:bg-slate-800/60 border border-white/[0.08] hover:border-primary/40 transition-all duration-200 active:scale-[0.99] shadow-sm"
+              className="group block rounded-[16px] p-3.5 bg-muted/40 hover:bg-muted/80 border border-border hover:border-primary/40 transition-all duration-200 active:scale-[0.99] shadow-sm"
             >
               {/* Row 1: ID Transaksi & Waktu */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
                 <span className="font-mono text-[11px] font-semibold text-primary-soft/90 truncate max-w-[170px] sm:max-w-[210px]">
                   #{formatTransactionId(trx.id)}
                 </span>
@@ -885,7 +885,7 @@ export function UnconfirmedTransactionsSection({
                     <p className="text-[12px] text-muted-foreground truncate leading-snug">
                       {trx.serviceNames}
                     </p>
-                    <span className="shrink-0 text-[10px] font-medium bg-white/5 px-1.5 py-0.2 rounded text-slate-300 border border-white/10">
+                    <span className="shrink-0 text-[10px] font-medium bg-background px-1.5 py-0.2 rounded text-muted-foreground border border-border">
                       {trx.totalDurationMinutes ?? 30}m
                     </span>
                   </div>
@@ -897,9 +897,9 @@ export function UnconfirmedTransactionsSection({
               </div>
 
               {/* Row 3: Metode Pembayaran & Estimasi (kiri) vs Total Harga & Tombol Konfirmasi (kanan) */}
-              <div className="flex items-end justify-between gap-2 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-end justify-between gap-2 pt-2 border-t border-border/60">
                 <div className="flex flex-col gap-1 pb-0.5">
-                  <span className="inline-flex items-center rounded-[6px] bg-white/[0.06] border border-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 w-fit">
+                  <span className="inline-flex items-center rounded-[6px] bg-background border border-border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-fit">
                     {trx.paymentMethod}
                   </span>
                   {trx.waitTimeMinutes !== undefined && (
@@ -955,14 +955,14 @@ export function ServiceStatusSection({
 
   return (
     <GlassCard className="space-y-3 p-4">
-      <div className="flex items-center justify-between border-b border-white/10 pb-2">
+      <div className="flex items-center justify-between border-b border-border pb-2">
         <h2 className="text-[14px] font-bold uppercase tracking-wider">STATUS LAYANAN</h2>
       </div>
       <div className="space-y-2.5">
         {items.map((item) => (
           <div key={item.label} className="flex items-center justify-between text-[13px]">
             <div className="flex items-center gap-2.5">
-              <span className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-white/10", item.color)} />
+              <span className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-border", item.color)} />
               <span className="font-medium">{item.label}</span>
             </div>
             <span className={cn("font-bold text-[14px]", item.text)}>{item.count}</span>
@@ -1032,8 +1032,8 @@ export function TransactionStatusBadge({ status }: { status: TransactionStatus |
     Batal: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
     cancelled: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
     Dibatalkan: { bg: "bg-danger/20 ring-danger/40", text: "text-danger", icon: AlertCircle, label: "Dibatalkan" },
-    Kedaluwarsa: { bg: "bg-rose-900/30 ring-rose-500/40", text: "text-rose-400", icon: Clock, label: "Kedaluwarsa" },
-    expired: { bg: "bg-rose-900/30 ring-rose-500/40", text: "text-rose-400", icon: Clock, label: "Kedaluwarsa" },
+    Kedaluwarsa: { bg: "bg-rose-500/15 ring-rose-500/30", text: "text-rose-600 dark:text-rose-400", icon: Clock, label: "Kedaluwarsa" },
+    expired: { bg: "bg-rose-500/15 ring-rose-500/30", text: "text-rose-600 dark:text-rose-400", icon: Clock, label: "Kedaluwarsa" },
   };
 
   const fallback = { bg: "bg-warning/20 ring-warning/40", text: "text-warning", icon: Clock, label: "Menunggu" };
@@ -1093,7 +1093,7 @@ export function CapsterTransactionCard({
 
           <div className="flex items-center justify-between text-[12px] text-muted-foreground gap-2">
             <span className="truncate">{trx.serviceNames}</span>
-            <span className="shrink-0 text-[11px] font-medium bg-white/5 px-2 py-0.5 rounded-[6px] border border-white/10 text-foreground">
+            <span className="shrink-0 text-[11px] font-medium bg-muted/50 px-2 py-0.5 rounded-[6px] border border-border text-foreground">
               Durasi: {trx.totalDurationMinutes ?? 30}m
             </span>
           </div>
@@ -1137,7 +1137,7 @@ export function CapsterTransactionCard({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[13px]">
+        <div className="flex items-center justify-between border-t border-border pt-2 text-[13px]">
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
             {trx.paymentMethod}
           </span>
@@ -1166,7 +1166,7 @@ export function ShiftEndModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
     >
-      <GlassCard className="w-full max-w-[360px] rounded-[24px] p-5 space-y-4 shadow-2xl border-white/20">
+      <GlassCard className="w-full max-w-[360px] rounded-[24px] p-5 space-y-4 shadow-2xl border-border bg-card text-card-foreground">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-danger/20 text-danger ring-1 ring-danger/40 mx-auto">
           <LogOut className="h-7 w-7" strokeWidth={2} />
         </div>
@@ -1182,7 +1182,7 @@ export function ShiftEndModal({
           <button
             type="button"
             onClick={onCancel}
-            className="glass-2 flex h-11 items-center justify-center rounded-[12px] text-[14px] font-semibold text-foreground transition-all active:scale-[0.98]"
+            className="flex h-11 items-center justify-center rounded-[12px] bg-muted hover:bg-muted/80 text-[14px] font-semibold text-foreground transition-all active:scale-[0.98]"
           >
             Batal
           </button>

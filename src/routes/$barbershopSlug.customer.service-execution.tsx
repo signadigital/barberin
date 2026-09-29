@@ -462,17 +462,17 @@ function ServiceExecutionPage() {
         {(txDetail?.bookingStatus === "pending_confirmation" ||
           txDetail?.bookingStatus === "waiting" ||
           txDetail?.bookingStatus === "confirmed") && (
-          <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-4 border-primary/25 bg-gradient-to-b from-primary/10 via-slate-900/60 to-slate-950">
+          <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-4 border border-border bg-card text-card-foreground shadow-sm">
             {txDetail?.bookingStatus === "pending_confirmation" && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 dark:text-amber-400" />
                 <span>Menunggu Konfirmasi Capster</span>
               </div>
             )}
 
             {/* Visual Countdown Badge Ring */}
             <div className="relative flex flex-col items-center justify-center my-1">
-              <div className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-white/10 bg-slate-950/90 shadow-[0_0_35px_rgba(56,189,248,0.22)]">
+              <div className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-border bg-background shadow-md">
                 {/* SVG Progress Arc */}
                 <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
                   <circle
@@ -480,7 +480,8 @@ function ServiceExecutionPage() {
                     cy="50"
                     r="44"
                     fill="none"
-                    stroke="rgba(255,255,255,0.06)"
+                    stroke="currentColor"
+                    className="text-muted/30"
                     strokeWidth="5"
                   />
                   <circle
@@ -497,8 +498,8 @@ function ServiceExecutionPage() {
                   />
                   <defs>
                     <linearGradient id="barberin-countdown-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#38bdf8" />
-                      <stop offset="100%" stopColor="#818cf8" />
+                      <stop offset="0%" stopColor="var(--primary, #38bdf8)" />
+                      <stop offset="100%" stopColor="var(--primary-soft, #818cf8)" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -508,7 +509,7 @@ function ServiceExecutionPage() {
                   <span className="text-[34px] sm:text-[38px] font-black tracking-tight text-foreground leading-none font-mono">
                     {countdown.number}
                   </span>
-                  <span className="text-[11px] font-extrabold tracking-widest text-primary-soft uppercase mt-1">
+                  <span className="text-[11px] font-extrabold tracking-widest text-primary uppercase mt-1">
                     {countdown.unit}
                   </span>
                 </div>
@@ -528,7 +529,7 @@ function ServiceExecutionPage() {
             </div>
 
             {/* Info Antrean & Estimasi Mulai */}
-            <div className="flex items-center justify-between border-t border-white/10 pt-3 text-[12px] text-muted-foreground w-full px-1">
+            <div className="flex items-center justify-between border-t border-border pt-3 text-[12px] text-muted-foreground w-full px-1">
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-primary-soft animate-ping" />
                 <span className="font-semibold text-foreground">
@@ -538,7 +539,7 @@ function ServiceExecutionPage() {
               {txDetail?.estimation?.estimasiMulai && (
                 <span>
                   Estimasi Mulai:{" "}
-                  <strong className="text-primary-soft font-semibold">
+                  <strong className="text-primary font-semibold">
                     {new Date(txDetail.estimation.estimasiMulai).toLocaleTimeString("id-ID", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -570,14 +571,14 @@ function ServiceExecutionPage() {
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+              <div className="rounded-[14px] bg-background/60 p-3 border border-border">
                 <span className="text-[11px] text-muted-foreground block">Durasi Layanan</span>
                 <span className="text-[20px] font-extrabold text-foreground">
                   {txDetail.estimation?.totalDurationMinutes ?? txDetail.totalDurationMinutes ?? 30}{" "}
                   <span className="text-[12px] font-medium text-muted-foreground">menit</span>
                 </span>
               </div>
-              <div className="rounded-[14px] bg-slate-900/60 p-3 border border-white/5">
+              <div className="rounded-[14px] bg-background/60 p-3 border border-border">
                 <span className="text-[11px] text-muted-foreground block">Sisa Waktu</span>
                 <span className="text-[20px] font-extrabold text-success">
                   ~{inServiceRemainingMinutes ?? txDetail.estimation?.remainingMinutes ?? (txDetail.estimation?.totalDurationMinutes ?? txDetail.totalDurationMinutes ?? 30)}{" "}
@@ -620,7 +621,7 @@ function ServiceExecutionPage() {
                   }
                   navigate({ to: `/${barbershopSlug}/customer/services` as any });
                 }}
-                className="inline-flex min-h-[40px] px-5 items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-white hover:bg-primary/90"
+                className="inline-flex min-h-[40px] px-5 items-center justify-center rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground hover:bg-primary/90"
               >
                 Buat Pesanan Baru
               </button>
@@ -646,7 +647,7 @@ function ServiceExecutionPage() {
         </GlassCard>
 
         <GlassCard className="space-y-2.5">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="flex items-center justify-between border-b border-border pb-2">
             <h2 className="text-[15px] font-semibold">Layanan Anda</h2>
             <span className="text-[12px] text-muted-foreground">
               Total Durasi: <strong className="text-foreground">{txDetail?.totalDurationMinutes ?? 30} menit</strong>
@@ -696,14 +697,14 @@ function ServiceExecutionPage() {
               }
               navigate({ to: `/${barbershopSlug}/customer/services` as any });
             }}
-            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-[14px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
           >
             <span>Kembali ke Layanan</span>
           </button>
         ) : txDetail?.bookingStatus === "in_service" ? (
           <div className="flex flex-col gap-2 w-full">
-            <div className="flex items-center justify-center min-h-[44px] w-full rounded-[12px] bg-emerald-500/15 border border-emerald-500/30 text-[13px] font-bold text-emerald-400">
-              <Scissors className="mr-2 h-4 w-4 animate-spin text-emerald-400" />
+            <div className="flex items-center justify-center min-h-[44px] w-full rounded-[12px] bg-emerald-500/15 border border-emerald-500/30 text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
+              <Scissors className="mr-2 h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-400" />
               <span>Layanan Sedang Berlangsung di Kursi</span>
             </div>
             <button
@@ -735,7 +736,7 @@ function ServiceExecutionPage() {
       {/* Modal Pilihan Alasan Pembatalan (Bentuknya Tombol) */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-3 w-full max-w-[420px] rounded-[24px] border border-white/15 p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-[420px] rounded-[24px] bg-card border border-border p-5 space-y-4 shadow-2xl text-card-foreground animate-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/20 text-danger ring-1 ring-danger/40">
@@ -759,7 +760,7 @@ function ServiceExecutionPage() {
                     setOtherReason("");
                   }
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" strokeWidth={2.2} />
               </button>
@@ -780,8 +781,8 @@ function ServiceExecutionPage() {
                     className={cn(
                       "flex w-full items-center justify-between rounded-[14px] p-3 text-left text-[14px] transition-all active:scale-[0.98]",
                       isSelected
-                        ? "border border-danger bg-danger/20 text-white font-semibold shadow-[0_0_12px_rgba(239,68,68,0.25)] ring-1 ring-danger/50"
-                        : "border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:border-white/20 font-medium",
+                        ? "border border-danger bg-danger/15 text-danger font-semibold ring-1 ring-danger/40"
+                        : "border border-border bg-muted/40 text-foreground hover:bg-muted hover:border-border font-medium",
                     )}
                   >
                     <div className="flex items-center gap-2.5">
@@ -790,7 +791,7 @@ function ServiceExecutionPage() {
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
                           isSelected
                             ? "bg-danger text-white"
-                            : "bg-white/10 text-muted-foreground",
+                            : "bg-muted text-muted-foreground",
                         )}
                       >
                         {idx + 1}
@@ -819,7 +820,7 @@ function ServiceExecutionPage() {
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Tulis alasan pembatalan Anda..."
                   maxLength={100}
-                  className="w-full rounded-[12px] border border-white/15 bg-white/5 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger"
+                  className="w-full rounded-[12px] border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger"
                 />
               </div>
             )}
@@ -850,7 +851,7 @@ function ServiceExecutionPage() {
                   setSelectedReason(null);
                   setOtherReason("");
                 }}
-                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-[12px] border border-white/10 bg-white/5 text-[13px] font-semibold text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-[12px] border border-border bg-muted text-[13px] font-semibold text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all"
               >
                 Tutup
               </button>

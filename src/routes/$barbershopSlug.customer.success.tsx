@@ -117,7 +117,7 @@ function SuccessPage() {
             <InfoRow label="Capster" value={receiptData.capster.name} />
           ) : null}
           <InfoRow label="Metode Pembayaran" value={paymentMethodName(receiptData.paymentMethod)} />
-          <div className="flex items-center justify-between border-t border-white/10 pt-3">
+          <div className="flex items-center justify-between border-t border-border pt-3">
             <span className="text-[14px] text-muted-foreground">Total</span>
             <span className="text-[18px] font-bold text-primary-soft">
               {formatRupiah(receiptData.total)}

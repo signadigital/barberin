@@ -311,7 +311,7 @@ function CapsterTransactionDetailPage() {
                 </div>
                 <span className="font-bold">Sisa: ~{trx.remainingMinutes ?? 0} menit</span>
               </div>
-              <p className="text-[11px] text-slate-300">
+              <p className="text-[11px] text-muted-foreground">
                 Layanan sedang berlangsung. Pelanggan akan menyelesaikan layanan melalui halaman pelanggannya.
               </p>
             </div>
@@ -322,7 +322,7 @@ function CapsterTransactionDetailPage() {
                 <Clock className="h-4 w-4 shrink-0" />
                 <span className="font-bold">Pelayanan Selesai — Menunggu Konfirmasi Pembayaran</span>
               </div>
-              <span className="text-[11px] text-slate-300 pl-6">
+              <span className="text-[11px] text-muted-foreground pl-6">
                 Batas konfirmasi pembayaran: 2 jam setelah pelayanan selesai
               </span>
             </div>
@@ -331,7 +331,7 @@ function CapsterTransactionDetailPage() {
 
         {/* Data Pelanggan */}
         <GlassCard className="p-4 space-y-3">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
             <User className="h-4 w-4 text-primary-soft" strokeWidth={2} />
             <h2 className="text-[14px] font-bold">Data Pelanggan</h2>
           </div>
@@ -373,7 +373,7 @@ function CapsterTransactionDetailPage() {
 
         {/* Daftar Layanan */}
         <GlassCard className="p-4 space-y-3">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
             <Scissors className="h-4 w-4 text-primary-soft" strokeWidth={2} />
             <h2 className="text-[14px] font-bold">Layanan</h2>
           </div>
@@ -393,7 +393,7 @@ function CapsterTransactionDetailPage() {
 
         {/* Rincian Pembayaran */}
         <GlassCard className="p-4 space-y-3">
-          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
             <Wallet className="h-4 w-4 text-primary-soft" strokeWidth={2} />
             <h2 className="text-[14px] font-bold">Pembayaran</h2>
           </div>
@@ -406,7 +406,7 @@ function CapsterTransactionDetailPage() {
               <span>Diskon</span>
               <span>{formatRupiah(trx.discount)}</span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-white/10">
+            <div className="flex justify-between items-center pt-2 border-t border-border">
               <span className="font-bold text-foreground">Total</span>
               <span className="font-extrabold text-[16px] text-primary-soft">
                 {formatRupiah(trx.total)}
@@ -435,7 +435,7 @@ function CapsterTransactionDetailPage() {
       <BottomActionBar>
         {trx.bookingStatus === "pending_confirmation" ? (
           <div className="flex flex-col gap-2 w-full">
-            <div className="text-[11px] font-semibold text-amber-400 text-center">
+            <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 text-center">
               Permintaan baru — batas konfirmasi 5 menit
             </div>
             <PrimaryButton
@@ -464,7 +464,7 @@ function CapsterTransactionDetailPage() {
           trx.status !== "Batal" &&
           trx.status !== "Kedaluwarsa" ? (
           <div className="flex flex-col gap-2 w-full">
-            <div className="text-[11px] font-semibold text-emerald-400 text-center">
+            <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 text-center">
               Layanan sedang berlangsung di kursi
             </div>
             <PrimaryButton
@@ -502,7 +502,7 @@ function CapsterTransactionDetailPage() {
           </PrimaryButton>
         ) : trx.status === "Kedaluwarsa" ? (
           <div className="flex flex-col gap-2 w-full">
-            <div className="flex items-center justify-center gap-2 rounded-[12px] border border-rose-500/35 bg-rose-900/20 p-3 text-[13px] font-bold text-rose-400">
+            <div className="flex items-center justify-center gap-2 rounded-[12px] border border-rose-500/35 bg-rose-900/20 p-3 text-[13px] font-bold text-rose-600 dark:text-rose-400">
               <Clock className="h-4 w-4 shrink-0" />
               <span>Pesanan Ini Telah Kedaluwarsa</span>
             </div>
@@ -545,7 +545,7 @@ function CapsterTransactionDetailPage() {
       {/* Modal Pilihan Alasan Pembatalan */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-3 w-full max-w-[420px] rounded-[24px] border border-white/15 p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-[420px] rounded-[24px] bg-card border border-border p-5 space-y-4 shadow-2xl text-card-foreground animate-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-[16px] font-bold text-foreground">Batalkan Pesanan</h3>
@@ -554,7 +554,7 @@ function CapsterTransactionDetailPage() {
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-white/10"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -565,7 +565,7 @@ function CapsterTransactionDetailPage() {
                 placeholder="Alasan pembatalan (misal: Pelanggan berhalangan)"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full rounded-[12px] border border-white/15 bg-white/5 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary-soft"
+                className="w-full rounded-[12px] border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary-soft"
               />
             </div>
             <div className="flex gap-2">

@@ -114,7 +114,7 @@ function TodayTransactionsPage() {
             onClick={() => setFilter("Semua")}
             className={
               filter === "Semua"
-                ? "rounded-[12px] bg-primary py-2 text-[11px] font-bold text-white shadow-md transition-all"
+                ? "rounded-[12px] bg-primary py-2 text-[11px] font-bold text-primary-foreground shadow-md transition-all"
                 : "glass-1 rounded-[12px] py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-all"
             }
           >

@@ -67,7 +67,7 @@ function CapsterAccountPage() {
 
           {/* Informasi Akun */}
           <GlassCard className="space-y-4 p-4">
-            <h2 className="text-[14px] font-bold border-b border-white/10 pb-2">
+            <h2 className="text-[14px] font-bold border-b border-border pb-2">
               Informasi Akun
             </h2>
 

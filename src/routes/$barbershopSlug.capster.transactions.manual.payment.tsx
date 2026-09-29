@@ -339,7 +339,7 @@ function ManualPaymentConfirmationPage() {
                     setError("");
                   }}
                   placeholder="0"
-                  className="min-h-[46px] w-full rounded-[10px] border border-white/16 bg-white/8 pl-11 pr-4 text-[16px] font-bold text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary-soft"
+                  className="min-h-[46px] w-full rounded-[10px] border border-input bg-background pl-11 pr-4 text-[16px] font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary-soft"
                 />
               </div>
 
@@ -348,7 +348,7 @@ function ManualPaymentConfirmationPage() {
                 <button
                   type="button"
                   onClick={() => setCashReceived(total)}
-                  className="glass-1 rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:bg-white/20"
+                  className="glass-1 rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:bg-muted"
                 >
                   Uang Pas
                 </button>
@@ -361,7 +361,7 @@ function ManualPaymentConfirmationPage() {
                       key={amt}
                       type="button"
                       onClick={() => setCashReceived(amt)}
-                      className="glass-1 rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:bg-white/20"
+                      className="glass-1 rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:bg-muted"
                     >
                       {formatRupiah(amt)}
                     </button>
@@ -371,7 +371,7 @@ function ManualPaymentConfirmationPage() {
             </div>
 
             {/* Kembalian */}
-            <div className="flex items-center justify-between border-t border-white/10 pt-3">
+            <div className="flex items-center justify-between border-t border-border pt-3">
               <span className="text-[13px] font-medium text-muted-foreground">
                 Kembalian
               </span>

@@ -137,7 +137,7 @@ function CustomerHistoryPage() {
                   </span>
                 </div>
 
-                <div className="border-t border-white/10 pt-2 flex justify-between items-center text-[12px] text-primary-soft font-semibold">
+                <div className="border-t border-border pt-2 flex justify-between items-center text-[12px] text-primary-soft font-semibold">
                   <span>Lihat Struk</span>
                   <span>&rarr;</span>
                 </div>

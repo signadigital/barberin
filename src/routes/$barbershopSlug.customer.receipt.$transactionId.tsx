@@ -216,7 +216,7 @@ function ReceiptPage() {
 
       <main className="flex-1 space-y-4 px-4 pb-6 pt-4">
         <GlassCard className="space-y-4 rounded-[20px]">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
             <BarberinLogo className="h-9 w-9" />
             <div className="min-w-0">
               <p className="text-[16px] font-bold">BARBERIN</p>
@@ -241,7 +241,7 @@ function ReceiptPage() {
             <InfoRow label="Waktu" value={formatWaktu(receiptData.createdAt, true)} />
           </div>
 
-          <div className="space-y-2 border-t border-white/10 pt-4">
+          <div className="space-y-2 border-t border-border pt-4">
             <p className="text-[13px] font-semibold text-muted-foreground">LAYANAN</p>
             {receiptData.items.map((item) => (
               <div key={item.service.id} className="flex justify-between gap-3 text-[14px]">
@@ -256,7 +256,7 @@ function ReceiptPage() {
             ))}
           </div>
 
-          <div className="space-y-2 border-t border-white/10 pt-4">
+          <div className="space-y-2 border-t border-border pt-4">
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-semibold">Total Bayar</span>
               <span className="text-[18px] font-bold text-primary-soft">

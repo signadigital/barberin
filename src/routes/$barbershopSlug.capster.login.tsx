@@ -165,7 +165,7 @@ function CapsterLoginPage() {
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="Masukkan email / nama capster"
-                  className="min-h-[48px] w-full rounded-[12px] border border-white/16 bg-white/8 pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary-soft"
+                  className="min-h-[48px] w-full rounded-[12px] border border-input bg-background pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-soft"
                 />
               </div>
             </div>
@@ -188,7 +188,7 @@ function CapsterLoginPage() {
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="Masukkan password"
-                  className="min-h-[48px] w-full rounded-[12px] border border-white/16 bg-white/8 pl-10 pr-11 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary-soft"
+                  className="min-h-[48px] w-full rounded-[12px] border border-input bg-background pl-10 pr-11 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-soft"
                 />
                 <button
                   type="button"
@@ -211,7 +211,7 @@ function CapsterLoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/20 bg-white/10 text-primary focus:ring-0 focus:ring-offset-0"
+                  className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-0 focus:ring-offset-0"
                 />
                 <span className="text-muted-foreground">Ingat saya</span>
               </label>

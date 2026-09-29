@@ -43,13 +43,13 @@ function ManualTransactionModePage() {
 
       <main className="flex-1 space-y-6 px-4 pb-8 pt-4">
         {/* Segmented Mode Selector */}
-        <div className="grid grid-cols-2 rounded-[14px] bg-white/5 p-1 ring-1 ring-white/10">
+        <div className="grid grid-cols-2 rounded-[14px] bg-muted/50 p-1 ring-1 ring-border">
           <button
             type="button"
             onClick={() => setMode("manual")}
             className={
               mode === "manual"
-                ? "flex items-center justify-center gap-2 rounded-[10px] bg-primary py-2.5 text-[13px] font-bold text-white shadow-md transition-all"
+                ? "flex items-center justify-center gap-2 rounded-[10px] bg-primary py-2.5 text-[13px] font-bold text-primary-foreground shadow-md transition-all"
                 : "flex items-center justify-center gap-2 py-2.5 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-all"
             }
           >
@@ -61,7 +61,7 @@ function ManualTransactionModePage() {
             onClick={() => setMode("qr")}
             className={
               mode === "qr"
-                ? "flex items-center justify-center gap-2 rounded-[10px] bg-primary py-2.5 text-[13px] font-bold text-white shadow-md transition-all"
+                ? "flex items-center justify-center gap-2 rounded-[10px] bg-primary py-2.5 text-[13px] font-bold text-primary-foreground shadow-md transition-all"
                 : "flex items-center justify-center gap-2 py-2.5 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-all"
             }
           >
@@ -73,7 +73,7 @@ function ManualTransactionModePage() {
         {mode === "manual" ? (
           /* Card Mode Manual */
           <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
-            <div className="flex h-24 w-24 items-center justify-center rounded-3xl glass-2 text-primary-soft shadow-xl ring-1 ring-white/15">
+            <div className="flex h-24 w-24 items-center justify-center rounded-3xl glass-2 text-primary-soft shadow-xl ring-1 ring-border">
               <Calculator className="h-12 w-12" strokeWidth={1.8} />
             </div>
             <div className="space-y-1.5 max-w-[280px]">
@@ -86,7 +86,7 @@ function ManualTransactionModePage() {
         ) : (
           /* Placeholder Scan QR (Disabled sesuai PRD) */
           <GlassCard className="p-6 text-center space-y-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-muted-foreground mx-auto">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground mx-auto">
               <QrCode className="h-8 w-8" strokeWidth={1.8} />
             </div>
             <p className="text-[14px] font-bold text-foreground">Mode Scan QR</p>

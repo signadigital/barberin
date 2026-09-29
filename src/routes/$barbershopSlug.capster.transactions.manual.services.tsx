@@ -110,7 +110,7 @@ function ManualSelectServicesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari layanan..."
-            className="min-h-[46px] w-full rounded-[12px] border border-white/16 bg-white/8 pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            className="min-h-[46px] w-full rounded-[12px] border border-input bg-background pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-soft"
           />
         </div>
 
@@ -177,8 +177,8 @@ function ManualSelectServicesPage() {
                           className={cn(
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] border transition-colors",
                             isSelected
-                              ? "border-primary bg-primary text-white"
-                              : "border-white/30 bg-white/5",
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background",
                           )}
                         >
                           {isSelected ? (

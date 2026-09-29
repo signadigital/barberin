@@ -253,7 +253,7 @@ function CapsterReceiptPage() {
 
       <main className="flex-1 px-4 pb-28 pt-3">
         {/* Thermal Slip Receipt Design */}
-        <div className="rounded-[18px] bg-slate-900/90 border border-white/20 p-5 space-y-3.5 shadow-2xl font-mono text-[12px] text-foreground">
+        <div className="rounded-[18px] bg-card border border-border p-5 space-y-3.5 shadow-md font-mono text-[12px] text-card-foreground">
           {/* Barbershop Header */}
           <div className="text-center space-y-1 pb-2">
             <h2 className="text-[16px] font-extrabold tracking-wider font-sans text-primary-soft">
@@ -267,7 +267,7 @@ function CapsterReceiptPage() {
             </p>
           </div>
 
-          <div className="border-b border-dashed border-white/20" />
+          <div className="border-b border-dashed border-border" />
 
           {/* Info Transaksi */}
           <div className="space-y-1 text-[11px]">
@@ -293,7 +293,7 @@ function CapsterReceiptPage() {
             </div>
           </div>
 
-          <div className="border-b border-dashed border-white/20" />
+          <div className="border-b border-dashed border-border" />
 
           {/* Tabel Layanan */}
           <div className="space-y-1.5">
@@ -313,7 +313,7 @@ function CapsterReceiptPage() {
             ))}
           </div>
 
-          <div className="border-b border-dashed border-white/20" />
+          <div className="border-b border-dashed border-border" />
 
           {/* Rincian Finansial */}
           <div className="space-y-1 text-[11px]">
@@ -341,7 +341,7 @@ function CapsterReceiptPage() {
             ) : null}
           </div>
 
-          <div className="border-b border-dashed border-white/20" />
+          <div className="border-b border-dashed border-border" />
 
           {/* Footer Receipt */}
           <div className="text-center pt-1 text-[11px] text-muted-foreground font-sans">

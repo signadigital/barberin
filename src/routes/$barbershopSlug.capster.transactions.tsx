@@ -129,7 +129,7 @@ function CapsterTransactionsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari transaksi..."
-            className="min-h-[46px] w-full rounded-[12px] border border-white/16 bg-white/8 pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            className="min-h-[46px] w-full rounded-[12px] border border-input bg-background pl-10 pr-4 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-soft"
           />
         </div>
 
@@ -151,7 +151,7 @@ function CapsterTransactionsPage() {
                   active
                     ? filter === "Menunggu"
                       ? "flex items-center gap-1.5 whitespace-nowrap rounded-full bg-warning px-3.5 py-1.5 text-[12px] font-bold text-black shadow-md transition-all"
-                      : "flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-white shadow-md transition-all"
+                      : "flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-primary-foreground shadow-md transition-all"
                     : "glass-1 flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-all"
                 }
               >
@@ -161,7 +161,7 @@ function CapsterTransactionsPage() {
                     className={
                       active
                         ? "rounded-full bg-black/20 px-1.5 py-0.2 text-[10px] font-bold"
-                        : "rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] font-semibold text-foreground"
+                        : "rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-semibold text-foreground"
                     }
                   >
                     {count}

@@ -154,7 +154,7 @@ function PaymentPage() {
                       className={
                         selected
                           ? "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary"
-                          : "h-6 w-6 shrink-0 rounded-full border border-white/30"
+                          : "h-6 w-6 shrink-0 rounded-full border border-border"
                       }
                     >
                       {selected ? (
