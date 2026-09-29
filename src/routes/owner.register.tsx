@@ -621,7 +621,16 @@ function OwnerRegisterPage() {
               </div>
 
               {/* SECTION 3: Address Pointer (Google Maps / Koordinat) */}
-              <MapPicker value={location} onChange={(loc) => setLocation(loc)} error={null} />
+              <MapPicker
+                value={location}
+                onChange={(loc) => {
+                  setLocation(loc);
+                  if (loc.address) {
+                    setAlamat(loc.address);
+                  }
+                }}
+                error={null}
+              />
             </div>
 
             <div className="pt-2 space-y-3">

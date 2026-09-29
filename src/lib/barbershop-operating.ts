@@ -16,6 +16,8 @@ type CachedOperatingShop = {
   slug: string | null;
   nama_barbershop: string;
   alamat: string | null;
+  latitude: string | null;
+  longitude: string | null;
   no_hp: string | null;
   jam_buka: string | null;
   jam_tutup: string | null;
@@ -48,7 +50,7 @@ export const getPublicBarbershopInfo = createServerFn({
 
       if (!shop) {
         if (data?.barbershopId) {
-          const [found] = await db
+          const [foundActive] = await db
             .select()
             .from(barbershop)
             .where(
@@ -58,9 +60,19 @@ export const getPublicBarbershopInfo = createServerFn({
               ),
             )
             .limit(1);
-          shop = found;
+
+          if (foundActive) {
+            shop = foundActive;
+          } else {
+            const [foundAny] = await db
+              .select()
+              .from(barbershop)
+              .where(eq(barbershop.id_barbershop, data.barbershopId))
+              .limit(1);
+            shop = foundAny;
+          }
         } else if (data?.slug) {
-          const [found] = await db
+          const [foundActive] = await db
             .select()
             .from(barbershop)
             .where(
@@ -70,7 +82,17 @@ export const getPublicBarbershopInfo = createServerFn({
               ),
             )
             .limit(1);
-          shop = found;
+
+          if (foundActive) {
+            shop = foundActive;
+          } else {
+            const [foundAny] = await db
+              .select()
+              .from(barbershop)
+              .where(eq(barbershop.slug, data.slug))
+              .limit(1);
+            shop = foundAny;
+          }
         }
 
         if (shop && cacheKey) {
@@ -90,6 +112,8 @@ export const getPublicBarbershopInfo = createServerFn({
 
       const nama = shop.nama_barbershop;
       const alamat = shop.alamat || "";
+      const lat = shop.latitude ? Number(shop.latitude) : null;
+      const lng = shop.longitude ? Number(shop.longitude) : null;
       const noHp = shop.no_hp || "";
       const jamBuka = shop.jam_buka || "08:00 WIB";
       const jamTutup = shop.jam_tutup || "21:00 WIB";
@@ -101,6 +125,8 @@ export const getPublicBarbershopInfo = createServerFn({
         slug: shop.slug ?? undefined,
         nama_barbershop: nama,
         alamat,
+        latitude: lat,
+        longitude: lng,
         no_hp: noHp,
         jam_buka: jamBuka,
         jam_tutup: jamTutup,

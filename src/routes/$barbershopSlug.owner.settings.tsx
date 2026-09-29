@@ -28,6 +28,7 @@ import {
   OwnerHeader,
   OwnerMobileHeader,
   OwnerBottomNav,
+  OwnerAuthGuard,
 } from "@/components/owner/ui";
 import { useOwner, ownerActions } from "@/lib/owner-store";
 import {
@@ -35,6 +36,7 @@ import {
   updateOwnerSettings,
   type OwnerSettingsData,
 } from "@/lib/owner-settings";
+import { MapPicker, type MapLocation } from "@/components/owner/map-picker";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/settings")({
   head: () => ({
@@ -63,6 +65,12 @@ function OwnerSettingsPage() {
   const [jamBuka, setJamBuka] = useState("08:00");
   const [jamTutup, setJamTutup] = useState("21:00");
 
+  // Location state for Leaflet Map
+  const [location, setLocation] = useState<MapLocation>({
+    latitude: -6.2088,
+    longitude: 106.8456,
+  });
+
   // Form states - Owner
   const [userId, setUserId] = useState("");
   const [namaLengkap, setNamaLengkap] = useState("");
@@ -81,10 +89,24 @@ function OwnerSettingsPage() {
       // Set Barbershop fields
       setBarbershopId(data.barbershop.id_barbershop);
       setNamaBarbershop(data.barbershop.nama_barbershop || storeUser.barbershopName || "Barbershop");
-      setAlamat(data.barbershop.alamat || "Jl. Jenderal Soedirman No. 123, Purbalingga");
-      setNoHpBarbershop(data.barbershop.no_hp || "0812-3456-7890");
+      setAlamat(data.barbershop.alamat || "");
+      setNoHpBarbershop(data.barbershop.no_hp || "");
       setJamBuka(data.barbershop.jam_buka?.replace(" WIB", "") || "08:00");
       setJamTutup(data.barbershop.jam_tutup?.replace(" WIB", "") || "21:00");
+
+      const initialLat =
+        data.barbershop.latitude != null && !isNaN(Number(data.barbershop.latitude))
+          ? Number(data.barbershop.latitude)
+          : -6.2088;
+      const initialLng =
+        data.barbershop.longitude != null && !isNaN(Number(data.barbershop.longitude))
+          ? Number(data.barbershop.longitude)
+          : 106.8456;
+
+      setLocation({
+        latitude: initialLat,
+        longitude: initialLng,
+      });
 
       // Set Owner fields
       setUserId(data.owner.id_user);
@@ -120,9 +142,25 @@ function OwnerSettingsPage() {
     const initialBuka = savedData.barbershop.jam_buka?.replace(" WIB", "") || "08:00";
     const initialTutup = savedData.barbershop.jam_tutup?.replace(" WIB", "") || "21:00";
 
+    const savedLat =
+      savedData.barbershop.latitude != null && !isNaN(Number(savedData.barbershop.latitude))
+        ? Number(savedData.barbershop.latitude)
+        : null;
+    const savedLng =
+      savedData.barbershop.longitude != null && !isNaN(Number(savedData.barbershop.longitude))
+        ? Number(savedData.barbershop.longitude)
+        : null;
+
+    const isLocationChanged =
+      savedLat === null
+        ? location.latitude !== -6.2088 || location.longitude !== 106.8456
+        : Math.abs(location.latitude - savedLat) > 0.000001 ||
+          Math.abs(location.longitude - (savedLng ?? 0)) > 0.000001;
+
     return (
       namaBarbershop !== savedData.barbershop.nama_barbershop ||
       alamat !== (savedData.barbershop.alamat || "") ||
+      isLocationChanged ||
       noHpBarbershop !== (savedData.barbershop.no_hp || "") ||
       jamBuka !== initialBuka ||
       jamTutup !== initialTutup ||
@@ -135,6 +173,7 @@ function OwnerSettingsPage() {
     savedData,
     namaBarbershop,
     alamat,
+    location,
     noHpBarbershop,
     jamBuka,
     jamTutup,
@@ -152,6 +191,17 @@ function OwnerSettingsPage() {
     setNoHpBarbershop(savedData.barbershop.no_hp || "");
     setJamBuka(savedData.barbershop.jam_buka?.replace(" WIB", "") || "08:00");
     setJamTutup(savedData.barbershop.jam_tutup?.replace(" WIB", "") || "21:00");
+
+    const resetLat =
+      savedData.barbershop.latitude != null && !isNaN(Number(savedData.barbershop.latitude))
+        ? Number(savedData.barbershop.latitude)
+        : -6.2088;
+    const resetLng =
+      savedData.barbershop.longitude != null && !isNaN(Number(savedData.barbershop.longitude))
+        ? Number(savedData.barbershop.longitude)
+        : 106.8456;
+    setLocation({ latitude: resetLat, longitude: resetLng });
+
     setNamaLengkap(savedData.owner.nama_lengkap);
     setEmail(savedData.owner.email);
     setNoHpOwner(savedData.owner.no_hp || "");
@@ -190,6 +240,8 @@ function OwnerSettingsPage() {
           id_barbershop: barbershopId || undefined,
           nama_barbershop: namaBarbershop.trim(),
           alamat: alamat.trim(),
+          latitude: location.latitude,
+          longitude: location.longitude,
           no_hp_barbershop: noHpBarbershop.trim(),
           jam_buka: formattedJamBuka,
           jam_tutup: formattedJamTutup,
@@ -227,8 +279,9 @@ function OwnerSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
-      <OwnerSidebar activePath="/owner/settings" />
+    <OwnerAuthGuard>
+      <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col lg:flex-row antialiased">
+        <OwnerSidebar activePath="/owner/settings" />
       <div className="flex-1 flex flex-col min-w-0">
         <OwnerMobileHeader activePath="/owner/settings" />
         <OwnerHeader />
@@ -367,18 +420,32 @@ function OwnerSettingsPage() {
                         </p>
                       </div>
 
-                      {/* Alamat Outlet */}
-                      <div>
-                        <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-rose-400" />
-                          Alamat Outlet Barbershop
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={alamat}
-                          onChange={(e) => setAlamat(e.target.value)}
-                          placeholder="Alamat lengkap lokasi fisik outlet..."
-                          className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm resize-y"
+                      {/* Alamat Outlet & Titik Lokasi Maps */}
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-rose-400" />
+                            Alamat Outlet Barbershop
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={alamat}
+                            onChange={(e) => setAlamat(e.target.value)}
+                            placeholder="Alamat lengkap lokasi fisik outlet..."
+                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm resize-none"
+                          />
+                        </div>
+
+                        {/* Interactive Leaflet Maps with Marker matching Register */}
+                        <MapPicker
+                          value={location}
+                          onChange={(loc) => {
+                            setLocation(loc);
+                            if (loc.address) {
+                              setAlamat(loc.address);
+                            }
+                          }}
+                          error={null}
                         />
                       </div>
 
@@ -446,6 +513,19 @@ function OwnerSettingsPage() {
                         <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
                         <span>{alamat || "Belum ada alamat diisi"}</span>
                       </p>
+                      {location.latitude && location.longitude ? (
+                        <div className="pt-0.5">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            <span>Preview Tautan Google Maps ({location.latitude.toFixed(4)}, {location.longitude.toFixed(4)})</span>
+                          </a>
+                        </div>
+                      ) : null}
                       {noHpBarbershop && (
                         <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
                           <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
@@ -573,5 +653,6 @@ function OwnerSettingsPage() {
         <OwnerBottomNav activePath="/owner/settings" />
       </div>
     </div>
+    </OwnerAuthGuard>
   );
 }

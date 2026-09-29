@@ -3,6 +3,8 @@ export type PublicBarbershopInfo = {
   slug?: string | undefined;
   nama_barbershop: string;
   alamat: string;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
   no_hp: string;
   jam_buka: string;
   jam_tutup: string;

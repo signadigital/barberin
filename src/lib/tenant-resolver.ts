@@ -9,6 +9,8 @@ export type ResolvedBarbershop = {
   slug: string;
   nama_barbershop: string;
   alamat: string | null;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
   no_hp: string | null;
   jam_buka: string | null;
   jam_tutup: string | null;
@@ -23,6 +25,8 @@ type CachedShopRecord = {
   slug: string;
   nama_barbershop: string;
   alamat: string | null;
+  latitude: string | null;
+  longitude: string | null;
   no_hp: string | null;
   jam_buka: string | null;
   jam_tutup: string | null;
@@ -63,6 +67,8 @@ export const resolveBarbershopBySlug = createServerFn({
             slug: barbershop.slug,
             nama_barbershop: barbershop.nama_barbershop,
             alamat: barbershop.alamat,
+            latitude: barbershop.latitude,
+            longitude: barbershop.longitude,
             no_hp: barbershop.no_hp,
             jam_buka: barbershop.jam_buka,
             jam_tutup: barbershop.jam_tutup,
@@ -99,6 +105,8 @@ export const resolveBarbershopBySlug = createServerFn({
       slug: found.slug,
       nama_barbershop: found.nama_barbershop,
       alamat: found.alamat,
+      latitude: found.latitude ? Number(found.latitude) : null,
+      longitude: found.longitude ? Number(found.longitude) : null,
       no_hp: found.no_hp,
       jam_buka: jamBuka,
       jam_tutup: jamTutup,

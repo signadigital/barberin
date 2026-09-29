@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { barbershop, users } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
+import { invalidatePublicShopCache } from "@/lib/barbershop-operating";
+import { invalidateTenantCache } from "@/lib/tenant-resolver";
 
 export type OwnerSettingsData = {
   barbershop: {
@@ -10,6 +12,8 @@ export type OwnerSettingsData = {
     nama_barbershop: string;
     slug?: string | undefined;
     alamat: string;
+    latitude?: number | null | undefined;
+    longitude?: number | null | undefined;
     no_hp: string;
     jam_buka: string;
     jam_tutup: string;
@@ -27,6 +31,8 @@ export type UpdateOwnerSettingsInput = {
   id_barbershop?: string | undefined;
   nama_barbershop: string;
   alamat: string;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
   no_hp_barbershop: string;
   jam_buka: string;
   jam_tutup: string;
@@ -76,6 +82,8 @@ export const getOwnerSettings = createServerFn({
       nama_barbershop: shop.nama_barbershop,
       slug: shop.slug || undefined,
       alamat: shop.alamat || "",
+      latitude: shop.latitude ? Number(shop.latitude) : null,
+      longitude: shop.longitude ? Number(shop.longitude) : null,
       no_hp: shop.no_hp || "",
       jam_buka: shop.jam_buka || "08:00",
       jam_tutup: shop.jam_tutup || "21:00",
@@ -125,23 +133,46 @@ export const updateOwnerSettings = createServerFn({
       throw new Error("Password baru minimal 4 karakter.");
     }
 
+    const rawLat =
+      data.latitude !== undefined && data.latitude !== null ? Number(data.latitude) : null;
+    const rawLng =
+      data.longitude !== undefined && data.longitude !== null ? Number(data.longitude) : null;
+
+    if (rawLat !== null && (isNaN(rawLat) || rawLat < -90 || rawLat > 90)) {
+      throw new Error("Latitude tidak valid. Rentang yang diperbolehkan adalah -90 hingga 90.");
+    }
+    if (rawLng !== null && (isNaN(rawLng) || rawLng < -180 || rawLng > 180)) {
+      throw new Error("Longitude tidak valid. Rentang yang diperbolehkan adalah -180 hingga 180.");
+    }
+
     // 1. Update Barbershop strictly for this tenant
+    const shopUpdatePayload: any = {
+      nama_barbershop: namaBarbershop,
+      alamat,
+      no_hp: noHpBarbershop,
+      jam_buka: jamBuka,
+      jam_tutup: jamTutup,
+      updated_at: new Date(),
+    };
+
+    if (rawLat !== null && rawLng !== null) {
+      shopUpdatePayload.latitude = rawLat.toFixed(7);
+      shopUpdatePayload.longitude = rawLng.toFixed(7);
+    }
+
     const [updatedShop] = await db
       .update(barbershop)
-      .set({
-        nama_barbershop: namaBarbershop,
-        alamat,
-        no_hp: noHpBarbershop,
-        jam_buka: jamBuka,
-        jam_tutup: jamTutup,
-        updated_at: new Date(),
-      })
+      .set(shopUpdatePayload)
       .where(eq(barbershop.id_barbershop, barbershopId))
       .returning();
 
     if (!updatedShop) {
       throw new Error("Gagal memperbarui profil toko Anda.");
     }
+
+    // Invalidate caches so customer immediately sees updated location and profile
+    invalidatePublicShopCache();
+    invalidateTenantCache();
 
     // 2. Update Akun User Owner strictly for this tenant
     const userPayload: any = {
@@ -180,6 +211,8 @@ export const updateOwnerSettings = createServerFn({
           nama_barbershop: updatedShop.nama_barbershop,
           slug: updatedShop.slug || undefined,
           alamat: updatedShop.alamat || "",
+          latitude: updatedShop.latitude ? Number(updatedShop.latitude) : null,
+          longitude: updatedShop.longitude ? Number(updatedShop.longitude) : null,
           no_hp: updatedShop.no_hp || "",
           jam_buka: updatedShop.jam_buka || "08:00",
           jam_tutup: updatedShop.jam_tutup || "21:00",

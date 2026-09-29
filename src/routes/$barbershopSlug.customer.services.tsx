@@ -236,6 +236,29 @@ function ServicesPage() {
   const displayJamBuka = shopInfo?.jam_buka?.replace(" WIB", "") || "08:00";
   const displayJamTutup = shopInfo?.jam_tutup?.replace(" WIB", "") || "21:00";
 
+  // Check if valid coordinates exist from database
+  const hasCoordinates = useMemo(() => {
+    if (shopInfo?.latitude == null || shopInfo?.longitude == null) return false;
+    const lat = Number(shopInfo.latitude);
+    const lng = Number(shopInfo.longitude);
+    return (
+      !isNaN(lat) &&
+      !isNaN(lng) &&
+      lat !== 0 &&
+      lng !== 0 &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lng >= -180 &&
+      lng <= 180
+    );
+  }, [shopInfo?.latitude, shopInfo?.longitude]);
+
+  // Coordinates-based Google Maps URL (Source of Truth)
+  const googleMapsUrl = useMemo(() => {
+    if (!hasCoordinates || shopInfo?.latitude == null || shopInfo?.longitude == null) return null;
+    return `https://www.google.com/maps/search/?api=1&query=${Number(shopInfo.latitude)},${Number(shopInfo.longitude)}`;
+  }, [hasCoordinates, shopInfo?.latitude, shopInfo?.longitude]);
+
   return (
     <MobileShell>
       <header className="safe-top px-4 pb-2">
@@ -301,12 +324,24 @@ function ServicesPage() {
           </div>
 
           <div className="space-y-1.5 pt-1.5 border-t border-slate-800/80 text-xs text-slate-300">
-            {/* Alamat Barbershop */}
+            {/* Alamat Barbershop (Clickable to Google Maps based on coordinates) */}
             <div className="flex items-start gap-2">
               <MapPin className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
-              <span className="line-clamp-2 leading-relaxed text-slate-300">
-                {shopInfo?.alamat || "Jl. Jenderal Soedirman No. 123, Purbalingga"}
-              </span>
+              {hasCoordinates && googleMapsUrl ? (
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="line-clamp-2 leading-relaxed text-slate-300 hover:text-white underline decoration-slate-500/60 hover:decoration-blue-400 transition-colors cursor-pointer"
+                  title="Buka titik lokasi barbershop di Google Maps"
+                >
+                  {shopInfo?.alamat || "Lihat Peta Lokasi di Google Maps"}
+                </a>
+              ) : (
+                <span className="line-clamp-2 leading-relaxed text-slate-300">
+                  {shopInfo?.alamat || "Alamat belum diatur"}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
