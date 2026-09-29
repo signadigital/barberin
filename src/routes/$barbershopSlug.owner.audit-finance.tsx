@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   FileText,
   DollarSign,
@@ -12,6 +12,7 @@ import {
   Search,
   SlidersHorizontal,
   Calendar,
+  ChevronDown,
   Download,
   Eye,
   ArrowRight,
@@ -42,6 +43,7 @@ import {
   type OwnerPeriodFilter,
   type OwnerFinanceTransactionItem,
 } from "@/lib/owner";
+import { OwnerDateRangePicker, type DateRangeResult } from "@/components/owner/date-range-picker";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/audit-finance")({
   head: () => ({
@@ -65,6 +67,44 @@ function OwnerAuditFinancePage() {
 
   // Filters
   const [period, setPeriod] = useState<OwnerPeriodFilter>("today");
+  const todayStr = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    } catch {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+  }, []);
+
+  const [startDate, setStartDate] = useState<string>(todayStr);
+  const [endDate, setEndDate] = useState<string>(todayStr);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const datePickerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Outside click listener for Date Range Picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        datePickerContainerRef.current &&
+        !datePickerContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsDatePickerOpen(false);
+      }
+    };
+
+    if (isDatePickerOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDatePickerOpen]);
+
   const [paymentMethod, setPaymentMethod] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
@@ -83,6 +123,8 @@ function OwnerAuditFinancePage() {
       const res = await getOwnerAuditFinance({
         data: {
           period,
+          startDate: period === "custom" ? startDate : undefined,
+          endDate: period === "custom" ? endDate : undefined,
           paymentMethod,
           status,
           search,
@@ -104,7 +146,7 @@ function OwnerAuditFinancePage() {
 
   useEffect(() => {
     fetchFinanceData();
-  }, [period, paymentMethod, status, page]);
+  }, [period, startDate, endDate, paymentMethod, status, page]);
 
   const handleApplyFilter = () => {
     setPage(1);
@@ -154,6 +196,8 @@ function OwnerAuditFinancePage() {
         const res = await getOwnerAuditFinance({
           data: {
             period,
+            startDate: period === "custom" ? startDate : undefined,
+            endDate: period === "custom" ? endDate : undefined,
             paymentMethod,
             status,
             search,
@@ -481,6 +525,8 @@ function OwnerAuditFinancePage() {
         const res = await getOwnerAuditFinance({
           data: {
             period,
+            startDate: period === "custom" ? startDate : undefined,
+            endDate: period === "custom" ? endDate : undefined,
             paymentMethod,
             status,
             search,
@@ -633,9 +679,58 @@ function OwnerAuditFinancePage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto px-3.5 py-2 bg-[#0F1D33] border border-slate-700/80 rounded-xl text-xs font-semibold text-white">
-              <Calendar className="h-4 w-4 text-blue-400" />
-              <span>{data?.dateRangeText || "Hari ini"}</span>
+            {/* Date Range Picker Trigger & Popover */}
+            <div className="relative self-start sm:self-auto" ref={datePickerContainerRef}>
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen((prev) => !prev)}
+                className="flex items-center gap-2 px-3.5 py-2 bg-[#0F1D33] hover:bg-[#152744] border border-slate-700/80 hover:border-slate-600 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer shadow-xs"
+              >
+                <Calendar className="h-4 w-4 text-blue-400" />
+                <span>
+                  {data?.dateRangeText ||
+                    (period === "today"
+                      ? new Date().toLocaleDateString("id-ID", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                          timeZone: "Asia/Jakarta",
+                        })
+                      : "Pilih Tanggal")}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                    isDatePickerOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isDatePickerOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <OwnerDateRangePicker
+                    isOpen={isDatePickerOpen}
+                    onClose={() => setIsDatePickerOpen(false)}
+                    appliedStart={startDate}
+                    appliedEnd={endDate}
+                    appliedPreset={
+                      period === "today"
+                        ? "today"
+                        : period === "7d"
+                          ? "7d"
+                          : period === "month"
+                            ? "month"
+                            : "custom"
+                    }
+                    onApply={(result) => {
+                      setPeriod(result.preset === "custom" ? "custom" : (result.preset as OwnerPeriodFilter));
+                      setStartDate(result.startDate);
+                      setEndDate(result.endDate);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -647,17 +742,41 @@ function OwnerAuditFinancePage() {
                 { key: "today", label: "Hari ini" },
                 { key: "7d", label: "Minggu ini" },
                 { key: "month", label: "Bulan ini" },
-                { key: "30d", label: "Custom" },
+                { key: "custom", label: "Custom" },
               ].map((b) => (
                 <button
                   key={b.key}
                   type="button"
                   onClick={() => {
+                    if (b.key === "custom") {
+                      setIsDatePickerOpen(true);
+                      return;
+                    }
                     setPeriod(b.key as OwnerPeriodFilter);
+                    const todayD = new Date();
+                    const tStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(todayD);
+                    if (b.key === "today") {
+                      setStartDate(tStr);
+                      setEndDate(tStr);
+                    } else if (b.key === "7d") {
+                      const day = todayD.getDay();
+                      const diffToMonday = day === 0 ? -6 : 1 - day;
+                      const monday = new Date(todayD.getTime() + diffToMonday * 86400000);
+                      const sunday = new Date(monday.getTime() + 6 * 86400000);
+                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(monday));
+                      setEndDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(sunday));
+                    } else if (b.key === "month") {
+                      const y = todayD.getFullYear();
+                      const m = todayD.getMonth();
+                      const first = new Date(y, m, 1, 12);
+                      const last = new Date(y, m + 1, 0, 12);
+                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(first));
+                      setEndDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(last));
+                    }
                     setPage(1);
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    period === b.key
+                    period === b.key || (b.key === "custom" && period === "custom")
                       ? "bg-blue-600 text-white font-semibold shadow-xs"
                       : "text-slate-400 hover:text-white"
                   }`}

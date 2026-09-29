@@ -2006,8 +2006,12 @@ export const getOwnerAuditFinance = createServerFn({
       custom: "Kustom",
     };
 
+    const isSingleDay =
+      startDate.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }) ===
+      endDate.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+
     const dateRangeText =
-      period === "today"
+      period === "today" || (period === "custom" && isSingleDay)
         ? startDate.toLocaleDateString("id-ID", {
             weekday: "long",
             day: "numeric",
