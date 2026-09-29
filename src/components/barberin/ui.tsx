@@ -44,7 +44,7 @@ export function BackButton({ to }: { to?: string }) {
       type="button"
       aria-label="Kembali"
       onClick={() => (to ? router.navigate({ to }) : router.history.back())}
-      className="glass-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] transition-colors active:bg-muted"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-border bg-card/60 text-foreground transition-colors hover:bg-muted active:bg-muted"
     >
       <ArrowLeft className="h-5 w-5" strokeWidth={2} />
     </button>
@@ -63,10 +63,10 @@ export function CustomerHeader({
   showBack?: boolean;
 }) {
   return (
-    <header className="glass-3 safe-top sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-x-0 border-t-0 px-4 pb-3">
+    <header className="safe-top sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 backdrop-blur-md px-4 pb-3">
       {showBack ? backTo ? <BackButton to={backTo} /> : <BackButton /> : <BarberinLogo />}
       <div className="min-w-0 text-center">
-        <h1 className="truncate text-[18px] font-bold leading-tight">{title}</h1>
+        <h1 className="truncate text-[18px] font-bold leading-tight text-foreground">{title}</h1>
         {subtitle ? (
           <p className="truncate text-[12px] text-muted-foreground">{subtitle}</p>
         ) : null}
@@ -88,7 +88,7 @@ export function GlassCard({
   return (
     <div
       className={cn(
-        "glass-1 rounded-[18px] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all",
+        "rounded-[18px] border border-border bg-card text-card-foreground p-4 shadow-sm transition-all",
         selected && "border-primary bg-primary/10 ring-1 ring-primary/40",
         className,
       )}
@@ -122,7 +122,7 @@ export function SecondaryButton({ className, children, loading, disabled, ...res
       {...rest}
       disabled={disabled || loading}
       className={cn(
-        "glass-2 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] px-5 text-[15px] font-semibold text-foreground transition-all active:scale-[0.98] disabled:opacity-50",
+        "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-muted/60 px-5 text-[15px] font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98] disabled:opacity-50",
         className,
       )}
     >
@@ -134,7 +134,7 @@ export function SecondaryButton({ className, children, loading, disabled, ...res
 
 export function BottomActionBar({ children }: { children: ReactNode }) {
   return (
-    <div className="glass-3 safe-bottom sticky bottom-0 z-20 mt-auto space-y-3 border-x-0 border-b-0 px-4 pt-4">
+    <div className="safe-bottom sticky bottom-0 z-20 mt-auto space-y-3 border-t border-border bg-background/95 backdrop-blur-md px-4 pt-4 shadow-xs">
       {children}
     </div>
   );
@@ -152,11 +152,11 @@ export function StatusBadge({
   children: ReactNode;
 }) {
   const tones: Record<Tone, string> = {
-    info: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
-    success: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-    warning: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
-    danger: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    neutral: "bg-muted text-muted-foreground border-border",
+    info: "bg-info/10 text-info border border-info/20",
+    success: "bg-success/10 text-success border border-success/20",
+    warning: "bg-warning/10 text-warning border border-warning/20",
+    danger: "bg-danger/10 text-danger border border-danger/20",
+    neutral: "bg-muted text-muted-foreground border border-border",
   };
   return (
     <span

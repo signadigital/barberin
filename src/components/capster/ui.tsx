@@ -486,13 +486,13 @@ export function CapsterHeader({
   }, [visiblePendingTransactions, dismissedNotifIds, capsterId, router, handleDismiss]);
 
   return (
-    <header className="glass-3 safe-top sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-x-0 border-t-0 px-4 pb-3">
+    <header className="safe-top sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 backdrop-blur-md px-4 pb-3">
       {showBack ? (
         <button
           type="button"
           aria-label="Kembali"
           onClick={() => (backTo ? router.navigate({ to: backTo }) : router.history.back())}
-          className="glass-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] transition-colors active:bg-white/15"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-border bg-card/60 text-foreground transition-colors hover:bg-muted active:bg-muted"
         >
           <ArrowLeft className="h-5 w-5" strokeWidth={2} />
         </button>
@@ -501,7 +501,7 @@ export function CapsterHeader({
       )}
 
       <div className="min-w-0 text-center">
-        {title ? <h1 className="truncate text-[18px] font-bold leading-tight">{title}</h1> : null}
+        {title ? <h1 className="truncate text-[18px] font-bold leading-tight text-foreground">{title}</h1> : null}
         {subtitle ? (
           <p className="truncate text-[12px] text-muted-foreground">{subtitle}</p>
         ) : null}
@@ -515,15 +515,15 @@ export function CapsterHeader({
               aria-label="Notifikasi"
               onClick={() => setShowNotifications(!showNotifications)}
               className={cn(
-                "glass-1 relative flex h-10 w-10 items-center justify-center rounded-[12px] transition-all active:scale-[0.95]",
-                pendingCount > 0 && "ring-1 ring-warning/40",
-                showNotifications && "bg-white/20",
+                "relative flex h-10 w-10 items-center justify-center rounded-[12px] border border-border bg-card/60 text-muted-foreground transition-all hover:text-foreground active:scale-[0.95]",
+                pendingCount > 0 && "ring-1 ring-warning/40 text-warning",
+                showNotifications && "bg-muted text-foreground",
               )}
             >
               <Bell
                 className={cn(
                   "h-4 w-4 transition-colors",
-                  pendingCount > 0 ? "text-warning" : "text-primary-soft",
+                  pendingCount > 0 ? "text-warning" : "text-foreground",
                 )}
                 strokeWidth={2}
               />
@@ -540,9 +540,9 @@ export function CapsterHeader({
               to={getCapsterTenantPath(slug, "/capster/login") as any}
               onClick={() => capsterActions.logout()}
               aria-label="Keluar"
-              className="glass-1 flex h-10 w-10 items-center justify-center rounded-[12px] transition-colors active:bg-white/15"
+              className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-border bg-card/60 text-muted-foreground transition-colors hover:text-foreground active:bg-muted"
             >
-              <LogOut className="h-4 w-4 text-primary-soft" strokeWidth={2} />
+              <LogOut className="h-4 w-4" strokeWidth={2} />
             </Link>
           </>
         ) : (
@@ -672,7 +672,7 @@ export function CapsterBottomNav({
   return (
     <nav
       aria-label="Navigasi Capster"
-      className="glass-3 safe-bottom sticky bottom-0 z-20 mt-auto border-x-0 border-b-0 px-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
+      className="sticky bottom-0 z-20 mt-auto border-t border-border bg-background/95 backdrop-blur-md safe-bottom px-2 pt-2 shadow-xs"
     >
       <div className="grid grid-cols-4 items-center">
         {tabs.map((tab) => {
@@ -685,14 +685,14 @@ export function CapsterBottomNav({
               className={cn(
                 "flex flex-col items-center gap-1 rounded-[12px] py-1.5 transition-colors",
                 isActive
-                  ? "text-primary-soft font-semibold"
-                  : "text-muted-foreground hover:text-foreground active:bg-white/5",
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-foreground active:bg-muted/50",
               )}
             >
               <div
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full transition-all",
-                  isActive && "bg-primary/20 ring-1 ring-primary/40",
+                  isActive && "bg-primary/10 text-primary ring-1 ring-primary/25",
                 )}
               >
                 <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 2} />
@@ -721,10 +721,10 @@ export function SummaryCard({
   tone?: "primary" | "success" | "purple" | "warning";
 }) {
   const toneBg: Record<string, string> = {
-    primary: "bg-primary/20 text-primary-soft ring-1 ring-primary/30",
-    success: "bg-success/20 text-success ring-1 ring-success/30",
-    purple: "bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/30",
-    warning: "bg-warning/20 text-warning ring-1 ring-warning/30",
+    primary: "bg-primary/10 text-primary ring-1 ring-primary/25",
+    success: "bg-success/10 text-success ring-1 ring-success/25",
+    purple: "bg-primary/10 text-primary ring-1 ring-primary/25",
+    warning: "bg-warning/10 text-warning ring-1 ring-warning/25",
   };
 
   return (
@@ -737,7 +737,7 @@ export function SummaryCard({
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </div>
       </div>
-      <div className="text-[20px] font-extrabold tracking-tight">{value}</div>
+      <div className="text-[20px] font-extrabold tracking-tight text-card-foreground">{value}</div>
       {delta ? (
         <p className="text-[11px] font-medium text-success flex items-center gap-1">
           {delta}

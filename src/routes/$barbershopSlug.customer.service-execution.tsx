@@ -464,15 +464,20 @@ function ServiceExecutionPage() {
           txDetail?.bookingStatus === "confirmed") && (
           <GlassCard className="flex flex-col items-center justify-center text-center p-6 space-y-4 border border-border bg-card text-card-foreground shadow-sm">
             {txDetail?.bookingStatus === "pending_confirmation" && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/25 shadow-sm animate-pulse">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 dark:text-amber-400" />
+              <div className="inline-flex items-center gap-2 rounded-full bg-warning/10 px-3.5 py-1 text-[11px] font-bold text-warning border border-warning/20 shadow-xs animate-pulse">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-warning" />
                 <span>Menunggu Konfirmasi Capster</span>
               </div>
             )}
 
             {/* Visual Countdown Badge Ring */}
             <div className="relative flex flex-col items-center justify-center my-1">
-              <div className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-border bg-background shadow-md">
+              <div
+                className="relative flex h-36 w-36 sm:h-40 sm:w-40 flex-col items-center justify-center rounded-full border border-border shadow-xs"
+                style={{
+                  background: "color-mix(in srgb, var(--primary) 8%, var(--card))",
+                }}
+              >
                 {/* SVG Progress Arc */}
                 <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
                   <circle

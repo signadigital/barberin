@@ -29,13 +29,17 @@ export function WaitingVisual({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-[26px] border border-border bg-gradient-to-b from-card via-card/95 to-muted shadow-xl transition-all duration-300",
-        "h-52 sm:h-60 flex flex-col items-center justify-center",
+        "relative w-full overflow-hidden rounded-[26px] border border-border shadow-sm transition-all duration-300",
+        "h-52 sm:h-60 flex flex-col items-center justify-center text-card-foreground",
         className,
       )}
+      style={{
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--card)), var(--card))",
+      }}
     >
       {/* Background Ambience & Lighting */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--primary)_15%,transparent)_0%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--primary)_10%,transparent)_0%,transparent_70%)]" />
       <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-32 w-64 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-card/80 to-transparent" />
 
@@ -52,7 +56,7 @@ export function WaitingVisual({
       {/* Optional Top-Right Status Badge */}
       {badgeText && (
         <div className="absolute top-3.5 right-3.5 z-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold tracking-wider text-foreground border border-border uppercase shadow-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-card/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold tracking-wider text-foreground border border-border uppercase shadow-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
             <span>{badgeText}</span>
           </span>

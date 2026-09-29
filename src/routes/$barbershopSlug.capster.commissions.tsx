@@ -204,12 +204,12 @@ function CapsterCommissionsPage() {
         <main className="flex-1 space-y-4 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+120px)] pt-3">
           {/* 1. RINGKASAN TOTAL KOMISI (Card Total Komisi Diterima) */}
           <div className="rounded-[20px] bg-card border border-border p-4 shadow-sm flex items-center gap-3.5 text-card-foreground">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/15 text-primary ring-1 ring-primary/30">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary ring-1 ring-primary/20">
               <Wallet className="h-6 w-6" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[12px] font-medium text-muted-foreground">Total Komisi Diterima</p>
-              <h2 className="text-[22px] font-extrabold tracking-tight text-foreground">
+              <h2 className="text-[22px] font-extrabold tracking-tight text-card-foreground">
                 {data?.totalKomisiDiterimaFormatted || "Rp 0"}
               </h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -222,12 +222,12 @@ function CapsterCommissionsPage() {
           <div className="grid grid-cols-[1fr_auto] gap-2.5 items-stretch">
             {/* Left Box: Komisi Tersedia */}
             <div className="rounded-[18px] bg-card border border-border p-3.5 flex items-center gap-3 text-card-foreground">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/25">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
                 <Clock className="h-5 w-5" strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-muted-foreground">Komisi Tersedia</p>
-                <p className="text-[16px] font-bold text-foreground tracking-tight">
+                <p className="text-[16px] font-bold text-card-foreground tracking-tight">
                   {data?.komisiTersediaFormatted || "Rp 0"}
                 </p>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5">
@@ -272,7 +272,7 @@ function CapsterCommissionsPage() {
                     "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer",
                     isActive
                       ? "bg-primary text-primary-foreground font-bold shadow-md ring-1 ring-primary/40"
-                      : "glass-1 text-muted-foreground hover:text-foreground border border-border active:bg-muted",
+                      : "bg-card text-muted-foreground hover:text-foreground border border-border active:bg-muted",
                   )}
                 >
                   <span>{tab.label}</span>
@@ -331,21 +331,21 @@ function CapsterCommissionsPage() {
                     {/* Status Badge */}
                     <div className="flex flex-col items-end gap-1">
                       {req.uiStatus === "pending" && (
-                        <div className="flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
+                        <div className="flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-[11px] font-bold text-warning border border-warning/20">
                           <Clock className="h-3 w-3" />
                           <span>Menunggu Persetujuan</span>
                         </div>
                       )}
 
                       {req.uiStatus === "approved" && (
-                        <div className="flex items-center gap-1.5 rounded-full bg-blue-500/15 px-2.5 py-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30">
+                        <div className="flex items-center gap-1.5 rounded-full bg-info/10 px-2.5 py-1 text-[11px] font-bold text-info border border-info/20">
                           <Hourglass className="h-3 w-3" />
                           <span>Disetujui</span>
                         </div>
                       )}
 
                       {req.uiStatus === "rejected" && (
-                        <div className="flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30">
+                        <div className="flex items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-bold text-danger border border-danger/20">
                           <XCircle className="h-3 w-3" />
                           <span>Ditolak</span>
                         </div>
@@ -353,7 +353,7 @@ function CapsterCommissionsPage() {
 
                       {req.uiStatus === "paid" && (
                         <>
-                          <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                          <div className="flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-bold text-success border border-success/20">
                             <CheckCircle2 className="h-3 w-3" />
                             <span>Sudah Ditarik</span>
                           </div>
@@ -370,7 +370,7 @@ function CapsterCommissionsPage() {
                   {/* Card Body: Amount & Label & Chevron */}
                   <div className="mt-3.5 flex items-center justify-between border-t border-border pt-2.5">
                     <div>
-                      <p className="text-[16px] font-extrabold text-foreground">
+                      <p className="text-[16px] font-extrabold text-card-foreground">
                         {req.jumlahFormatted}
                       </p>
                       <p className="text-[11px] text-muted-foreground">Penarikan komisi</p>

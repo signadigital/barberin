@@ -176,8 +176,8 @@ function CapsterDashboardPage() {
               Kamu ke dashboard capster mu.
             </p>
           </div>
-          <div className="glass-2 flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold text-primary-soft shrink-0">
-            <Clock className="h-3.5 w-3.5 text-primary-soft shrink-0" />
+          <div className="border border-border bg-card flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold text-foreground shrink-0 shadow-xs">
+            <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>
               {liveClock.toLocaleDateString("id-ID", {
                 weekday: "short",
