@@ -234,7 +234,6 @@ function OwnerAuditActivitiesPage() {
                 <option value="all">Semua Role</option>
                 <option value="capster">Capster</option>
                 <option value="pelanggan">Pelanggan</option>
-                <option value="admin">Admin</option>
                 <option value="owner">Owner</option>
               </select>
             </div>
@@ -704,7 +703,6 @@ function OwnerAuditActivitiesPage() {
                   <option value="all">Semua Role</option>
                   <option value="capster">Capster</option>
                   <option value="pelanggan">Pelanggan</option>
-                  <option value="admin">Admin</option>
                   <option value="owner">Owner</option>
                 </select>
               </div>
