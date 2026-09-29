@@ -398,7 +398,7 @@ export function OwnerNotificationBell({
         <>
           {/* Backdrop for closing when clicking outside */}
           <div
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs"
             onClick={() => setIsOpen(false)}
           />
 
@@ -718,7 +718,7 @@ export function OwnerHeader({
       <header
         className={`hidden lg:flex items-center ${
           searchPlaceholder ? "justify-between" : "justify-end"
-        } px-8 py-3.5 sticky top-0 z-30 transition-colors ${
+        } px-8 py-3.5 sticky top-0 z-40 transition-colors ${
           isLight
             ? "bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs"
             : "bg-[#0A1424] border-b border-slate-800/80"

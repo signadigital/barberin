@@ -374,13 +374,13 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
         </div>
       )}
 
-      {/* REAL INTERACTIVE LEAFLET MAP CONTAINER */}
-      <div className="relative w-full h-72 sm:h-80 bg-[#0B1527] border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl">
+      {/* REAL INTERACTIVE LEAFLET MAP CONTAINER (Isolated Stacking Context) */}
+      <div className="relative isolate z-0 w-full h-72 sm:h-80 bg-[#0B1527] border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl">
         {/* The Leaflet Map DOM Element */}
         <div ref={mapContainerRef} className="w-full h-full" />
 
         {/* Top Overlay Badge: Coordinate & Status */}
-        <div className="absolute top-3 left-3 right-3 z-30 pointer-events-none flex items-center justify-between gap-2">
+        <div className="absolute top-3 left-3 right-3 z-10 pointer-events-none flex items-center justify-between gap-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[11px] backdrop-blur-md shadow-lg pointer-events-auto">
             <Compass className="h-3.5 w-3.5 text-blue-400" />
             <span className="text-slate-200 font-mono text-[11px]">
@@ -404,7 +404,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
         </div>
 
         {/* Bottom Bar: Petunjuk & Tombol Buka di Google Maps */}
-        <div className="absolute bottom-2 left-2 right-2 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2">
+        <div className="absolute bottom-2 left-2 right-2 z-10 pointer-events-none flex flex-wrap items-center justify-between gap-2">
           <div className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-700/80 text-[10px] text-slate-300 backdrop-blur-md shadow pointer-events-auto">
             💡 <em>Klik peta atau geser pin biru untuk menentukan titik</em>
           </div>
