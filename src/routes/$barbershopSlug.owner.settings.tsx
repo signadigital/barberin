@@ -932,18 +932,6 @@ function OwnerSettingsPage() {
                           )}
                         </div>
 
-                        {/* Role Hak Akses */}
-                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                          <div>
-                            <label className="text-slate-400 block mb-0.5">Peran Sistem</label>
-                            <span className="text-xs text-slate-300 font-medium">
-                              Akses Tertinggi (Super User)
-                            </span>
-                          </div>
-                          <span className="inline-block px-3 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 font-bold uppercase tracking-wider text-[11px]">
-                            OWNER (PENGELOLA)
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
