@@ -8,19 +8,20 @@
 
 ## DAFTAR ISI
 1. [Ringkasan Eksekutif & Prinsip Desain](#1-ringkasan-eksekutif--prinsip-desain)
-2. [Pemisahan Hak Akses & Matriks Otorisasi](#2-pemisahan-hak-akses--matriks-otorisasi)
-3. [BPMN 01 — White Labeling & Custom Design (Owner Barbershop)](#3-bpmn-01--white-labeling--custom-design-owner-barbershop)
-   - 3.1. [Diagram Alur BPMN 01 (Mermaid Swimlanes)](#31-diagram-alur-bpmn-01-mermaid-swimlanes)
-   - 3.2. [Spesifikasi Node & Rincian Proses 01](#32-spesifikasi-node--rincian-proses-01)
-   - 3.3. [Aturan Validasi Konfigurasi Branding](#33-aturan-validasi-konfigurasi-branding)
-   - 3.4. [Pencatatan Audit Trail (branding_histories)](#34-pencatatan-audit-trail-branding_histories)
-4. [BPMN 02 — Custom Domain (Admin Platform / Superadmin)](#4-bpmn-02--custom-domain-admin-platform--superadmin)
-   - 4.1. [Diagram Alur BPMN 02 (Mermaid Swimlanes)](#41-diagram-alur-bpmn-02-mermaid-swimlanes)
-   - 4.2. [Spesifikasi Node & Rincian Proses 02](#42-spesifikasi-node--rincian-proses-02)
-   - 4.3. [Aturan Format & Ketersediaan Domain](#43-aturan-format--ketersediaan-domain)
-   - 4.4. [State Machine & Verifikasi DNS](#44-state-machine--verifikasi-dns)
-5. [Sinkronisasi ERD & Struktur Database](#5-sinkronisasi-erd--struktur-database)
-6. [Tabel Perbandingan Versi (Changelog Versi 1.0 ke 1.1)](#6-tabel-perbandingan-versi-changelog-versi-10-ke-11)
+2. [Penjelasan Wireframe Tema / White Labeling (Owner)](#2-penjelasan-wireframe-tema--white-labeling-owner)
+3. [Pemisahan Hak Akses & Matriks Otorisasi](#3-pemisahan-hak-akses--matriks-otorisasi)
+4. [BPMN 01 — White Labeling & Custom Design (Owner Barbershop)](#4-bpmn-01--white-labeling--custom-design-owner-barbershop)
+   - 4.1. [Diagram Alur BPMN 01 (Mermaid Swimlanes)](#41-diagram-alur-bpmn-01-mermaid-swimlanes)
+   - 4.2. [Spesifikasi Node & Rincian Proses 01](#42-spesifikasi-node--rincian-proses-01)
+   - 4.3. [Aturan Validasi Konfigurasi Branding](#43-aturan-validasi-konfigurasi-branding)
+   - 4.4. [Pencatatan Audit Trail (branding_histories)](#44-pencatatan-audit-trail-branding_histories)
+5. [BPMN 02 — Custom Domain (Admin Platform / Superadmin)](#5-bpmn-02--custom-domain-admin-platform--superadmin)
+   - 5.1. [Diagram Alur BPMN 02 (Mermaid Swimlanes)](#51-diagram-alur-bpmn-02-mermaid-swimlanes)
+   - 5.2. [Spesifikasi Node & Rincian Proses 02](#52-spesifikasi-node--rincian-proses-02)
+   - 5.3. [Aturan Format & Ketersediaan Domain](#53-aturan-format--ketersediaan-domain)
+   - 5.4. [State Machine & Verifikasi DNS](#54-state-machine--verifikasi-dns)
+6. [Sinkronisasi ERD & Struktur Database](#6-sinkronisasi-erd--struktur-database)
+7. [Tabel Perbandingan Versi (Changelog Versi 1.0 ke 1.1)](#7-tabel-perbandingan-versi-changelog-versi-10-ke-11)
 
 ---
 
@@ -33,13 +34,45 @@ Dokumen ini mendefinisikan pembaruan arsitektural proses bisnis (**Business Proc
 ### Prinsip Utama:
 - **Tenant Isolation**: Setiap konfigurasi branding terisolasi secara mutlak berdasarkan `id_barbershop`. Owner hanya dapat melihat dan memodifikasi data barbershop miliknya sendiri.
 - **Strict Role Boundaries**: Konfigurasi domain dan DNS adalah ranah infrastruktur platform yang secara eksklusif dikelola oleh **Superadmin / Admin Platform**. Owner tidak memiliki hak akses menambah, mengedit, atau memverifikasi custom domain.
-- **Single Source of Truth**: Tabel `barbershop_brandings` menjadi satu-satunya entitas penyimpan konfigurasi branding aktif (tidak ada duplikasi tabel).
-- **Traceability & Auditability**: Setiap modifikasi branding dicatat pada `branding_histories` (menyimpan data sebelum dan sesudah perubahan), dan setiap percobaan verifikasi DNS dicatat pada `domain_verification_logs`.
-- **Zero UI Regression**: Kompatibel penuh dengan desain wireframe antarmuka Owner Settings / Tema dan skema ERD yang sudah dirancang.
+- **Single Source of Truth**: Tabel `barbershop_brandings` menjadi satu-satunya entitas penyimpan konfigurasi branding aktif (tidak ada pemisahan tabel `brandings` dan `white_label_configs`).
+- **Traceability & Auditability**: Setiap modifikasi branding dicatat pada `branding_histories` (menyimpan snapshot `data_before` dan `data_after`), dan setiap percobaan verifikasi DNS dicatat pada `domain_verification_logs`.
+- **Zero UI Regression & Wireframe Fidelity**: Memetakan secara presisi wireframe antarmuka halaman Tema/White Labeling Owner (Identitas Brand, Tampilan layout presets, Mode Light/Dark, Preset Warna kontras aman).
+- **Aturan Kolom Kanonikal**:
+  - Kolom logo dan favicon menggunakan `logo_url` dan `favicon_url` (tidak menggunakan `custom_logo` / `custom_favicon`).
+  - Menggunakan satu kolom nama brand saja: `nama_brand` (tanpa `app_name`).
+  - Font tidak dikonfigurasi melalui fitur ini (mengikuti font standar bawaan aplikasi BARBERIN).
 
 ---
 
-## 2. PEMISAHAN HAK AKSES & MATRIKS OTORISASI
+## 2. PENJELASAN WIREFRAME TEMA / WHITE LABELING (OWNER)
+
+Sesuai rancangan antarmuka wireframe pada menu **Tema** (`Pengaturan > White Labeling`), struktur antarmuka terbagi menjadi 2 kartu konfigurasi utama:
+
+### Kartu 1: Identitas Brand
+- **Deskripsi Sub-header**: *"Atur informasi dasar yang akan digunakan untuk menampilkan identitas barbershop Anda."*
+- **Field Nama Brand (`nama_brand`)** *(Wajib / `*`)*: Input teks nama barbershop (contoh: *"Singgah Barbershop"*).
+- **Field Tagline (`tagline`)**: Input teks slogan barbershop (contoh: *"Potong rapi, tampil percaya diri"*).
+- **Upload Box Logo (`logo_url`)** *(Wajib / `*`)*: Area interaktif klik / drag & drop. Format: JPG, PNG, atau SVG.
+- **Upload Box Favicon (`favicon_url`)**: Area interaktif klik / drag & drop. Rekomendasi 32×32px, format ICO / PNG untuk tab browser.
+
+### Kartu 2: Tampilan & Gaya
+- **Deskripsi Sub-header**: *"Pilih gaya tampilan yang sesuai dengan karakter brand barbershop Anda."*
+- **Preset Gaya Tampilan (Theme Presets)**:
+  1. `Default` — Tata letak standar BARBERIN.
+  2. `Secondary` — Tata letak alternatif aksen tegas.
+  3. `Tertiary` — Tata letak modern dengan sidebar/kontainer kontras tinggi (terpilih pada wireframe).
+  4. `Natural` — Tata letak minimalis bernuansa bersih.
+- **Mode Tampilan**:
+  - `Light` (☀️) — Latar belakang terang.
+  - `Dark` (🌙) — Latar belakang gelap (terpilih pada wireframe).
+- **Preset Kombinasi Warna (Color Presets)**:
+  - Pilihan palet: `Blue`, `Emerald`, `Purple` (terpilih pada wireframe), `Rose`, `Amber`, `Slate`.
+  - Subketerangan: *"Setiap preset mencakup Warna Utama, Warna Sekunder, dan Warna Background."*
+  - **Prinsip Kontras**: Preset warna dikurasi secara ketat oleh sistem agar **tidak bertabrakan dengan ikon dan elemen antarmuka aplikasi**, sehingga teks, ikon, status badge, tombol, dan komponen tetap mudah dibaca (*high legibility & accessibility*).
+
+---
+
+## 3. PEMISAHAN HAK AKSES & MATRIKS OTORISASI
 
 | Fitur / Aksi | Owner Barbershop | Admin Platform / Superadmin | Catatan Keamanan |
 | :--- | :---: | :---: | :--- |
@@ -57,12 +90,12 @@ Dokumen ini mendefinisikan pembaruan arsitektural proses bisnis (**Business Proc
 
 ---
 
-## 3. BPMN 01 — WHITE LABELING & CUSTOM DESIGN (OWNER BARBERSHOP)
+## 4. BPMN 01 — WHITE LABELING & CUSTOM DESIGN (OWNER BARBERSHOP)
 
 > **Tujuan Proses**:  
 > Memberikan kendali penuh kepada Owner untuk mempersonalisasi nama brand, logo, favicon, warna, tema, dan metadata SEO barbershop miliknya, dengan perlindungan validasi ketat, fitur pratinjau (*preview*), serta pencatatan riwayat perubahan (*history*).
 
-### 3.1. Diagram Alur BPMN 01 (Mermaid Swimlanes)
+### 4.1. Diagram Alur BPMN 01 (Mermaid Swimlanes)
 
 ```mermaid
 flowchart TD
@@ -137,7 +170,7 @@ flowchart TD
 
 ---
 
-### 3.2. Spesifikasi Node & Rincian Proses 01
+### 4.2. Spesifikasi Node & Rincian Proses 01
 
 #### Node 1: Buka Menu Pengaturan Branding / White Label (Aktor: Owner)
 - **Deskripsi**: Owner mengakses dashboard manajemen dan memilih menu **Pengaturan Branding / White Label** (atau tab *Tema* pada bilah navigasi).
@@ -196,12 +229,12 @@ Owner mengisi/mengubah field identitas visual yang disediakan:
 
 ---
 
-## 4. BPMN 02 — CUSTOM DOMAIN (ADMIN PLATFORM / SUPERADMIN)
+## 5. BPMN 02 — CUSTOM DOMAIN (ADMIN PLATFORM / SUPERADMIN)
 
 > **Tujuan Proses**:  
 > Memberikan alur kerja bagi Superadmin untuk mendaftarkan nama domain khusus milik barbershop, memvalidasi sintaks dan keunikan domain, menghasilkan parameter instruksi DNS, melakukan verifikasi DNS otomatis, dan mengaktifkan perutean SSL/Domain secara aman.
 
-### 4.1. Diagram Alur BPMN 02 (Mermaid Swimlanes)
+### 5.1. Diagram Alur BPMN 02 (Mermaid Swimlanes)
 
 ```mermaid
 flowchart TD
@@ -295,7 +328,7 @@ flowchart TD
 
 ---
 
-### 4.2. Spesifikasi Node & Rincian Proses 02
+### 5.2. Spesifikasi Node & Rincian Proses 02
 
 #### Node 1: Pilih Barbershop (Aktor: Admin Platform / Superadmin)
 - Superadmin membuka portal Superadmin (`/superadmin/tenants`).
@@ -365,7 +398,7 @@ Sistem melakukan validasi sintaks nama domain:
 
 ---
 
-## 4.3. ATURAN FORMAT & KETERSEDIAAN DOMAIN
+### 5.3. ATURAN FORMAT & KETERSEDIAAN DOMAIN
 
 | Kategori Format | Contoh Format Valid | Status |
 | :--- | :--- | :---: |
@@ -392,7 +425,7 @@ Sistem melakukan validasi sintaks nama domain:
 
 ---
 
-## 4.4. STATE MACHINE & VERIFIKASI DNS
+### 5.4. STATE MACHINE & VERIFIKASI DNS
 
 ```mermaid
 stateDiagram-v2
@@ -413,7 +446,7 @@ stateDiagram-v2
 
 ---
 
-## 5. SINKRONISASI ERD & STRUKTUR DATABASE
+## 6. SINKRONISASI ERD & STRUKTUR DATABASE
 
 Semua entitas dalam BPMN Versi 1.1 memiliki pemetaan 1-ke-1 yang presisi terhadap ERD platform:
 
@@ -495,7 +528,7 @@ erDiagram
 
 ---
 
-## 6. TABEL PERBANDINGAN VERSI (CHANGELOG VERSI 1.0 KE 1.1)
+## 7. TABEL PERBANDINGAN VERSI (CHANGELOG VERSI 1.0 KE 1.1)
 
 | Bagian | Versi 1.0 (Lama) | Versi 1.1 (Pembaruan) | Alasan Perubahan |
 | :--- | :--- | :--- | :--- |
