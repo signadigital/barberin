@@ -26,6 +26,7 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Globe,
 } from "lucide-react";
 
 import { BarberinLogo } from "@/components/barberin/ui";
@@ -96,6 +97,11 @@ export function SuperadminSidebar({ activePath }: { activePath: string }) {
       label: "Manajemen Toko / Tenants",
       href: "/superadmin/tenants",
       icon: Store,
+    },
+    {
+      label: "Custom Domain (BPMN)",
+      href: "/superadmin/domains",
+      icon: Globe,
     },
   ];
 
@@ -365,6 +371,18 @@ export function SuperadminMobileHeader({
               >
                 <Store className="h-4 w-4" />
                 <span>Manajemen Toko / Tenants</span>
+              </Link>
+              <Link
+                to="/superadmin/domains"
+                onClick={() => setDrawerOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activePath === "/superadmin/domains"
+                    ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <Globe className="h-4 w-4" />
+                <span>Custom Domain (BPMN)</span>
               </Link>
             </nav>
 

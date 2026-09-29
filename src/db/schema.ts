@@ -11,6 +11,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -1304,3 +1305,143 @@ export const superadminAuditLogs = pgTable(
 
 export type SuperadminAuditLog = typeof superadminAuditLogs.$inferSelect;
 export type NewSuperadminAuditLog = typeof superadminAuditLogs.$inferInsert;
+
+// ============================================================================
+// WHITE LABELING, BRANDING & CUSTOM DOMAINS (BPMN / ERD)
+// ============================================================================
+
+export const barbershopBrandings = pgTable(
+  "barbershop_brandings",
+  {
+    id_branding: uuid("id_branding").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .unique()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    nama_brand: varchar("nama_brand", { length: 100 }).notNull(),
+    tagline: varchar("tagline", { length: 150 }),
+    logo_url: text("logo_url"),
+    favicon_url: text("favicon_url"),
+    warna_primary: varchar("warna_primary", { length: 20 }).default("#2563EB"),
+    warna_secondary: varchar("warna_secondary", { length: 20 }).default("#1E293B"),
+    warna_background: varchar("warna_background", { length: 20 }).default("#070D18"),
+    theme: varchar("theme", { length: 50 }).default("default"),
+    hide_barberin_brand: boolean("hide_barberin_brand").default(false),
+    meta_title: varchar("meta_title", { length: 150 }),
+    meta_description: text("meta_description"),
+    status: varchar("status", { length: 50 }).default("active"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("barbershop_brandings_shop_idx").on(table.id_barbershop),
+  ],
+);
+
+export const brandingHistories = pgTable(
+  "branding_histories",
+  {
+    id_history: uuid("id_history").defaultRandom().primaryKey(),
+    id_branding: uuid("id_branding")
+      .notNull()
+      .references(() => barbershopBrandings.id_branding, { onDelete: "cascade" }),
+    changed_by: uuid("changed_by").references(() => users.id_user, { onDelete: "set null" }),
+    data_before: jsonb("data_before"),
+    data_after: jsonb("data_after"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("branding_histories_branding_idx").on(table.id_branding),
+  ],
+);
+
+export const customDomains = pgTable(
+  "custom_domains",
+  {
+    id_domain: uuid("id_domain").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    domain: varchar("domain", { length: 255 }).notNull().unique(),
+    domain_type: varchar("domain_type", { length: 50 }).default("primary"),
+    dns_name: varchar("dns_name", { length: 100 }).notNull().default("@"),
+    dns_value: varchar("dns_value", { length: 255 }).notNull().default("cname.barberin.id"),
+    verification_token: varchar("verification_token", { length: 100 }),
+    status: varchar("status", { length: 50 }).default("pending"),
+    ssl_status: varchar("ssl_status", { length: 50 }).default("pending"),
+    is_primary: boolean("is_primary").default(false),
+    verified_at: timestamp("verified_at", { mode: "date" }),
+    activated_at: timestamp("activated_at", { mode: "date" }),
+    created_by: uuid("created_by").references(() => users.id_user, { onDelete: "set null" }),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("custom_domains_shop_idx").on(table.id_barbershop),
+    index("custom_domains_domain_idx").on(table.domain),
+  ],
+);
+
+export const domainVerificationLogs = pgTable(
+  "domain_verification_logs",
+  {
+    id_log: uuid("id_log").defaultRandom().primaryKey(),
+    id_domain: uuid("id_domain")
+      .notNull()
+      .references(() => customDomains.id_domain, { onDelete: "cascade" }),
+    status: varchar("status", { length: 50 }).notNull(),
+    response_message: text("response_message"),
+    checked_at: timestamp("checked_at", { mode: "date" }).notNull().defaultNow(),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("domain_verif_logs_domain_idx").on(table.id_domain),
+  ],
+);
+
+// Relations
+export const barbershopBrandingsRelations = relations(barbershopBrandings, ({ one, many }) => ({
+  barbershop: one(barbershop, {
+    fields: [barbershopBrandings.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+  histories: many(brandingHistories),
+}));
+
+export const brandingHistoriesRelations = relations(brandingHistories, ({ one }) => ({
+  branding: one(barbershopBrandings, {
+    fields: [brandingHistories.id_branding],
+    references: [barbershopBrandings.id_branding],
+  }),
+  user: one(users, {
+    fields: [brandingHistories.changed_by],
+    references: [users.id_user],
+  }),
+}));
+
+export const customDomainsRelations = relations(customDomains, ({ one, many }) => ({
+  barbershop: one(barbershop, {
+    fields: [customDomains.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+  verificationLogs: many(domainVerificationLogs),
+}));
+
+export const domainVerificationLogsRelations = relations(domainVerificationLogs, ({ one }) => ({
+  domain: one(customDomains, {
+    fields: [domainVerificationLogs.id_domain],
+    references: [customDomains.id_domain],
+  }),
+}));
+
+export type BarbershopBranding = typeof barbershopBrandings.$inferSelect;
+export type NewBarbershopBranding = typeof barbershopBrandings.$inferInsert;
+
+export type BrandingHistory = typeof brandingHistories.$inferSelect;
+export type NewBrandingHistory = typeof brandingHistories.$inferInsert;
+
+export type CustomDomain = typeof customDomains.$inferSelect;
+export type NewCustomDomain = typeof customDomains.$inferInsert;
+
+export type DomainVerificationLog = typeof domainVerificationLogs.$inferSelect;
+export type NewDomainVerificationLog = typeof domainVerificationLogs.$inferInsert;

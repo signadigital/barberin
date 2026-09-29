@@ -27,6 +27,7 @@ import {
   UserCheck,
   LogIn,
   Search,
+  Palette,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -141,6 +142,7 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
     { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
     { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
     { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
+    { label: "Tema", href: getTenantPath(slug, "/owner/theme"), icon: Palette },
   ];
 
   const bottomItems = [
@@ -838,6 +840,7 @@ export function OwnerMobileHeader({
     { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
     { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
     { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
+    { label: "Tema", href: getTenantPath(slug, "/owner/theme"), icon: Palette },
   ];
 
   const bottomItems = [
