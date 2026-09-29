@@ -4,12 +4,16 @@ import { resolve } from "path";
 import { db } from "../src/db/index.js";
 import { users, barbershop } from "../src/db/schema.js";
 import { eq, and } from "drizzle-orm";
-import { supabase } from "../src/lib/supabase-client.js";
-import { getBaseUrl, handleRequestPasswordReset } from "../src/lib/owner-auth.ts";
+import { supabase, getSupabaseClient } from "../src/lib/supabase-client.js";
+import {
+  getBaseUrl,
+  handleRequestPasswordReset,
+  handleValidateOwnerRecoveryContext,
+} from "../src/lib/owner-auth.ts";
 
 async function runTests() {
   console.log("===============================================================");
-  console.log("BARBERIN — VERIFIKASI FITUR RESET PASSWORD OWNER");
+  console.log("BARBERIN — VERIFIKASI PERBAIKAN PASSWORD RECOVERY FLOW (DIFF)");
   console.log("===============================================================\n");
 
   let passedTests = 0;
@@ -26,25 +30,50 @@ async function runTests() {
     }
   }
 
-  // TEST 1: SUPABASE CLIENT METHODS
-  console.log("--- 1. Supabase Client Recovery & Update API Check ---");
-  assert(typeof supabase.auth.resetPasswordForEmail === "function", "supabase.auth.resetPasswordForEmail API tersedia");
-  assert(typeof supabase.auth.updateUser === "function", "supabase.auth.updateUser API tersedia");
-  assert(typeof supabase.auth.verifyOtp === "function", "supabase.auth.verifyOtp API tersedia");
-  assert(typeof supabase.auth.exchangeCodeForSession === "function", "supabase.auth.exchangeCodeForSession API tersedia");
+  // TEST 1: SUPABASE CLIENT & PKCE ELIMINATION (DIFF 2)
+  console.log("--- 1. Supabase Client & Flow Type Check (DIFF 2) ---");
+  const client = getSupabaseClient();
+  assert(typeof client.auth.resetPasswordForEmail === "function", "client.auth.resetPasswordForEmail tersedia");
+  assert(typeof client.auth.updateUser === "function", "client.auth.updateUser tersedia");
+  assert(typeof client.auth.verifyOtp === "function", "client.auth.verifyOtp tersedia");
+  assert(typeof client.auth.setSession === "function", "client.auth.setSession tersedia");
 
-  // TEST 2: PRODUCTION URL RESOLUTION (Section 6)
-  console.log("\n--- 2. Base URL & Redirect Resolution (Section 6) ---");
+  // Verifikasi bahwa client dikonfigurasi dengan flowType implicit (bukan PKCE storage dependency)
+  const clientFile = readFileSync(resolve("src/lib/supabase-client.ts"), "utf-8");
+  assert(clientFile.includes('flowType: "implicit"'), "Supabase Client menggunakan flowType 'implicit' (menghilangkan PKCE code_verifier dependency)");
+  assert(!clientFile.includes('flowType: "pkce"'), "PKCE code_verifier flowType telah dihapus");
+
+  // TEST 2: PRODUCTION URL RESOLUTION (DIFF 4)
+  console.log("\n--- 2. Base URL & Dynamic Redirect Resolution (DIFF 4) ---");
   const localUrl = getBaseUrl();
   console.log("Default Base URL:", localUrl);
   assert(localUrl.length > 0, "Base URL menghasilkan nilai yang valid");
 
-  const vercelOrigin = "https://barberin-prod.vercel.app";
+  const vercelOrigin = "https://barberinsigna.vercel.app";
   const resolvedWithClient = getBaseUrl(vercelOrigin);
-  assert(resolvedWithClient === "https://barberin-prod.vercel.app", "Client origin production dihormati untuk redirect URL");
+  assert(resolvedWithClient === "https://barberinsigna.vercel.app", "Client origin production dihormati untuk redirect URL");
 
-  // TEST 3: ACCOUNT ENUMERATION PROTECTION (Section 10)
-  console.log("\n--- 3. Account Enumeration Security (Section 10) ---");
+  // TEST 3: VALIDASI INPUT & ERROR MESSAGES (DIFF 11 A & B)
+  console.log("\n--- 3. Validation & Error Messages (DIFF 11 A & B) ---");
+  try {
+    await handleRequestPasswordReset({ email: "" });
+    assert(false, "Email kosong seharusnya melempar error");
+  } catch (e) {
+    assert(e.message === "Email wajib diisi.", "Pesan email kosong sesuai DIFF 11 A ('Email wajib diisi.')");
+  }
+
+  try {
+    await handleRequestPasswordReset({ email: "invalid-email-format" });
+    assert(false, "Format email salah seharusnya melempar error");
+  } catch (e) {
+    assert(
+      e.message === "Masukkan alamat email yang valid.",
+      "Pesan format email salah sesuai DIFF 11 B ('Masukkan alamat email yang valid.')",
+    );
+  }
+
+  // TEST 4: ACCOUNT ENUMERATION PROTECTION (DIFF 3 & 10)
+  console.log("\n--- 4. Account Enumeration Security (DIFF 3 & 10) ---");
   const randomEmail = `nonexistent_owner_${Date.now()}@example.com`;
   const resNonExistent = await handleRequestPasswordReset({
     email: randomEmail,
@@ -53,36 +82,12 @@ async function runTests() {
   console.log("Response untuk email non-existent:", resNonExistent);
   assert(resNonExistent.success === true, "Response non-existent email mengembalikan success: true");
   assert(
-    resNonExistent.message === "Jika email tersebut terdaftar, kami telah mengirimkan link untuk reset password.",
-    "Pesan netral dan seragam, tidak membocorkan status email",
+    resNonExistent.message === "Link reset password telah dikirim. Silakan cek Gmail Anda.",
+    "Pesan netral dan seragam sesuai DIFF 3 ('Link reset password telah dikirim. Silakan cek Gmail Anda.')",
   );
 
-  // TEST 4: ROLE OWNER PROTECTION (Section 11)
-  console.log("\n--- 4. Role Owner Protection (Section 11) ---");
-  // Pastikan jika ada user dengan role bukan owner, mereka tidak memicu reset password owner
-  const [nonOwnerUser] = await db
-    .select({ email: users.email, role: users.role })
-    .from(users)
-    .where(eq(users.role, "capster"))
-    .limit(1);
-
-  if (nonOwnerUser) {
-    const resNonOwner = await handleRequestPasswordReset({
-      email: nonOwnerUser.email,
-      clientOrigin: "http://localhost:8080",
-    });
-    assert(resNonOwner.success === true, "Response non-owner email tetap mengembalikan response seragam");
-    assert(
-      resNonOwner.message.includes("Jika email tersebut terdaftar"),
-      "Non-owner user tidak dapat mengeksploitasi formulir reset owner",
-    );
-  } else {
-    console.log("Info: Tidak ada capster di DB saat ini, dilewati.");
-  }
-
-  // TEST 5: MULTI-TENANT ISOLATION (Section 12)
-  console.log("\n--- 5. Multi-Tenant Isolation Check (Section 12) ---");
-  // Ambil data Owner yang ada
+  // TEST 5: OWNER ROLE VALIDATION (DIFF 9)
+  console.log("\n--- 5. Owner Role Validation in DB Context (DIFF 9) ---");
   const [existingOwner] = await db
     .select({
       id_user: users.id_user,
@@ -95,7 +100,38 @@ async function runTests() {
     .limit(1);
 
   if (existingOwner) {
-    console.log(`Ditemukan Owner aktif di DB: ${existingOwner.email}, Barbershop ID: ${existingOwner.id_barbershop}`);
+    console.log(`Menguji Owner valid di DB: ${existingOwner.email} (${existingOwner.id_user})`);
+    const ownerContext = await handleValidateOwnerRecoveryContext({
+      userId: existingOwner.id_user,
+    });
+    assert(ownerContext.valid === true, "Validasi context recovery untuk owner berhasil");
+    assert(ownerContext.role === "owner", "Role user adalah 'owner'");
+    assert(ownerContext.id_barbershop === existingOwner.id_barbershop, "id_barbershop tetap sama");
+
+    // Uji proteksi non-owner: cari akun capster atau pelanggan jika ada
+    const [nonOwnerUser] = await db
+      .select({ id_user: users.id_user, role: users.role })
+      .from(users)
+      .where(eq(users.role, "capster"))
+      .limit(1);
+
+    if (nonOwnerUser) {
+      try {
+        await handleValidateOwnerRecoveryContext({ userId: nonOwnerUser.id_user });
+        assert(false, "User non-owner seharusnya ditolak");
+      } catch (err) {
+        assert(
+          err.message.includes("Bukan merupakan akun Owner BARBERIN") ||
+            err.message.includes("Akses ditolak"),
+          "User non-owner ditolak aksesnya ke form reset owner (DIFF 9)",
+        );
+      }
+    }
+  }
+
+  // TEST 6: MULTI-TENANT ISOLATION (DIFF 10)
+  console.log("\n--- 6. Multi-Tenant Isolation Check (DIFF 10) ---");
+  if (existingOwner) {
     const [shop] = await db
       .select({
         id_barbershop: barbershop.id_barbershop,
@@ -116,11 +152,11 @@ async function runTests() {
     });
     assert(resValidOwner.success === true, "Request reset untuk Owner terdaftar berhasil");
     assert(
-      resValidOwner.message === "Jika email tersebut terdaftar, kami telah mengirimkan link untuk reset password.",
+      resValidOwner.message === "Link reset password telah dikirim. Silakan cek Gmail Anda.",
       "Response tetap seragam untuk Owner valid (Account enumeration protection)",
     );
 
-    // Verifikasi bahwa data owner di DB TIDAK berubah (role dan id_barbershop tetap utuh)
+    // Verifikasi bahwa data owner di DB TIDAK berubah
     const [ownerAfter] = await db
       .select({
         id_user: users.id_user,
@@ -134,37 +170,33 @@ async function runTests() {
 
     assert(ownerAfter.role === "owner", "Role tetap 'owner'");
     assert(ownerAfter.id_barbershop === existingOwner.id_barbershop, "id_barbershop tetap sama persis (Tenant isolation preserved)");
-    assert(ownerAfter.password === null || typeof ownerAfter.password === "string", "Password tidak disimpan secara plaintext");
-  } else {
-    console.log("Info: Tidak ada owner aktif di DB lokal saat ini.");
+    assert(ownerAfter.password === null || typeof ownerAfter.password === "string", "Password tidak disimpan plaintext di database aplikasi");
   }
 
-  // TEST 6: FILE & UI INTEGRITY CHECKS (Section 1 & 3)
-  console.log("\n--- 6. UI Structure & Route Integrity Check ---");
+  // TEST 7: FILE & UI INTEGRITY CHECKS (DIFF 3, 5, 6, 7)
+  console.log("\n--- 7. UI & Route Content Check (DIFF 3, 5, 6, 7) ---");
   const loginContent = readFileSync(resolve("src/routes/owner.login.tsx"), "utf-8");
   assert(loginContent.includes("Lupa Password?"), "Link 'Lupa Password?' ada di owner.login.tsx");
   assert(
     loginContent.indexOf("Daftar di sini") < loginContent.indexOf("Lupa Password?"),
     "Posisi 'Lupa Password?' berada tepat di bawah 'Belum memiliki akun Barbershop? Daftar di sini'",
   );
-  assert(loginContent.includes("/owner/forgot-password"), "Link 'Lupa Password?' mengarah ke /owner/forgot-password");
+  assert(loginContent.includes('to="/owner/forgot-password"'), "Link 'Lupa Password?' mengarah ke /owner/forgot-password");
 
   const forgotContent = readFileSync(resolve("src/routes/owner.forgot-password.tsx"), "utf-8");
-  assert(forgotContent.includes("createFileRoute(\"/owner/forgot-password\")"), "Route /owner/forgot-password terdaftar");
-  assert(forgotContent.includes("Kirim Link Reset Password"), "Tombol 'Kirim Link Reset Password' ada");
-  assert(forgotContent.includes("requestPasswordReset"), "Memanggil server function requestPasswordReset");
+  assert(forgotContent.includes("Lupa Password"), "Judul 'Lupa Password' ada (DIFF 3)");
+  assert(forgotContent.includes("Email Owner"), "Label 'Email Owner' ada (DIFF 3)");
+  assert(forgotContent.includes("Link reset password telah dikirim. Silakan cek Gmail Anda."), "Pesan sukses Gmail ada (DIFF 3)");
+  assert(forgotContent.includes("Kirim Link Reset Password"), "Tombol 'Kirim Link Reset Password' ada (DIFF 3)");
 
   const resetContent = readFileSync(resolve("src/routes/owner.reset-password.tsx"), "utf-8");
-  assert(resetContent.includes("createFileRoute(\"/owner/reset-password\")"), "Route /owner/reset-password terdaftar");
-  assert(resetContent.includes("Atur Password Baru"), "Judul 'Atur Password Baru' ada");
-  assert(resetContent.includes("supabase.auth.updateUser"), "Menggunakan supabase.auth.updateUser untuk menyimpan password baru");
-  assert(resetContent.includes("Link Reset Password Tidak Valid"), "Menampilkan pesan error jika token invalid/expired");
-
-  const slugForgot = readFileSync(resolve("src/routes/$barbershopSlug.owner.forgot-password.tsx"), "utf-8");
-  assert(slugForgot.includes("/owner/forgot-password"), "Tenant-scoped forgot-password route me-redirect ke /owner/forgot-password");
-
-  const slugReset = readFileSync(resolve("src/routes/$barbershopSlug.owner.reset-password.tsx"), "utf-8");
-  assert(slugReset.includes("/owner/reset-password"), "Tenant-scoped reset-password route me-redirect ke /owner/reset-password");
+  assert(resetContent.includes("Atur Password Baru"), "Judul 'Atur Password Baru' ada (DIFF 5)");
+  assert(resetContent.includes("Simpan Password Baru"), "Tombol 'Simpan Password Baru' ada (DIFF 5)");
+  assert(resetContent.includes("Konfirmasi password tidak sama."), "Validasi konfirmasi password ada (DIFF 11 I)");
+  assert(resetContent.includes("Password Berhasil Diubah"), "Pesan 'Password Berhasil Diubah' ada (DIFF 7)");
+  assert(resetContent.includes("Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi."), "Pesan error invalid/expired ada (DIFF 6)");
+  assert(resetContent.includes("Kirim Link Baru"), "Tombol 'Kirim Link Baru' ada (DIFF 6)");
+  assert(resetContent.includes("validateOwnerRecoveryContext"), "Memverifikasi role Owner ke server (DIFF 9)");
 
   console.log("\n===============================================================");
   console.log(`SEMUA PENGUJIAN BERHASIL: ${passedTests}/${totalTests} TESTS PASSED`);

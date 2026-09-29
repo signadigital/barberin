@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { BarberinLogo } from "@/components/barberin/ui";
 import { supabase } from "@/lib/supabase-client";
 import { ownerActions } from "@/lib/owner-store";
+import { validateOwnerRecoveryContext } from "@/lib/owner-auth";
 
 export const Route = createFileRoute("/owner/reset-password")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/owner/reset-password")({
       token_hash: typeof search["token_hash"] === "string" ? search["token_hash"] : "",
       type: typeof search["type"] === "string" ? search["type"] : "",
       error: typeof search["error"] === "string" ? search["error"] : "",
+      error_code: typeof search["error_code"] === "string" ? search["error_code"] : "",
       error_description:
         typeof search["error_description"] === "string" ? search["error_description"] : "",
     };
@@ -44,7 +46,7 @@ function OwnerResetPasswordPage() {
   const searchParams = Route.useSearch();
   const navigate = useNavigate();
 
-  // Verification state: "verifying" | "valid" | "invalid"
+  // Status sesi: "verifying" | "valid" | "invalid"
   const [sessionStatus, setSessionStatus] = useState<"verifying" | "valid" | "invalid">(
     "verifying",
   );
@@ -67,34 +69,63 @@ function OwnerResetPasswordPage() {
 
     let isMounted = true;
 
+    // Helper untuk memverifikasi role Owner di database server (DIFF 9)
+    const verifyOwnerRole = async (userId: string) => {
+      const res = await validateOwnerRecoveryContext({ data: { userId } });
+      return res;
+    };
+
+    // Bersihkan hash fragment atau parameter sensitif dari URL bar (DIFF 8)
+    const sanitizeUrlBar = () => {
+      if (typeof window !== "undefined" && window.history && window.location.hash) {
+        window.history.replaceState(null, document.title, window.location.pathname);
+      }
+    };
+
     // 1. Dengarkan event auth Supabase untuk mendeteksi event PASSWORD_RECOVERY secara realtime
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-      console.log("[RESET-PASSWORD] Auth state change event:", event);
 
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session?.user)) {
-        setSessionStatus("valid");
+        try {
+          if (session?.user?.id) {
+            await verifyOwnerRole(session.user.id);
+            if (isMounted) {
+              setSessionStatus("valid");
+              sanitizeUrlBar();
+            }
+          }
+        } catch (err: unknown) {
+          console.warn("[RESET-PASSWORD] Owner role verification error:", err);
+          if (isMounted) {
+            setSessionStatus("invalid");
+            setErrorMessage(
+              err instanceof Error
+                ? err.message
+                : "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
+            );
+          }
+        }
       }
     });
 
     const verifyRecoverySession = async () => {
       try {
-        // Cek jika Supabase mengirimkan error langsung di query params (misal: error=access_denied&error_description=Email+link+is+invalid+or+has+expired)
+        // Cek jika Supabase mengirimkan error langsung di query params atau hash
         if (searchParams.error || searchParams.error_description) {
           throw new Error(
-            searchParams.error_description ||
-              "Tautan reset password sudah tidak berlaku atau telah kedaluwarsa.",
+            "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
           );
         }
 
-        // Kumpulkan parameter dari query search atau window.location
+        // Kumpulkan parameter dari URL
         let activeCode = searchParams.code?.trim() || "";
         let activeTokenHash = searchParams.token_hash?.trim() || "";
         let activeType = searchParams.type?.trim() || "recovery";
 
         let hashAccessToken: string | null = null;
         let hashRefreshToken: string | null = null;
-        let hashErrorDescription: string | null = null;
+        let hashError: string | null = null;
 
         if (typeof window !== "undefined") {
           const urlParams = new URLSearchParams(window.location.search);
@@ -109,7 +140,7 @@ function OwnerResetPasswordPage() {
             const hashParams = new URLSearchParams(rawHash);
             hashAccessToken = hashParams.get("access_token");
             hashRefreshToken = hashParams.get("refresh_token");
-            hashErrorDescription = hashParams.get("error_description");
+            hashError = hashParams.get("error") || hashParams.get("error_description");
             const hashToken = hashParams.get("token_hash");
             const hashCode = hashParams.get("code");
             if (!activeTokenHash && hashToken) activeTokenHash = hashToken.trim();
@@ -117,89 +148,103 @@ function OwnerResetPasswordPage() {
           }
         }
 
-        if (hashErrorDescription) {
-          throw new Error(decodeURIComponent(hashErrorDescription.replace(/\+/g, " ")));
+        if (hashError) {
+          throw new Error(
+            "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
+          );
         }
 
-        // Flow A: PKCE Code Exchange
-        if (activeCode) {
-          console.log("[RESET-PASSWORD] Menukarkan PKCE code untuk recovery session...");
-          const { data: exData, error: exError } =
-            await supabase.auth.exchangeCodeForSession(activeCode);
+        // PRIORITAS 1: Hash Fragment Access Token (Aliran pemulihan resmi tanpa dependensi PKCE storage)
+        if (hashAccessToken) {
+          const { data: sessData, error: sessError } = await supabase.auth.setSession({
+            access_token: hashAccessToken,
+            refresh_token: hashRefreshToken || "",
+          });
 
-          if (exError || !exData.session) {
+          if (sessError || !sessData.session?.user) {
             throw new Error(
-              exError?.message || "Kode verifikasi reset password sudah kedaluwarsa.",
+              "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
             );
           }
 
+          // Verifikasi bahwa user adalah Owner BARBERIN yang aktif (DIFF 9)
+          await verifyOwnerRole(sessData.session.user.id);
+
           if (isMounted) {
             setSessionStatus("valid");
+            sanitizeUrlBar();
           }
           return;
         }
 
-        // Flow B: Token Hash OTP Verify
+        // PRIORITAS 2: Token Hash OTP Verify (Dukungan token_hash langsung via verifyOtp)
         if (activeTokenHash) {
-          console.log("[RESET-PASSWORD] Memverifikasi token_hash recovery...");
           const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
             token_hash: activeTokenHash,
             type: "recovery",
           });
 
-          if (otpError || !otpData.session) {
+          if (otpError || !otpData.session?.user) {
             throw new Error(
-              otpError?.message || "Link reset password tidak valid atau sudah kedaluwarsa.",
+              "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
             );
           }
 
+          await verifyOwnerRole(otpData.session.user.id);
+
           if (isMounted) {
             setSessionStatus("valid");
+            sanitizeUrlBar();
           }
           return;
         }
 
-        // Flow C: Hash Fragment Access Token
-        if (hashAccessToken && hashRefreshToken) {
-          console.log("[RESET-PASSWORD] Mengaktifkan sesi dari hash fragment...");
-          const { data: sessData, error: sessError } = await supabase.auth.setSession({
-            access_token: hashAccessToken,
-            refresh_token: hashRefreshToken,
-          });
-
-          if (sessError || !sessData.session) {
-            throw new Error(
-              sessError?.message || "Sesi pemulihan tidak valid atau sudah kedaluwarsa.",
-            );
-          }
-
-          if (isMounted) {
-            setSessionStatus("valid");
-          }
-          return;
-        }
-
-        // Flow D: Cek sesi aktif yang sudah tersimpan oleh client Supabase
+        // PRIORITAS 3: Cek sesi aktif yang sudah terverifikasi (misal dari onAuthStateChange otomatis)
         const { data: currentSession } = await supabase.auth.getSession();
         if (currentSession?.session?.user) {
+          await verifyOwnerRole(currentSession.session.user.id);
           if (isMounted) {
             setSessionStatus("valid");
+            sanitizeUrlBar();
           }
           return;
         }
 
-        // Jika tidak ada kredensial recovery sama sekali
+        // PRIORITAS 4: PKCE Code Exchange (Fallback graceful)
+        if (activeCode) {
+          try {
+            const { data: exData, error: exError } =
+              await supabase.auth.exchangeCodeForSession(activeCode);
+
+            if (exError || !exData.session?.user) {
+              throw exError || new Error("Exchange code gagal.");
+            }
+
+            await verifyOwnerRole(exData.session.user.id);
+
+            if (isMounted) {
+              setSessionStatus("valid");
+              sanitizeUrlBar();
+            }
+            return;
+          } catch {
+            throw new Error(
+              "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
+            );
+          }
+        }
+
+        // Jika tidak ada kredensial pemulihan apapun
         throw new Error(
-          "Link reset password tidak valid atau tidak memuat token pemulihan yang sah.",
+          "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
         );
       } catch (err: unknown) {
         if (!isMounted) return;
-        console.warn("[RESET-PASSWORD VALIDATION FAILED]", err);
         setSessionStatus("invalid");
         setErrorMessage(
           err instanceof Error
             ? err.message
-            : "Link reset password sudah tidak berlaku. Silakan minta link reset password baru.",
+            : "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi.",
         );
       }
     };
@@ -219,7 +264,7 @@ function OwnerResetPasswordPage() {
     const trimmedPassword = password.trim();
     const trimmedConfirm = confirmPassword.trim();
 
-    // 1. Validasi Input
+    // 1. Validasi Input (DIFF 11 H & I)
     if (!trimmedPassword) {
       setFormError("Password baru wajib diisi.");
       return;
@@ -231,53 +276,52 @@ function OwnerResetPasswordPage() {
     }
 
     if (trimmedPassword !== trimmedConfirm) {
-      setFormError("Konfirmasi password tidak cocok dengan password baru.");
+      setFormError("Konfirmasi password tidak sama.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // 2. Update password melalui Supabase Auth (Section 9)
-      const { data, error: updateError } = await supabase.auth.updateUser({
+      // 2. Update password melalui Supabase Auth (DIFF 7)
+      const { error: updateError } = await supabase.auth.updateUser({
         password: trimmedPassword,
       });
 
       if (updateError) {
-        console.error("[SUPABASE UPDATE PASSWORD ERROR]", updateError);
+        console.error("[SUPABASE UPDATE PASSWORD ERROR]", updateError.status, updateError.message);
         let msg = updateError.message;
         if (msg.toLowerCase().includes("same_password")) {
           msg = "Password baru tidak boleh sama dengan password lama Anda.";
+        } else {
+          msg = "Gagal memperbarui password. Silakan coba lagi beberapa saat lagi.";
         }
-        throw new Error(msg || "Gagal memperbarui password akun.");
+        throw new Error(msg);
       }
 
-      console.log(
-        "[RESET-PASSWORD SUCCESS] Password berhasil diperbarui untuk user:",
-        data.user?.email,
-      );
-
-      // 3. Keluarkan dari recovery session & hapus local state agar Owner login ulang dengan password baru (Section 9 & 11)
-      await supabase.auth.signOut();
+      // 3. Keluarkan dari recovery session & hapus local state agar Owner login ulang dengan password baru (DIFF 7 & 9)
+      try {
+        await supabase.auth.signOut();
+      } catch {}
       ownerActions.logout();
 
       setIsSuccess(true);
-      toast.success("Password Berhasil Diperbarui", {
-        description: "Silakan masuk kembali menggunakan password baru Anda.",
+      toast.success("Password Berhasil Diubah", {
+        description:
+          "Password Owner Anda telah berhasil diperbarui. Silakan login menggunakan password baru.",
       });
 
-      // 4. Arahkan kembali ke Login Owner setelah 2.5 detik
+      // 4. Arahkan kembali ke Login Owner setelah 2.5 detik (DIFF 7)
       setTimeout(() => {
         navigate({ to: "/owner/login", replace: true });
       }, 2500);
     } catch (err: unknown) {
-      console.error("[RESET-PASSWORD SUBMIT ERROR]", err);
       const msg =
         err instanceof Error
           ? err.message
-          : "Terjadi kesalahan saat memperbarui password. Silakan coba lagi.";
+          : "Gagal memperbarui password. Silakan coba lagi beberapa saat lagi.";
       setFormError(msg);
-      toast.error("Gagal Memperbarui Password", { description: msg });
+      toast.error("Gagal Mengubah Password", { description: msg });
     } finally {
       setIsSubmitting(false);
     }
@@ -311,7 +355,7 @@ function OwnerResetPasswordPage() {
           </div>
         )}
 
-        {/* STATE 2: INVALID TOKEN / LINK EXPIRED (Section 8) */}
+        {/* STATE 2: INVALID TOKEN / LINK EXPIRED (DIFF 5 & 6) */}
         {sessionStatus === "invalid" && (
           <div className="relative z-10 py-4 space-y-5 text-center animate-in zoom-in-95 duration-300">
             <div className="mx-auto w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/20">
@@ -322,7 +366,7 @@ function OwnerResetPasswordPage() {
               <h2 className="text-lg font-bold text-white">Link Reset Password Tidak Valid</h2>
               <p className="text-xs text-rose-300 max-w-xs mx-auto leading-relaxed">
                 {errorMessage ||
-                  "Link reset password sudah tidak berlaku. Silakan minta link reset password baru."}
+                  "Link reset password sudah kedaluwarsa, sudah digunakan, atau tidak dapat diverifikasi."}
               </p>
             </div>
 
@@ -331,7 +375,7 @@ function OwnerResetPasswordPage() {
               <ul className="list-disc pl-4 space-y-1 text-[11px]">
                 <li>Link sudah kedaluwarsa (masa aktif maksimal 24 jam)</li>
                 <li>Link sudah pernah digunakan sebelumnya</li>
-                <li>Tautan terpotong atau dibuka di browser yang berbeda</li>
+                <li>Tautan terpotong atau dibuka melalui aplikasi yang tidak mendukung</li>
               </ul>
             </div>
 
@@ -355,7 +399,7 @@ function OwnerResetPasswordPage() {
           </div>
         )}
 
-        {/* STATE 3: SUCCESS STATE */}
+        {/* STATE 3: SUCCESS STATE (DIFF 7) */}
         {sessionStatus === "valid" && isSuccess && (
           <div className="relative z-10 py-6 space-y-5 text-center animate-in zoom-in-95 duration-300">
             <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/20">
@@ -363,10 +407,10 @@ function OwnerResetPasswordPage() {
             </div>
 
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-white">Password Berhasil Diperbarui</h2>
+              <h2 className="text-xl font-bold text-white">Password Berhasil Diubah</h2>
               <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                Kata sandi baru akun Owner Anda telah berhasil disimpan. Anda dapat langsung masuk
-                menggunakan password baru.
+                Password Owner Anda telah berhasil diperbarui. Silakan login menggunakan password
+                baru.
               </p>
             </div>
 
@@ -387,7 +431,7 @@ function OwnerResetPasswordPage() {
           </div>
         )}
 
-        {/* STATE 4: VALID SESSION FORM (Section 7) */}
+        {/* STATE 4: VALID SESSION FORM (DIFF 5 & 6) */}
         {sessionStatus === "valid" && !isSuccess && (
           <div className="relative z-10 space-y-5">
             <div className="text-center space-y-1">
@@ -429,9 +473,7 @@ function OwnerResetPasswordPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Minimal 6 karakter kombinasi huruf dan angka.
-                </p>
+                <p className="text-[10px] text-slate-500 mt-1">Minimal 6 karakter.</p>
               </div>
 
               <div>

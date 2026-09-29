@@ -45,7 +45,7 @@ function OwnerForgotPasswordPage() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError("Format email tidak valid.");
+      setError("Masukkan alamat email yang valid.");
       return;
     }
 
@@ -102,9 +102,9 @@ function OwnerForgotPasswordPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-xl font-bold text-white">Link Reset Password Terkirim</h2>
+              <h2 className="text-xl font-bold text-white">Link Reset Password Telah Dikirim</h2>
               <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-                Jika email tersebut terdaftar, kami telah mengirimkan link untuk reset password.
+                Link reset password telah dikirim. Silakan cek Gmail Anda.
               </p>
             </div>
 
@@ -146,9 +146,10 @@ function OwnerForgotPasswordPage() {
           /* FORM STATE */
           <div className="relative z-10 space-y-5">
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-bold text-white">Lupa Password?</h2>
+              <h2 className="text-xl font-bold text-white">Lupa Password</h2>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Masukkan email yang digunakan saat mendaftarkan akun Owner BARBERIN.
+                Masukkan email yang digunakan saat mendaftarkan akun Owner. Link untuk membuat
+                password baru akan dikirim ke email tersebut.
               </p>
             </div>
 
@@ -163,7 +164,7 @@ function OwnerForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Email Akun Owner
+                  Email Owner
                 </label>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center text-slate-400 pointer-events-none">

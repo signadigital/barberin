@@ -995,12 +995,12 @@ export async function handleRequestPasswordReset(data: RequestPasswordResetInput
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(rawEmail)) {
-    throw new Error("Format email tidak valid.");
+    throw new Error("Masukkan alamat email yang valid.");
   }
 
   const normalizedEmail = normalizeEmail(rawEmail);
 
-  // Keamanan: Periksa apakah user terdaftar dengan role owner (Section 11)
+  // Keamanan: Periksa apakah user terdaftar dengan role owner (DIFF 9 & 11)
   // Cegah user non-owner atau yang dinonaktifkan menerima reset password via portal owner
   const [foundOwner] = await db
     .select({
@@ -1044,11 +1044,11 @@ export async function handleRequestPasswordReset(data: RequestPasswordResetInput
     }
   }
 
-  // Keamanan Account Enumeration (Section 10):
+  // Keamanan Account Enumeration (DIFF 3 & 10):
   // Selalu kembalikan pesan netral yang identik terlepas apakah email terdaftar atau tidak
   return {
     success: true,
-    message: "Jika email tersebut terdaftar, kami telah mengirimkan link untuk reset password.",
+    message: "Link reset password telah dikirim. Silakan cek Gmail Anda.",
   };
 }
 
@@ -1057,3 +1057,69 @@ export const requestPasswordReset = createServerFn({
 })
   .validator((data: RequestPasswordResetInput) => data)
   .handler(async ({ data }) => handleRequestPasswordReset(data));
+
+// ============================================================================
+// 8. VALIDASI CONTEXT RECOVERY OWNER (DIFF 9 & 10)
+// ============================================================================
+export type ValidateRecoveryInput = {
+  userId: string;
+};
+
+export async function handleValidateOwnerRecoveryContext(data: ValidateRecoveryInput) {
+  const userId = (data.userId || "").trim();
+  if (!userId) {
+    throw new Error("ID pengguna tidak ditemukan dalam sesi recovery.");
+  }
+
+  const [u] = await db
+    .select({
+      id_user: users.id_user,
+      email: users.email,
+      role: users.role,
+      status: users.status,
+      id_barbershop: users.id_barbershop,
+    })
+    .from(users)
+    .where(eq(users.id_user, userId))
+    .limit(1);
+
+  if (!u) {
+    throw new Error("Akun pengguna tidak ditemukan di database BARBERIN.");
+  }
+
+  if (u.role !== "owner") {
+    throw new Error("Akses ditolak: Akun ini bukan merupakan akun Owner BARBERIN.");
+  }
+
+  if (u.status !== "active") {
+    throw new Error("Akun Owner ini sedang dinonaktifkan. Hubungi administrator BARBERIN.");
+  }
+
+  let barbershopSlug = "";
+  if (u.id_barbershop) {
+    const [shop] = await db
+      .select({ slug: barbershop.slug })
+      .from(barbershop)
+      .where(eq(barbershop.id_barbershop, u.id_barbershop))
+      .limit(1);
+    if (shop) {
+      barbershopSlug = shop.slug;
+    }
+  }
+
+  return {
+    valid: true,
+    userId: u.id_user,
+    email: u.email,
+    role: u.role,
+    id_barbershop: u.id_barbershop,
+    barbershopSlug,
+  };
+}
+
+export const validateOwnerRecoveryContext = createServerFn({
+  method: "POST",
+})
+  .validator((data: ValidateRecoveryInput) => data)
+  .handler(async ({ data }) => handleValidateOwnerRecoveryContext(data));
+
