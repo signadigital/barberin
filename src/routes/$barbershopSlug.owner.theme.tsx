@@ -274,26 +274,8 @@ function OwnerWhiteLabelingPage() {
                 </p>
               </div>
 
-              {/* Action buttons (Preview & BPMN) */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowBpmnModal(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-primary border border-primary/30 transition-all shadow-sm active:scale-95"
-                >
-                  <Layers className="h-4 w-4" />
-                  <span>Lihat Alur BPMN</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openHistoryModal}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-muted-foreground border border-border transition-all shadow-sm active:scale-95"
-                >
-                  <History className="h-4 w-4" />
-                  <span>Riwayat</span>
-                </button>
-
+              {/* Action buttons (Preview & Simpan Perubahan) */}
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(true)}
