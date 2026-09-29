@@ -1,0 +1,703 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" width="1600" height="1080" style="background:#f8fafc; font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="badge01" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="badge02" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="blueCardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0f9ff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
+    </linearGradient>
+    <linearGradient id="errorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff1f2"/>
+      <stop offset="100%" stop-color="#ffe4e6"/>
+    </linearGradient>
+
+    <!-- Markers -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#e11d48"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#d97706"/>
+    </marker>
+
+    <!-- Drop Shadows -->
+    <filter id="shadow-sm" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-md" x="-10%" y="-10%" width="120%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- ==================== HEADER BAR ==================== -->
+  <rect x="0" y="0" width="1600" height="74" fill="#ffffff"/>
+  <line x1="0" y1="74" x2="1600" y2="74" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Logo BARBERIN -->
+  <g transform="translate(30, 16)">
+    <rect width="42" height="42" rx="10" fill="url(#headerGrad)"/>
+    <path d="M14 14 L28 28 M28 14 L14 28" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="21" cy="21" r="3" fill="#ffffff"/>
+    <text x="52" y="24" font-size="20" font-weight="800" fill="#0f172a" letter-spacing="-0.5">BARBERIN</text>
+    <text x="52" y="38" font-size="11" font-weight="500" fill="#64748b">Sistem Manajemen Barbershop Modern</text>
+  </g>
+
+  <!-- Title Center -->
+  <text x="800" y="33" text-anchor="middle" font-size="19" font-weight="800" fill="#0f172a" letter-spacing="-0.3">BPMN — WHITE LABELING &amp; CUSTOM DOMAIN</text>
+  <text x="800" y="52" text-anchor="middle" font-size="12" font-weight="500" fill="#64748b">Alur proses konfigurasi identitas brand dan domain custom pada BARBERIN</text>
+
+  <!-- Header Right Slogan -->
+  <text x="1560" y="33" text-anchor="end" font-size="12" font-weight="700" fill="#2563eb">Satu Platform, Banyak Bisnis.</text>
+  <text x="1560" y="50" text-anchor="end" font-size="11" font-weight="500" fill="#64748b">Lebih Mudah Mengelola, Lebih Besar Bertumbuh.</text>
+
+  <!-- ==================== 01 — WHITE LABELING & CUSTOM DESIGN ==================== -->
+  <g transform="translate(20, 84)">
+    <!-- Container Box -->
+    <rect width="1560" height="375" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+
+    <!-- Process Title Header Band -->
+    <rect width="1560" height="42" rx="12" fill="#fef3c7"/>
+    <rect y="30" width="1560" height="12" fill="#fef3c7"/>
+    <line x1="0" y1="42" x2="1560" y2="42" stroke="#fcd34d" stroke-width="1.5"/>
+
+    <rect x="16" y="8" width="36" height="26" rx="6" fill="#d97706"/>
+    <text x="34" y="26" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">01</text>
+    <text x="62" y="26" font-size="14" font-weight="800" fill="#78350f">BPMN — WHITE LABELING / CUSTOM DESIGN (Dikelola oleh Owner)</text>
+    <text x="560" y="26" font-size="12" font-weight="500" fill="#92400e">• Owner mengatur identitas visual website barbershop tanpa mengubah struktur utama platform BARBERIN (Terisolasi per id_barbershop)</text>
+
+    <!-- Swimlanes Background & Lines -->
+    <!-- Lane 1: Owner (y=42 to 180, h=138) -->
+    <rect x="0" y="42" width="130" height="150" fill="#f8fafc"/>
+    <text x="65" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Owner</text>
+    <text x="65" y="122" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">Barbershop</text>
+    <circle cx="65" cy="75" r="14" fill="#fed7aa"/>
+    <text x="65" y="80" text-anchor="middle" font-size="12">👤</text>
+    <line x1="0" y1="192" x2="1560" y2="192" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Lane 2: System (y=192 to 292, h=100) -->
+    <rect x="0" y="192" width="130" height="98" fill="#f1f5f9"/>
+    <text x="65" y="238" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">System</text>
+    <text x="65" y="255" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">BARBERIN</text>
+    <circle cx="65" cy="216" r="14" fill="#bfdbfe"/>
+    <text x="65" y="221" text-anchor="middle" font-size="12">⚙️</text>
+    <line x1="0" y1="290" x2="1560" y2="290" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Lane 3: Database (y=290 to 375, h=85) -->
+    <rect x="0" y="290" width="130" height="85" fill="#f8fafc"/>
+    <text x="65" y="335" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Database</text>
+    <text x="65" y="352" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">Sistem</text>
+    <circle cx="65" cy="312" r="14" fill="#bbf7d0"/>
+    <text x="65" y="317" text-anchor="middle" font-size="12">🗄️</text>
+
+    <!-- Swimlane Divider Vertical -->
+    <line x1="130" y1="42" x2="130" y2="375" stroke="#cbd5e1" stroke-width="1.5"/>
+
+    <!-- START NODE -->
+    <circle cx="170" cy="115" r="15" fill="#ecfdf5" stroke="#10b981" stroke-width="3"/>
+    <text x="170" y="145" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Mulai</text>
+
+    <!-- Flow: Start -> Node 1 -->
+    <line x1="185" y1="115" x2="220" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 1: Buka menu Pengaturan Branding / White Label -->
+    <g transform="translate(220, 88)">
+      <rect width="135" height="54" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="16" cy="18" r="9" fill="#2563eb"/>
+      <text x="16" y="22" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff">1</text>
+      <text x="32" y="19" font-size="10.5" font-weight="700" fill="#1e3a8a">Buka menu</text>
+      <text x="12" y="34" font-size="10" font-weight="600" fill="#1e40af">Pengaturan Branding</text>
+      <text x="12" y="47" font-size="9.5" font-weight="500" fill="#3b82f6">/ White Label (Tema)</text>
+    </g>
+
+    <!-- Flow: Node 1 -> Node 2 -->
+    <line x1="355" y1="115" x2="385" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 2: Form Ubah Konfigurasi Brand & Desain -->
+    <g transform="translate(385, 52)">
+      <rect width="190" height="132" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="16" cy="16" r="9" fill="#2563eb"/>
+      <text x="16" y="20" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff">2</text>
+      <text x="32" y="18" font-size="11" font-weight="700" fill="#1e3a8a">Ubah konfigurasi brand</text>
+      <text x="32" y="30" font-size="10" font-weight="600" fill="#3b82f6">&amp; desain website:</text>
+      <text x="12" y="46" font-size="9" fill="#334155">• Nama brand (nama_brand)</text>
+      <text x="12" y="58" font-size="9" fill="#334155">• Tagline (tagline)</text>
+      <text x="12" y="70" font-size="9" fill="#334155">• Logo (logo_url) &amp; Favicon (favicon_url)</text>
+      <text x="12" y="82" font-size="9" fill="#334155">• Warna primary, secondary, bg</text>
+      <text x="12" y="94" font-size="9" fill="#334155">• Theme (Default/Secondary/Tertiary/Natural)</text>
+      <text x="12" y="106" font-size="9" fill="#334155">• Mode tampilan: Light / Dark</text>
+      <text x="12" y="118" font-size="9" fill="#334155">• Hide BARBERIN brand &amp; Meta SEO</text>
+    </g>
+
+    <!-- Flow: Node 2 -> Node 3 (Preview) -->
+    <line x1="575" y1="115" x2="615" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 3: Klik Preview -->
+    <g transform="translate(615, 93)">
+      <rect width="90" height="44" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+      <text x="45" y="22" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0f172a">👁️ Klik</text>
+      <text x="45" y="36" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2563eb">Preview</text>
+    </g>
+
+    <!-- Flow: Preview down to System Lane -->
+    <line x1="660" y1="137" x2="660" y2="210" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- SYSTEM NODE: Tampilkan Preview -->
+    <g transform="translate(585, 210)">
+      <rect width="150" height="50" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="75" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">Tampilkan preview</text>
+      <text x="75" y="33" text-anchor="middle" font-size="9.5" fill="#475569">website berdasarkan</text>
+      <text x="75" y="44" text-anchor="middle" font-size="9.5" fill="#475569">konfigurasi live edit</text>
+    </g>
+
+    <!-- Flow: System Preview to Decision "Sesuai?" -->
+    <line x1="735" y1="235" x2="765" y2="235" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- DECISION: Sesuai? -->
+    <g transform="translate(765, 215)">
+      <polygon points="40,0 80,20 40,40 0,20" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="40" y="24" text-anchor="middle" font-size="10" font-weight="800" fill="#78350f">Sesuai?</text>
+    </g>
+
+    <!-- Decision "Tidak" -> Kembali Edit (Loop back) -->
+    <path d="M 805 215 L 805 100 L 760 100" fill="none" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrowRed)"/>
+    <text x="812" y="160" font-size="10" font-weight="700" fill="#e11d48">Tidak</text>
+    <g transform="translate(685, 80)">
+      <rect width="75" height="30" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
+      <text x="37" y="19" text-anchor="middle" font-size="9.5" font-weight="700" fill="#be123c">Kembali Edit</text>
+    </g>
+    <line x1="685" y1="95" x2="575" y2="95" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrowRed)"/>
+
+    <!-- Decision "Ya" -> Owner Klik Simpan -->
+    <path d="M 845 235 L 880 235 L 880 135 L 895 135" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+    <text x="855" y="228" font-size="10" font-weight="700" fill="#2563eb">Ya</text>
+
+    <!-- NODE 4: Klik Simpan -->
+    <g transform="translate(895, 110)">
+      <rect width="90" height="44" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">4</text>
+      <text x="48" y="21" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">💾 Klik</text>
+      <text x="48" y="34" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2563eb">Simpan</text>
+    </g>
+
+    <!-- Flow: Klik Simpan down to System Validation -->
+    <line x1="940" y1="154" x2="940" y2="202" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 5: Validasi Konfigurasi -->
+    <g transform="translate(850, 202)">
+      <rect width="180" height="74" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="16" cy="16" r="9" fill="#2563eb"/>
+      <text x="16" y="20" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff">5</text>
+      <text x="32" y="18" font-size="10.5" font-weight="700" fill="#1e3a8a">Validasi konfigurasi:</text>
+      <text x="12" y="33" font-size="9" fill="#334155">• Cek field wajib (nama_brand, logo)</text>
+      <text x="12" y="44" font-size="9" fill="#334155">• Cek format file (JPG, PNG, SVG, ICO)</text>
+      <text x="12" y="55" font-size="9" fill="#334155">• Cek ukuran file maksimal (&lt;= 5MB)</text>
+      <text x="12" y="66" font-size="9" fill="#334155">• Cek warna preset &amp; panjang karakter</text>
+    </g>
+
+    <!-- Flow: Node 5 -> Decision Valid? -->
+    <line x1="1030" y1="239" x2="1055" y2="239" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- DECISION 6: Valid? -->
+    <g transform="translate(1055, 219)">
+      <polygon points="35,0 70,20 35,40 0,20" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="7" fill="#d97706"/>
+      <text x="12" y="15" text-anchor="middle" font-size="8" font-weight="800" fill="#ffffff">6</text>
+      <text x="37" y="24" text-anchor="middle" font-size="10" font-weight="800" fill="#78350f">Valid?</text>
+    </g>
+
+    <!-- Decision 6: Tidak -> Node 7 Error Banner -->
+    <path d="M 1090 219 L 1090 135 L 1115 135" fill="none" stroke="#e11d48" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+    <text x="1095" y="175" font-size="10" font-weight="700" fill="#e11d48">Tidak</text>
+
+    <!-- NODE 7: Tampilkan Pesan Kesalahan -->
+    <g transform="translate(1115, 108)">
+      <rect width="180" height="54" rx="8" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#e11d48"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">7</text>
+      <text x="28" y="16" font-size="10" font-weight="700" fill="#9f1239">Tampilkan pesan kesalahan</text>
+      <text x="10" y="32" font-size="9" fill="#be123c">(Format file salah, ukuran terlalu</text>
+      <text x="10" y="44" font-size="9" fill="#be123c">besar, warna/URL tidak valid, dll)</text>
+    </g>
+
+    <!-- Loop error back to Node 2 Form -->
+    <path d="M 1205 108 L 1205 60 L 575 60" fill="none" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrowRed)"/>
+
+    <!-- Decision 6: Ya -> Node 8 Simpan Konfigurasi -->
+    <line x1="1125" y1="239" x2="1170" y2="239" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+    <text x="1135" y="232" font-size="10" font-weight="700" fill="#2563eb">Ya</text>
+
+    <!-- NODE 8: Simpan Konfigurasi Branding -->
+    <g transform="translate(1170, 214)">
+      <rect width="155" height="50" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">8</text>
+      <text x="82" y="24" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1e3a8a">💾 Simpan konfigurasi</text>
+      <text x="82" y="38" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2563eb">branding</text>
+    </g>
+
+    <!-- Flow: Node 8 to Database Lane -->
+    <line x1="1245" y1="264" x2="1245" y2="305" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 10: Database Update barbershop_brandings -->
+    <g transform="translate(1140, 305)">
+      <rect width="190" height="54" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#1d4ed8"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">10</text>
+      <text x="28" y="16" font-size="9.5" font-weight="700" fill="#1e3a8a">INSERT / UPDATE data tabel:</text>
+      <text x="10" y="32" font-size="10" font-weight="800" fill="#2563eb">barbershop_brandings</text>
+      <text x="10" y="46" font-size="9" fill="#64748b">(Terkait ke id_barbershop)</text>
+    </g>
+
+    <!-- Flow: DB 10 -> DB 11 Audit Trail -->
+    <line x1="1330" y1="332" x2="1355" y2="332" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 11: Database Insert branding_histories -->
+    <g transform="translate(1355, 305)">
+      <rect width="185" height="54" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#1d4ed8"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">11</text>
+      <text x="28" y="16" font-size="9.5" font-weight="700" fill="#1e3a8a">INSERT data ke tabel:</text>
+      <text x="10" y="32" font-size="10" font-weight="800" fill="#2563eb">branding_histories</text>
+      <text x="10" y="46" font-size="9" fill="#64748b">(id_branding, changed_by, diff)</text>
+    </g>
+
+    <!-- Flow: DB 11 -> Node 9 Terapkan Konfigurasi -->
+    <path d="M 1445 305 L 1445 264" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 9: Terapkan Konfigurasi -->
+    <g transform="translate(1365, 214)">
+      <rect width="160" height="50" rx="8" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#10b981"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">9</text>
+      <text x="82" y="22" text-anchor="middle" font-size="10" font-weight="700" fill="#065f46">Terapkan konfigurasi</text>
+      <text x="82" y="36" text-anchor="middle" font-size="9.5" font-weight="600" fill="#047857">pada website barbershop</text>
+    </g>
+
+    <!-- Flow: Node 9 to Finish -->
+    <path d="M 1445 214 L 1445 130" fill="none" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- FINISH NODE -->
+    <circle cx="1445" cy="115" r="15" fill="#ecfdf5" stroke="#10b981" stroke-width="4"/>
+    <circle cx="1445" cy="115" r="11" fill="#10b981"/>
+    <text x="1445" y="145" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Selesai</text>
+  </g>
+
+  <!-- ==================== 02 — CUSTOM DOMAIN ==================== -->
+  <g transform="translate(20, 475)">
+    <!-- Container Box -->
+    <rect width="1560" height="385" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+
+    <!-- Process Title Header Band -->
+    <rect width="1560" height="42" rx="12" fill="#dbeafe"/>
+    <rect y="30" width="1560" height="12" fill="#dbeafe"/>
+    <line x1="0" y1="42" x2="1560" y2="42" stroke="#93c5fd" stroke-width="1.5"/>
+
+    <rect x="16" y="8" width="36" height="26" rx="6" fill="#1d4ed8"/>
+    <text x="34" y="26" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">02</text>
+    <text x="62" y="26" font-size="14" font-weight="800" fill="#1e3a8a">BPMN — CUSTOM DOMAIN (Dikelola oleh Admin Platform / Superadmin)</text>
+    <text x="590" y="26" font-size="12" font-weight="500" fill="#1e40af">• Admin Platform menambah, mengedit, dan mengelola domain custom untuk barbershop (1 Barbershop dapat memiliki N Domain)</text>
+
+    <!-- Swimlanes Background & Lines -->
+    <!-- Lane 1: Admin Platform (y=42 to 180, h=138) -->
+    <rect x="0" y="42" width="130" height="150" fill="#f8fafc"/>
+    <text x="65" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Admin Platform</text>
+    <text x="65" y="122" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">/ Superadmin</text>
+    <circle cx="65" cy="75" r="14" fill="#bae6fd"/>
+    <text x="65" y="80" text-anchor="middle" font-size="12">👨‍💼</text>
+    <line x1="0" y1="192" x2="1560" y2="192" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Lane 2: System (y=192 to 298, h=106) -->
+    <rect x="0" y="192" width="130" height="106" fill="#f1f5f9"/>
+    <text x="65" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">System</text>
+    <text x="65" y="259" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">BARBERIN</text>
+    <circle cx="65" cy="220" r="14" fill="#bfdbfe"/>
+    <text x="65" y="225" text-anchor="middle" font-size="12">⚙️</text>
+    <line x1="0" y1="298" x2="1560" y2="298" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Lane 3: Database (y=298 to 385, h=87) -->
+    <rect x="0" y="298" width="130" height="87" fill="#f8fafc"/>
+    <text x="65" y="342" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Database</text>
+    <text x="65" y="359" text-anchor="middle" font-size="11" font-weight="500" fill="#64748b">Sistem</text>
+    <circle cx="65" cy="320" r="14" fill="#bbf7d0"/>
+    <text x="65" y="325" text-anchor="middle" font-size="12">🗄️</text>
+
+    <!-- Swimlane Divider Vertical -->
+    <line x1="130" y1="42" x2="130" y2="385" stroke="#cbd5e1" stroke-width="1.5"/>
+
+    <!-- START NODE 2 -->
+    <circle cx="165" cy="115" r="15" fill="#ecfdf5" stroke="#10b981" stroke-width="3"/>
+    <text x="165" y="145" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Mulai</text>
+
+    <!-- Flow: Start -> Pilih Barbershop -->
+    <line x1="180" y1="115" x2="205" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 1: Pilih Barbershop -->
+    <g transform="translate(205, 88)">
+      <rect width="115" height="54" rx="8" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#0284c7"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">1</text>
+      <text x="28" y="16" font-size="10.5" font-weight="700" fill="#0369a1">Pilih</text>
+      <text x="12" y="32" font-size="10" font-weight="700" fill="#0c4a6e">Barbershop</text>
+      <text x="12" y="46" font-size="9" fill="#0369a1">(Tenant target)</text>
+    </g>
+
+    <!-- Flow: Node 1 -> Node 2 -->
+    <line x1="320" y1="115" x2="345" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 2: Tambah / Edit Custom Domain -->
+    <g transform="translate(345, 75)">
+      <rect width="145" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">2</text>
+      <text x="28" y="16" font-size="10" font-weight="700" fill="#1e3a8a">Tambah / Edit</text>
+      <text x="12" y="30" font-size="10.5" font-weight="800" fill="#2563eb">Custom Domain</text>
+      <text x="12" y="46" font-size="9" fill="#334155">• Input nama domain</text>
+      <text x="12" y="58" font-size="9" fill="#334155">• Pilih tipe domain</text>
+      <text x="12" y="70" font-size="9" fill="#334155">• Setting SSL (opsional)</text>
+    </g>
+
+    <!-- Flow: Node 2 down to System Validation -->
+    <line x1="417" y1="155" x2="417" y2="205" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- NODE 3: Validasi Format Domain -->
+    <g transform="translate(340, 205)">
+      <rect width="155" height="74" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">3</text>
+      <text x="28" y="16" font-size="10" font-weight="700" fill="#1e3a8a">Validasi format domain:</text>
+      <text x="10" y="30" font-size="9" fill="#334155">• Struktur domain (a-z, 0-9)</text>
+      <text x="10" y="41" font-size="9" fill="#334155">• Ekstensi valid (.com, .id, dll)</text>
+      <text x="10" y="52" font-size="9" fill="#334155">• Tanpa spasi / simbol ilegal</text>
+      <text x="10" y="63" font-size="9" fill="#334155">• Bukan URL / tanpa path</text>
+    </g>
+
+    <!-- Flow: Node 3 -> Decision 4 -->
+    <line x1="495" y1="242" x2="520" y2="242" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- DECISION 4: Format Valid? -->
+    <g transform="translate(520, 222)">
+      <polygon points="35,0 70,20 35,40 0,20" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="7" fill="#d97706"/>
+      <text x="12" y="15" text-anchor="middle" font-size="8" font-weight="800" fill="#ffffff">4</text>
+      <text x="35" y="24" text-anchor="middle" font-size="9.5" font-weight="800" fill="#78350f">Format</text>
+      <text x="35" y="34" text-anchor="middle" font-size="8.5" font-weight="700" fill="#78350f">Valid?</text>
+    </g>
+
+    <!-- Decision 4: Tidak -> Node 7 Error Format -->
+    <path d="M 555 222 L 555 170 L 525 170" fill="none" stroke="#e11d48" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+    <text x="560" y="195" font-size="9.5" font-weight="700" fill="#e11d48">Tidak</text>
+    <g transform="translate(380, 160)">
+      <rect width="140" height="26" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.2"/>
+      <text x="70" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="#be123c">⚠️ Format domain tidak valid</text>
+    </g>
+    <!-- Loop back to Node 2 -->
+    <line x1="450" y1="160" x2="450" y2="155" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="2,2"/>
+
+    <!-- Decision 4: Ya -> Node 5 Cek Ketersediaan -->
+    <line x1="590" y1="242" x2="620" y2="242" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+    <text x="597" y="235" font-size="10" font-weight="700" fill="#2563eb">Ya</text>
+
+    <!-- NODE 5: Cek Ketersediaan Domain -->
+    <g transform="translate(620, 218)">
+      <rect width="135" height="48" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">5</text>
+      <text x="28" y="16" font-size="10" font-weight="700" fill="#1e3a8a">Cek ketersediaan:</text>
+      <text x="10" y="32" font-size="9" fill="#475569">Cek apakah domain sudah</text>
+      <text x="10" y="43" font-size="9" fill="#475569">digunakan tenant lain</text>
+    </g>
+
+    <!-- Flow: Node 5 -> Decision 6 -->
+    <line x1="755" y1="242" x2="780" y2="242" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- DECISION 6: Tersedia? -->
+    <g transform="translate(780, 222)">
+      <polygon points="35,0 70,20 35,40 0,20" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="7" fill="#d97706"/>
+      <text x="12" y="15" text-anchor="middle" font-size="8" font-weight="800" fill="#ffffff">6</text>
+      <text x="35" y="24" text-anchor="middle" font-size="9" font-weight="800" fill="#78350f">Tersedia?</text>
+    </g>
+
+    <!-- Decision 6: Tidak -> Node 8 Error Duplicate -->
+    <path d="M 815 222 L 815 170 L 780 170" fill="none" stroke="#e11d48" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+    <text x="820" y="195" font-size="9.5" font-weight="700" fill="#e11d48">Tidak</text>
+    <g transform="translate(630, 160)">
+      <rect width="145" height="26" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.2"/>
+      <text x="72" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="#be123c">⚠️ Domain sudah digunakan</text>
+    </g>
+    <!-- Loop back to Node 2 -->
+    <path d="M 630 170 L 490 170 L 490 125" fill="none" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="2,2" marker-end="url(#arrowRed)"/>
+
+    <!-- Decision 6: Ya -> Node 7 Konfigurasi DNS -->
+    <line x1="850" y1="242" x2="880" y2="242" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+    <text x="857" y="235" font-size="10" font-weight="700" fill="#2563eb">Ya</text>
+
+    <!-- NODE 7: Konfigurasi DNS -->
+    <g transform="translate(880, 205)">
+      <rect width="165" height="74" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">7</text>
+      <text x="28" y="16" font-size="10.5" font-weight="700" fill="#1e3a8a">Konfigurasi DNS:</text>
+      <text x="10" y="32" font-size="9" fill="#334155">• Generate CNAME / A record</text>
+      <text x="10" y="44" font-size="9" fill="#334155">• DNS name &amp; target value</text>
+      <text x="10" y="56" font-size="9" fill="#334155">• Panduan setting registrar</text>
+      <text x="10" y="68" font-size="9" font-weight="700" fill="#2563eb">→ Tampilkan di dashboard</text>
+    </g>
+
+    <!-- Flow: Node 7 down to Database 12 -->
+    <line x1="962" y1="279" x2="962" y2="315" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 12: DB Simpan Status Pending -->
+    <g transform="translate(875, 315)">
+      <rect width="175" height="54" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#1d4ed8"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">12</text>
+      <text x="28" y="16" font-size="9.5" font-weight="700" fill="#1e3a8a">INSERT data ke tabel:</text>
+      <text x="10" y="32" font-size="10" font-weight="800" fill="#2563eb">custom_domains</text>
+      <text x="10" y="46" font-size="9" fill="#64748b">(status: 'pending', is_primary)</text>
+    </g>
+
+    <!-- Flow: DB 12 up to Admin Verifikasi Domain -->
+    <path d="M 1050 342 L 1080 342 L 1080 145 L 1105 145" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 8: Admin Klik Verifikasi Domain -->
+    <g transform="translate(1105, 115)">
+      <rect width="115" height="50" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#2563eb"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">8</text>
+      <text x="64" y="24" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">🌐 Klik</text>
+      <text x="64" y="38" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2563eb">Verifikasi Domain</text>
+    </g>
+
+    <!-- Flow: Verifikasi down to System Cek DNS -->
+    <line x1="1162" y1="165" x2="1162" y2="210" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- SYSTEM: Cek DNS Domain (status: verifying) -->
+    <g transform="translate(1090, 210)">
+      <rect width="145" height="64" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <text x="72" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">🔍 Cek DNS Domain</text>
+      <text x="72" y="30" text-anchor="middle" font-size="8.5" font-weight="700" fill="#2563eb">(status: 'verifying')</text>
+      <text x="8" y="44" font-size="8.5" fill="#334155">• Validasi record CNAME / A</text>
+      <text x="8" y="56" font-size="8.5" fill="#334155">• Cek propagasi &amp; SSL</text>
+    </g>
+
+    <!-- Flow: Cek DNS to Decision 9 -->
+    <line x1="1235" y1="242" x2="1260" y2="242" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- DECISION 9: Valid? -->
+    <g transform="translate(1260, 222)">
+      <polygon points="35,0 70,20 35,40 0,20" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="7" fill="#d97706"/>
+      <text x="12" y="15" text-anchor="middle" font-size="8" font-weight="800" fill="#ffffff">9</text>
+      <text x="35" y="24" text-anchor="middle" font-size="10" font-weight="800" fill="#78350f">Valid?</text>
+    </g>
+
+    <!-- Decision 9: Tidak -> Node 10 Error DNS (status: failed) -->
+    <path d="M 1295 222 L 1295 155 L 1250 155" fill="none" stroke="#e11d48" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+    <text x="1300" y="195" font-size="9.5" font-weight="700" fill="#e11d48">Tidak</text>
+
+    <!-- NODE 10: Tampilkan Pesan Kesalahan DNS -->
+    <g transform="translate(1230, 80)">
+      <rect width="170" height="60" rx="8" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#e11d48"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">10</text>
+      <text x="28" y="16" font-size="10" font-weight="700" fill="#9f1239">Verifikasi DNS Gagal</text>
+      <text x="10" y="32" font-size="9" fill="#be123c">(status: 'failed' - DNS belum</text>
+      <text x="10" y="44" font-size="9" fill="#be123c">sesuai atau masih propagasi)</text>
+      <text x="10" y="55" font-size="8.5" font-weight="700" fill="#e11d48">↻ Tombol Verifikasi Ulang</text>
+    </g>
+    <!-- Loop Verifikasi Ulang to Node 8 -->
+    <path d="M 1230 110 L 1220 110" fill="none" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="2,2" marker-end="url(#arrowRed)"/>
+
+    <!-- Decision 9: Ya -> Node Update Status Active -->
+    <line x1="1330" y1="242" x2="1360" y2="242" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+    <text x="1337" y="235" font-size="10" font-weight="700" fill="#2563eb">Ya</text>
+
+    <!-- NODE: Update status domain active -->
+    <g transform="translate(1360, 218)">
+      <rect width="135" height="48" rx="8" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <text x="67" y="19" text-anchor="middle" font-size="10" font-weight="700" fill="#065f46">Update status domain</text>
+      <text x="67" y="34" text-anchor="middle" font-size="11" font-weight="800" fill="#10b981">"active"</text>
+    </g>
+
+    <!-- Flow: Update to DB 13 & 14 -->
+    <path d="M 1427 266 L 1427 315" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- NODE 13: DB Update Custom Domains -->
+    <g transform="translate(1125, 315)">
+      <rect width="185" height="54" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#1d4ed8"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">13</text>
+      <text x="28" y="16" font-size="9.5" font-weight="700" fill="#1e3a8a">UPDATE data tabel:</text>
+      <text x="10" y="32" font-size="10" font-weight="800" fill="#2563eb">custom_domains</text>
+      <text x="10" y="46" font-size="8.5" fill="#64748b">(status: 'active', verified_at)</text>
+    </g>
+
+    <!-- NODE 14: DB Insert Verification Logs -->
+    <g transform="translate(1335, 315)">
+      <rect width="185" height="54" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <circle cx="14" cy="14" r="8" fill="#1d4ed8"/>
+      <text x="14" y="18" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">14</text>
+      <text x="28" y="16" font-size="9.5" font-weight="700" fill="#1e3a8a">INSERT log ke tabel:</text>
+      <text x="10" y="32" font-size="10" font-weight="800" fill="#2563eb">domain_verification_logs</text>
+      <text x="10" y="46" font-size="8.5" fill="#64748b">(id_domain, status, response)</text>
+    </g>
+
+    <line x1="1310" y1="342" x2="1335" y2="342" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+    <!-- Flow to FINISH 2 -->
+    <path d="M 1495 242 L 1525 242 L 1525 130" fill="none" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- FINISH NODE 2 -->
+    <circle cx="1525" cy="115" r="15" fill="#ecfdf5" stroke="#10b981" stroke-width="4"/>
+    <circle cx="1525" cy="115" r="11" fill="#10b981"/>
+    <text x="1525" y="145" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Selesai</text>
+  </g>
+
+  <!-- ==================== BOTTOM 4 REFERENCE CARDS ==================== -->
+  <g transform="translate(20, 875)">
+    <!-- CARD 1: Kategori Format Domain -->
+    <g transform="translate(0, 0)">
+      <rect width="365" height="150" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <rect width="365" height="30" rx="10" fill="#0284c7"/>
+      <rect y="20" width="365" height="10" fill="#0284c7"/>
+      <text x="14" y="20" font-size="11" font-weight="800" fill="#ffffff">🌐 KATEGORI FORMAT DOMAIN</text>
+      
+      <!-- Table rows -->
+      <text x="14" y="48" font-size="10" font-weight="700" fill="#475569">Kategori</text>
+      <text x="170" y="48" font-size="10" font-weight="700" fill="#475569">Contoh Format (Valid)</text>
+      <line x1="14" y1="54" x2="350" y2="54" stroke="#f1f5f9" stroke-width="1"/>
+
+      <text x="14" y="70" font-size="9.5" fill="#334155">Domain utama</text>
+      <text x="170" y="70" font-size="9.5" font-family="monospace" fill="#0284c7">barberinsinggah.com</text>
+      <text x="340" y="70" font-size="10" fill="#10b981">✓</text>
+
+      <text x="14" y="85" font-size="9.5" fill="#334155">Subdomain</text>
+      <text x="170" y="85" font-size="9.5" font-family="monospace" fill="#0284c7">cukur.barberinsinggah.com</text>
+      <text x="340" y="85" font-size="10" fill="#10b981">✓</text>
+
+      <text x="14" y="100" font-size="9.5" fill="#334155">Custom domain bisnis</text>
+      <text x="170" y="100" font-size="9.5" font-family="monospace" fill="#0284c7">barberin-singgah.id</text>
+      <text x="340" y="100" font-size="10" fill="#10b981">✓</text>
+
+      <text x="14" y="115" font-size="9.5" fill="#334155">Subdomain custom</text>
+      <text x="170" y="115" font-size="9.5" font-family="monospace" fill="#0284c7">app.barberinsinggah.co.id</text>
+      <text x="340" y="115" font-size="10" fill="#10b981">✓</text>
+
+      <text x="14" y="130" font-size="9.5" fill="#334155">Domain dgn hyphen/angka</text>
+      <text x="170" y="130" font-size="9.5" font-family="monospace" fill="#0284c7">barberin-123.com</text>
+      <text x="340" y="130" font-size="10" fill="#10b981">✓</text>
+    </g>
+
+    <!-- CARD 2: Aturan Format Domain -->
+    <g transform="translate(380, 0)">
+      <rect width="380" height="150" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <rect width="380" height="30" rx="10" fill="#2563eb"/>
+      <rect y="20" width="380" height="10" fill="#2563eb"/>
+      <text x="14" y="20" font-size="11" font-weight="800" fill="#ffffff">📋 ATURAN FORMAT DOMAIN</text>
+
+      <!-- Subheaders -->
+      <rect x="10" y="38" width="175" height="20" rx="4" fill="#ecfdf5"/>
+      <text x="18" y="52" font-size="10" font-weight="700" fill="#065f46">Diperbolehkan</text>
+
+      <rect x="195" y="38" width="175" height="20" rx="4" fill="#fff1f2"/>
+      <text x="203" y="52" font-size="10" font-weight="700" fill="#9f1239">Tidak Diperbolehkan</text>
+
+      <!-- Allowed Items -->
+      <text x="16" y="75" font-size="9.5" fill="#047857">✔ Huruf kecil a-z</text>
+      <text x="16" y="90" font-size="9.5" fill="#047857">✔ Angka 0-9</text>
+      <text x="16" y="105" font-size="9.5" fill="#047857">✔ Tanda hubung (-) di tengah</text>
+      <text x="16" y="120" font-size="9.5" fill="#047857">✔ Titik (.) sebagai pemisah</text>
+      <text x="16" y="135" font-size="9.5" fill="#047857">✔ Ekstensi TLD sah (.com, dll)</text>
+
+      <!-- Disallowed Items -->
+      <text x="201" y="75" font-size="9.5" fill="#b91c1c">✖ Spasi (misal: "barber in")</text>
+      <text x="201" y="90" font-size="9.5" fill="#b91c1c">✖ Karakter khusus (@, #, _, dll)</text>
+      <text x="201" y="105" font-size="9.5" fill="#b91c1c">✖ Diawali / diakhiri tanda hubung</text>
+      <text x="201" y="120" font-size="9.5" fill="#b91c1c">✖ Titik ganda (barberin..com)</text>
+      <text x="201" y="135" font-size="9.5" fill="#b91c1c">✖ Path URL (/login) / Protokol (https)</text>
+    </g>
+
+    <!-- CARD 3: Contoh Domain Valid vs Tidak -->
+    <g transform="translate(775, 0)">
+      <rect width="380" height="150" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <rect width="380" height="30" rx="10" fill="#0891b2"/>
+      <rect y="20" width="380" height="10" fill="#0891b2"/>
+      <text x="14" y="20" font-size="11" font-weight="800" fill="#ffffff">💡 CONTOH DOMAIN</text>
+
+      <!-- Subheaders -->
+      <text x="20" y="48" font-size="10" font-weight="700" fill="#047857">Format Valid</text>
+      <text x="200" y="48" font-size="10" font-weight="700" fill="#b91c1c">Format Tidak Valid</text>
+      <line x1="14" y1="54" x2="365" y2="54" stroke="#f1f5f9" stroke-width="1"/>
+
+      <text x="20" y="70" font-size="9.5" font-family="monospace" fill="#047857">✔ barberinsinggah.com</text>
+      <text x="200" y="70" font-size="9.5" font-family="monospace" fill="#b91c1c">✖ barberin (tanpa TLD)</text>
+
+      <text x="20" y="86" font-size="9.5" font-family="monospace" fill="#047857">✔ barberinsinggah.id</text>
+      <text x="200" y="86" font-size="9.5" font-family="monospace" fill="#b91c1c">✖ barberin. (titik akhir)</text>
+
+      <text x="20" y="102" font-size="9.5" font-family="monospace" fill="#047857">✔ barberinsinggah.co.id</text>
+      <text x="200" y="102" font-size="9.5" font-family="monospace" fill="#b91c1c">✖ barber in.com (spasi)</text>
+
+      <text x="20" y="118" font-size="9.5" font-family="monospace" fill="#047857">✔ app.barberinsinggah.com</text>
+      <text x="200" y="118" font-size="9.5" font-family="monospace" fill="#b91c1c">✖ -barberin.com (awalan -)</text>
+
+      <text x="20" y="134" font-size="9.5" font-family="monospace" fill="#047857">✔ cukur.barberin123.com</text>
+      <text x="200" y="134" font-size="9.5" font-family="monospace" fill="#b91c1c">✖ https://barberin.com (URL)</text>
+    </g>
+
+    <!-- CARD 4: Status Domain (ENUM) -->
+    <g transform="translate(1170, 0)">
+      <rect width="390" height="150" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+      <rect width="390" height="30" rx="10" fill="#4f46e5"/>
+      <rect y="20" width="390" height="10" fill="#4f46e5"/>
+      <text x="14" y="20" font-size="11" font-weight="800" fill="#ffffff">🔀 STATUS DOMAIN (ENUM)</text>
+
+      <!-- Status Items -->
+      <circle cx="26" cy="50" r="6" fill="#f59e0b"/>
+      <text x="38" y="53" font-size="10" font-weight="800" fill="#b45309">Pending</text>
+      <text x="95" y="53" font-size="9.5" fill="#475569">Domain tersimpan, DNS belum dikonfigurasi.</text>
+
+      <circle cx="26" cy="74" r="6" fill="#2563eb"/>
+      <text x="38" y="77" font-size="10" font-weight="800" fill="#1d4ed8">Verifying</text>
+      <text x="95" y="77" font-size="9.5" fill="#475569">Sistem sedang melakukan pengecekan DNS.</text>
+
+      <circle cx="26" cy="98" r="6" fill="#10b981"/>
+      <text x="38" y="101" font-size="10" font-weight="800" fill="#047857">Active</text>
+      <text x="95" y="101" font-size="9.5" fill="#475569">DNS terverifikasi &amp; domain aktif digunakan.</text>
+
+      <circle cx="26" cy="122" r="6" fill="#e11d48"/>
+      <text x="38" y="125" font-size="10" font-weight="800" fill="#be123c">Failed</text>
+      <text x="95" y="125" font-size="9.5" fill="#475569">Verifikasi DNS gagal (opsi verifikasi ulang).</text>
+
+      <line x1="14" y1="134" x2="375" y2="134" stroke="#f1f5f9" stroke-width="1"/>
+      <text x="14" y="144" font-size="8.5" font-style="italic" fill="#64748b">Relasi: 1 Barbershop memiliki 1 Branding (1:N History) &amp; N Domain (1:N Logs)</text>
+    </g>
+  </g>
+
+  <!-- ==================== FOOTER ==================== -->
+  <line x1="20" y1="1045" x2="1580" y2="1045" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="30" y="1065" font-size="11" font-weight="600" fill="#64748b">BARBERIN — Sistem Manajemen Barbershop Modern</text>
+  <text x="1570" y="1065" text-anchor="end" font-size="11" font-weight="700" fill="#2563eb">Versi 1.1 — BPMN White Labeling, Custom Design &amp; Custom Domain</text>
+</svg>
