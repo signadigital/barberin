@@ -21,6 +21,7 @@ import {
   Sparkles,
   ExternalLink,
   RefreshCw,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
