@@ -14,6 +14,7 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/barberin/ui";
+import { TenantLogo, TenantBrandName } from "@/components/tenant/TenantLogo";
 import { formatRupiah, formatTanggal, formatWaktu, formatTransactionId, formatCustomerId } from "@/lib/format";
 import { paymentMethodName, useBarberin, type ReceiptData, type PaymentMethodId } from "@/lib/barberin-store";
 import { getTransactionDetail } from "@/lib/bookings";
@@ -217,9 +218,11 @@ function ReceiptPage() {
       <main className="flex-1 space-y-4 px-4 pb-6 pt-4">
         <GlassCard className="space-y-4 rounded-[20px]">
           <div className="flex items-center gap-3 border-b border-border pb-4">
-            <BarberinLogo className="h-9 w-9" />
+            <TenantLogo className="h-9 w-9 object-contain" />
             <div className="min-w-0">
-              <p className="text-[16px] font-bold">BARBERIN</p>
+              <p className="text-[16px] font-bold">
+                <TenantBrandName fallback="BARBERIN" />
+              </p>
               <p className="text-[12px] text-muted-foreground">Struk Transaksi</p>
             </div>
             <span className="ml-auto shrink-0">

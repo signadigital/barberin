@@ -43,6 +43,7 @@ import {
 
 import { formatRupiah, formatWibClock, useLiveClock } from "@/lib/format";
 import { BarberinLogo } from "@/components/barberin/ui";
+import { TenantLogo, useTenantBranding } from "@/components/tenant/TenantLogo";
 import {
   type OwnerDashboardMetrics,
   type OwnerPeriodFilter,
@@ -134,6 +135,7 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
 export function OwnerSidebar({ activePath }: { activePath: string }) {
   const navigate = useNavigate();
   const slug = useTenantSlug();
+  const branding = useTenantBranding();
 
   const navItems = [
     { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
@@ -159,15 +161,19 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
     <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0 text-card-foreground p-5 select-none shrink-0 z-40 overflow-y-auto">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-6 shrink-0">
-        <BarberinLogo className="h-10 w-10 shrink-0" />
-        <div>
-          <div className="font-extrabold tracking-wider text-foreground text-base leading-none">
-            BARBERIN
+        <TenantLogo className="h-10 w-10 shrink-0 rounded-lg object-contain" />
+        <div className="min-w-0 flex-1">
+          <div className="font-extrabold tracking-wider text-foreground text-base leading-none truncate">
+            {branding?.nama_brand || "BARBERIN"}
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1 leading-tight font-medium">
-            Modern Barbershop
-            <br />
-            Management System
+          <div className="text-[11px] text-muted-foreground mt-1 leading-tight font-medium line-clamp-2">
+            {branding?.tagline || (
+              <>
+                Modern Barbershop
+                <br />
+                Management System
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -689,6 +695,7 @@ export function OwnerHeader({
   onSearchChange?: (val: string) => void;
 }) {
   const { user } = useOwner();
+  const branding = useTenantBranding();
   const liveTime = useLiveClock(1000);
   const isLight = variant === "light";
 
@@ -753,7 +760,7 @@ export function OwnerHeader({
               {user.nama_lengkap || "Owner"}
             </div>
             <div className="text-xs leading-tight text-muted-foreground">
-              {user.barbershopName || "Barberin Barbershop"}
+              {branding?.nama_brand || user.barbershopName || "Barberin Barbershop"}
             </div>
           </div>
         </div>
@@ -779,6 +786,7 @@ export function OwnerMobileHeader({
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user } = useOwner();
+  const branding = useTenantBranding();
   const navigate = useNavigate();
   const isLight = variant === "light";
 
@@ -816,10 +824,10 @@ export function OwnerMobileHeader({
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <BarberinLogo className="h-7 w-7 shrink-0" />
-            <span className="font-extrabold tracking-wider text-sm text-foreground">
-              BARBERIN
+          <div className="flex items-center gap-2 min-w-0">
+            <TenantLogo className="h-7 w-7 shrink-0 rounded-md object-contain" />
+            <span className="font-extrabold tracking-wider text-sm text-foreground truncate max-w-[140px]">
+              {branding?.nama_brand || "BARBERIN"}
             </span>
           </div>
         </div>
@@ -855,9 +863,11 @@ export function OwnerMobileHeader({
           />
           <div className="relative w-72 bg-card border-r border-border h-full p-5 flex flex-col z-10 shadow-2xl text-card-foreground">
             <div className="flex items-center justify-between pb-4 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <BarberinLogo className="h-8 w-8 shrink-0" />
-                <div className="font-extrabold text-foreground text-base">BARBERIN</div>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <TenantLogo className="h-8 w-8 shrink-0 rounded-md object-contain" />
+                <div className="font-extrabold text-foreground text-base truncate">
+                  {branding?.nama_brand || "BARBERIN"}
+                </div>
               </div>
               <button
                 type="button"
@@ -872,7 +882,9 @@ export function OwnerMobileHeader({
               <div className="text-sm font-semibold text-foreground">
                 {user.nama_lengkap}
               </div>
-              <div className="text-xs text-muted-foreground">{user.barbershopName}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {branding?.nama_brand || user.barbershopName}
+              </div>
             </div>
 
             {/* Main Navigation (Scrollable) */}

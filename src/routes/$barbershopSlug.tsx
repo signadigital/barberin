@@ -2,6 +2,7 @@ import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { resolveBarbershopBySlug } from "@/lib/tenant-resolver";
 import { BarbershopNotFound } from "@/components/barberin/barbershop-not-found";
+import { TenantBrandingProvider } from "@/components/tenant/TenantLogo";
 
 export const Route = createFileRoute("/$barbershopSlug")({
   staleTime: 10_000,
@@ -15,6 +16,24 @@ export const Route = createFileRoute("/$barbershopSlug")({
     }
 
     return { shop };
+  },
+  head: ({ loaderData }: any) => {
+    const b = loaderData?.shop?.branding;
+    const links: any[] = [];
+    if (b?.favicon_url) {
+      links.push({ rel: "icon", href: b.favicon_url });
+    }
+    const meta: any[] = [];
+    if (b?.meta_title) {
+      meta.push({ title: b.meta_title });
+    }
+    if (b?.meta_description) {
+      meta.push({ name: "description", content: b.meta_description });
+    }
+    return {
+      links,
+      meta,
+    };
   },
   notFoundComponent: BarbershopNotFound,
   component: BarbershopLayout,
@@ -108,18 +127,20 @@ function BarbershopLayout() {
   }, [branding, styleVars, shop.slug]);
 
   return (
-    <div
-      data-tenant-theme="true"
-      data-tenant-slug={shop.slug}
-      data-theme={branding?.theme || "default"}
-      data-display-mode={branding?.display_mode || "dark"}
-      data-color-preset={branding?.color_preset || "blue"}
-      style={styleVars}
-      className={`min-h-screen bg-background text-foreground transition-colors duration-150 ${
-        branding?.display_mode === "light" ? "light-mode" : "dark-mode"
-      }`}
-    >
-      <Outlet />
-    </div>
+    <TenantBrandingProvider shop={shop} branding={branding}>
+      <div
+        data-tenant-theme="true"
+        data-tenant-slug={shop.slug}
+        data-theme={branding?.theme || "default"}
+        data-display-mode={branding?.display_mode || "dark"}
+        data-color-preset={branding?.color_preset || "blue"}
+        style={styleVars}
+        className={`min-h-screen bg-background text-foreground transition-colors duration-150 ${
+          branding?.display_mode === "light" ? "light-mode" : "dark-mode"
+        }`}
+      >
+        <Outlet />
+      </div>
+    </TenantBrandingProvider>
   );
 }

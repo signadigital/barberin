@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { BarberinLogo } from "@/components/barberin/ui";
+import { TenantLogo } from "@/components/tenant/TenantLogo";
 import { supabase } from "@/lib/supabase-client";
 import { getPendingPasswordState, finalizePasswordChange } from "@/lib/owner-settings";
 import { ownerActions } from "@/lib/owner-store";
@@ -267,7 +268,7 @@ function OwnerVerifyPasswordChangePage() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-block transition-transform hover:scale-105">
-            <BarberinLogo size="md" />
+            <TenantLogo size="md" />
           </Link>
         </div>
 

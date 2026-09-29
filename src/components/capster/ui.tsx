@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatRupiah, formatTransactionId, formatWibClock, useLiveClock } from "@/lib/format";
 import { BarberinLogo, GlassCard } from "@/components/barberin/ui";
+import { TenantLogo } from "@/components/tenant/TenantLogo";
 import {
   capsterActions,
   useCapster,
@@ -497,7 +498,7 @@ export function CapsterHeader({
           <ArrowLeft className="h-5 w-5" strokeWidth={2} />
         </button>
       ) : (
-        <BarberinLogo className="h-9 w-9" />
+        <TenantLogo className="h-9 w-9 shrink-0 object-contain" />
       )}
 
       <div className="min-w-0 text-center">

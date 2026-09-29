@@ -9,6 +9,7 @@ import {
   MobileShell,
   PrimaryButton,
 } from "@/components/barberin/ui";
+import { TenantLogo, TenantBrandName } from "@/components/tenant/TenantLogo";
 import { capsterActions, getCapsterAuth, useCapster } from "@/lib/capster-store";
 import { loginCapster } from "@/lib/capsters";
 import { getActiveShift } from "@/lib/shifts";
@@ -124,11 +125,11 @@ function CapsterLoginPage() {
     <MobileShell>
       <main className="flex-1 flex flex-col justify-center px-5 py-8">
         <div className="flex flex-col items-center text-center space-y-2 mb-8">
-          <div className="h-20 w-20 flex items-center justify-center rounded-2xl glass-2 shadow-lg mb-2">
-            <BarberinLogo className="h-14 w-14" />
+          <div className="h-20 w-20 flex items-center justify-center rounded-2xl glass-2 shadow-lg mb-2 p-2">
+            <TenantLogo className="h-14 w-14 object-contain" />
           </div>
           <h1 className="text-[26px] font-extrabold tracking-tight text-foreground">
-            BARBERIN
+            <TenantBrandName fallback="BARBERIN" />
           </h1>
           <div className="inline-block rounded-full bg-primary/20 px-3 py-1 text-[12px] font-bold text-primary-soft ring-1 ring-primary/40">
             Capster / Admin

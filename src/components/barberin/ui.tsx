@@ -22,14 +22,9 @@ import {
   type CartItem as CartItemType,
   type Capster,
 } from "@/lib/barberin-store";
+import { TenantLogo, TenantBrandName } from "@/components/tenant/TenantLogo";
 
-export const BarberinLogo = ({ className }: { className?: string }) => (
-  <img
-    src="/barberin-logo.png"
-    alt="Logo BARBERIN"
-    className={cn("h-8 w-8 object-contain", className)}
-  />
-);
+export { BarberinLogo } from "./BarberinLogo";
 
 export function MobileShell({ children }: { children: ReactNode }) {
   return (
@@ -64,7 +59,7 @@ export function CustomerHeader({
 }) {
   return (
     <header className="safe-top sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 backdrop-blur-md px-4 pb-3">
-      {showBack ? backTo ? <BackButton to={backTo} /> : <BackButton /> : <BarberinLogo />}
+      {showBack ? backTo ? <BackButton to={backTo} /> : <BackButton /> : <TenantLogo className="h-8 w-8 object-contain" />}
       <div className="min-w-0 text-center">
         <h1 className="truncate text-[18px] font-bold leading-tight text-foreground">{title}</h1>
         {subtitle ? (
@@ -362,8 +357,8 @@ export function StepBrand() {
 
   return (
     <Link to={target as any} className="flex items-center justify-center gap-2 py-4">
-      <BarberinLogo className="h-7 w-7" />
-      <span className="text-[15px] font-bold tracking-wide text-foreground">BARBERIN</span>
+      <TenantLogo className="h-7 w-7 object-contain" />
+      <TenantBrandName className="text-[15px] font-bold tracking-wide text-foreground" fallback="BARBERIN" />
     </Link>
   );
 }

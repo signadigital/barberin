@@ -24,6 +24,7 @@ import {
   PrimaryButton,
   SkeletonCard,
 } from "@/components/barberin/ui";
+import { TenantLogo } from "@/components/tenant/TenantLogo";
 import { formatRupiah } from "@/lib/format";
 import { actions, cartCount, cartTotal, useBarberin, type Service } from "@/lib/barberin-store";
 import { getServices } from "@/lib/services";
@@ -266,15 +267,11 @@ function ServicesPage() {
       <header className="safe-top px-4 pb-2">
         {/* Brand Bar */}
         <div className="flex items-center gap-3">
-          {tenantBranding?.logo_url ? (
-            <img
-              src={tenantBranding.logo_url}
-              alt="Logo"
-              className="h-10 w-10 object-contain rounded-xl"
-            />
-          ) : (
-            <BarberinLogo className="h-10 w-10" />
-          )}
+          <TenantLogo
+            logoUrl={tenantBranding?.logo_url}
+            brandName={tenantBranding?.nama_brand || shopInfo?.nama_barbershop}
+            className="h-10 w-10 object-contain rounded-xl"
+          />
           <div className="min-w-0">
             <p className="truncate text-[18px] font-bold leading-tight text-foreground">
               {tenantBranding?.nama_brand || shopInfo?.nama_barbershop || "BARBERIN"}
