@@ -731,37 +731,6 @@ function OwnerWhiteLabelingPage() {
                   </div>
                 </div>
 
-                {/* CARD 3: Visibilitas Brand / Watermark Settings */}
-                <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-5 text-card-foreground">
-                  <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div>
-                      <h2 className="text-sm font-bold text-foreground">Visibilitas Brand</h2>
-                      <p className="text-xs text-muted-foreground">
-                        Opsi sembunyikan merek platform pada website barbershop Anda.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-background border border-border">
-                    <div>
-                      <div className="text-xs font-semibold text-foreground">
-                        Sembunyikan Label "Powered by BARBERIN"
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Menghilangkan watermark brand platform dari footer halaman reservasi pelanggan.
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hideBarberinBrand}
-                        onChange={(e) => setHideBarberinBrand(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-muted peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                  </div>
-                </div>
               </div>
             )}
           </main>
