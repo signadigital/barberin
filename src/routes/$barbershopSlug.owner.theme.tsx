@@ -72,8 +72,6 @@ function OwnerWhiteLabelingPage() {
   const [displayMode, setDisplayMode] = useState<"dark" | "light">("dark");
   const [selectedColorKey, setSelectedColorKey] = useState("purple");
   const [hideBarberinBrand, setHideBarberinBrand] = useState(false);
-  const [metaTitle, setMetaTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
   const [brandingStatus, setBrandingStatus] = useState<BrandingStatus>("draft");
 
   // Modals
@@ -100,8 +98,6 @@ function OwnerWhiteLabelingPage() {
         setSelectedTheme((data.theme as BrandingTheme) || "default");
         setDisplayMode((data.display_mode as "light" | "dark") || "dark");
         setHideBarberinBrand(Boolean(data.hide_barberin_brand));
-        setMetaTitle(data.meta_title || "");
-        setMetaDescription(data.meta_description || "");
         setBrandingStatus((data.status as BrandingStatus) || "draft");
 
         // Set color preset
@@ -200,8 +196,6 @@ function OwnerWhiteLabelingPage() {
           display_mode: displayMode,
           color_preset: selectedColorKey,
           hide_barberin_brand: hideBarberinBrand,
-          meta_title: metaTitle.trim() || undefined,
-          meta_description: metaDescription.trim() || undefined,
           status: targetStatus,
         },
       });
@@ -737,43 +731,18 @@ function OwnerWhiteLabelingPage() {
                   </div>
                 </div>
 
-                {/* CARD 3: SEO & Watermark Settings */}
+                {/* CARD 3: Visibilitas Brand / Watermark Settings */}
                 <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-5 text-card-foreground">
                   <div className="flex items-center justify-between pb-3 border-b border-border">
                     <div>
-                      <h2 className="text-sm font-bold text-foreground">SEO &amp; Visibilitas Brand</h2>
+                      <h2 className="text-sm font-bold text-foreground">Visibilitas Brand</h2>
                       <p className="text-xs text-muted-foreground">
-                        Pengaturan metadata pencarian Google dan opsi sembunyikan merek platform.
+                        Opsi sembunyikan merek platform pada website barbershop Anda.
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Meta Title</label>
-                      <input
-                        type="text"
-                        value={metaTitle}
-                        onChange={(e) => setMetaTitle(e.target.value)}
-                        placeholder="Contoh: Singgah Barbershop — Potong Rapi & Nyaman"
-                        maxLength={150}
-                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Meta Description</label>
-                      <input
-                        type="text"
-                        value={metaDescription}
-                        onChange={(e) => setMetaDescription(e.target.value)}
-                        placeholder="Deskripsi singkat yang muncul di hasil pencarian Google"
-                        className="w-full bg-background border border-input rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between p-3.5 rounded-xl bg-background border border-border">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-background border border-border">
                     <div>
                       <div className="text-xs font-semibold text-foreground">
                         Sembunyikan Label "Powered by BARBERIN"
