@@ -19,6 +19,8 @@ import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
 import { Route as OwnerResetPasswordRouteImport } from './routes/owner.reset-password'
 import { Route as OwnerVerifyEmailRouteImport } from './routes/owner.verify-email'
+import { Route as OwnerVerifyEmailChangeRouteImport } from './routes/owner.verify-email-change'
+import { Route as OwnerVerifyPasswordChangeRouteImport } from './routes/owner.verify-password-change'
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SuperadminLoginRouteImport } from './routes/superadmin.login'
 import { Route as SuperadminTenantsRouteImport } from './routes/superadmin.tenants'
@@ -54,6 +56,8 @@ import { Route as BarbershopSlugOwnerLoginRouteImport } from './routes/$barbersh
 import { Route as BarbershopSlugOwnerResetPasswordRouteImport } from './routes/$barbershopSlug.owner.reset-password'
 import { Route as BarbershopSlugOwnerServicesRouteImport } from './routes/$barbershopSlug.owner.services'
 import { Route as BarbershopSlugOwnerSettingsRouteImport } from './routes/$barbershopSlug.owner.settings'
+import { Route as BarbershopSlugOwnerVerifyEmailChangeRouteImport } from './routes/$barbershopSlug.owner.verify-email-change'
+import { Route as BarbershopSlugOwnerVerifyPasswordChangeRouteImport } from './routes/$barbershopSlug.owner.verify-password-change'
 import { Route as BarbershopSlugCapsterTransactionsTransactionIdRouteImport } from './routes/$barbershopSlug.capster.transactions.$transactionId'
 import { Route as BarbershopSlugCapsterTransactionsManualRouteImport } from './routes/$barbershopSlug.capster.transactions.manual'
 import { Route as BarbershopSlugCapsterTransactionsSuccessRouteImport } from './routes/$barbershopSlug.capster.transactions.success'
@@ -117,6 +121,17 @@ const OwnerVerifyEmailRoute = OwnerVerifyEmailRouteImport.update({
   path: '/owner/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerVerifyEmailChangeRoute = OwnerVerifyEmailChangeRouteImport.update({
+  id: '/owner/verify-email-change',
+  path: '/owner/verify-email-change',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerVerifyPasswordChangeRoute =
+  OwnerVerifyPasswordChangeRouteImport.update({
+    id: '/owner/verify-password-change',
+    path: '/owner/verify-password-change',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SuperadminDashboardRoute = SuperadminDashboardRouteImport.update({
   id: '/superadmin/dashboard',
   path: '/superadmin/dashboard',
@@ -322,6 +337,18 @@ const BarbershopSlugOwnerSettingsRoute =
     path: '/owner/settings',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
+const BarbershopSlugOwnerVerifyEmailChangeRoute =
+  BarbershopSlugOwnerVerifyEmailChangeRouteImport.update({
+    id: '/owner/verify-email-change',
+    path: '/owner/verify-email-change',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerVerifyPasswordChangeRoute =
+  BarbershopSlugOwnerVerifyPasswordChangeRouteImport.update({
+    id: '/owner/verify-password-change',
+    path: '/owner/verify-password-change',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
 const BarbershopSlugCapsterTransactionsTransactionIdRoute =
   BarbershopSlugCapsterTransactionsTransactionIdRouteImport.update({
     id: '/$transactionId',
@@ -406,6 +433,8 @@ export interface FileRoutesByFullPath {
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
+  '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
+  '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
@@ -441,6 +470,8 @@ export interface FileRoutesByFullPath {
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/owner/verify-email-change': typeof BarbershopSlugOwnerVerifyEmailChangeRoute
+  '/$barbershopSlug/owner/verify-password-change': typeof BarbershopSlugOwnerVerifyPasswordChangeRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
   '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
   '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
@@ -465,6 +496,8 @@ export interface FileRoutesByTo {
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
+  '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
+  '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
@@ -500,6 +533,8 @@ export interface FileRoutesByTo {
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/owner/verify-email-change': typeof BarbershopSlugOwnerVerifyEmailChangeRoute
+  '/$barbershopSlug/owner/verify-password-change': typeof BarbershopSlugOwnerVerifyPasswordChangeRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
   '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
   '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
@@ -525,6 +560,8 @@ export interface FileRoutesById {
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
+  '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
+  '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
   '/superadmin/tenants': typeof SuperadminTenantsRoute
@@ -560,6 +597,8 @@ export interface FileRoutesById {
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
+  '/$barbershopSlug/owner/verify-email-change': typeof BarbershopSlugOwnerVerifyEmailChangeRoute
+  '/$barbershopSlug/owner/verify-password-change': typeof BarbershopSlugOwnerVerifyPasswordChangeRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
   '/$barbershopSlug/capster/transactions/manual': typeof BarbershopSlugCapsterTransactionsManualRouteWithChildren
   '/$barbershopSlug/capster/transactions/success': typeof BarbershopSlugCapsterTransactionsSuccessRoute
@@ -586,6 +625,8 @@ export interface FileRouteTypes {
     | '/owner/register'
     | '/owner/reset-password'
     | '/owner/verify-email'
+    | '/owner/verify-email-change'
+    | '/owner/verify-password-change'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
@@ -621,6 +662,8 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/owner/verify-email-change'
+    | '/$barbershopSlug/owner/verify-password-change'
     | '/$barbershopSlug/capster/transactions/$transactionId'
     | '/$barbershopSlug/capster/transactions/manual'
     | '/$barbershopSlug/capster/transactions/success'
@@ -645,6 +688,8 @@ export interface FileRouteTypes {
     | '/owner/register'
     | '/owner/reset-password'
     | '/owner/verify-email'
+    | '/owner/verify-email-change'
+    | '/owner/verify-password-change'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
@@ -680,6 +725,8 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/owner/verify-email-change'
+    | '/$barbershopSlug/owner/verify-password-change'
     | '/$barbershopSlug/capster/transactions/$transactionId'
     | '/$barbershopSlug/capster/transactions/manual'
     | '/$barbershopSlug/capster/transactions/success'
@@ -704,6 +751,8 @@ export interface FileRouteTypes {
     | '/owner/register'
     | '/owner/reset-password'
     | '/owner/verify-email'
+    | '/owner/verify-email-change'
+    | '/owner/verify-password-change'
     | '/superadmin/dashboard'
     | '/superadmin/login'
     | '/superadmin/tenants'
@@ -739,6 +788,8 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
+    | '/$barbershopSlug/owner/verify-email-change'
+    | '/$barbershopSlug/owner/verify-password-change'
     | '/$barbershopSlug/capster/transactions/$transactionId'
     | '/$barbershopSlug/capster/transactions/manual'
     | '/$barbershopSlug/capster/transactions/success'
@@ -764,6 +815,8 @@ export interface RootRouteChildren {
   OwnerRegisterRoute: typeof OwnerRegisterRoute
   OwnerResetPasswordRoute: typeof OwnerResetPasswordRoute
   OwnerVerifyEmailRoute: typeof OwnerVerifyEmailRoute
+  OwnerVerifyEmailChangeRoute: typeof OwnerVerifyEmailChangeRoute
+  OwnerVerifyPasswordChangeRoute: typeof OwnerVerifyPasswordChangeRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   SuperadminLoginRoute: typeof SuperadminLoginRoute
   SuperadminTenantsRoute: typeof SuperadminTenantsRoute
@@ -839,6 +892,20 @@ declare module '@tanstack/react-router' {
       path: '/owner/verify-email'
       fullPath: '/owner/verify-email'
       preLoaderRoute: typeof OwnerVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/verify-email-change': {
+      id: '/owner/verify-email-change'
+      path: '/owner/verify-email-change'
+      fullPath: '/owner/verify-email-change'
+      preLoaderRoute: typeof OwnerVerifyEmailChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/verify-password-change': {
+      id: '/owner/verify-password-change'
+      path: '/owner/verify-password-change'
+      fullPath: '/owner/verify-password-change'
+      preLoaderRoute: typeof OwnerVerifyPasswordChangeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin/dashboard': {
@@ -1086,6 +1153,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BarbershopSlugOwnerSettingsRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
+    '/$barbershopSlug/owner/verify-email-change': {
+      id: '/$barbershopSlug/owner/verify-email-change'
+      path: '/owner/verify-email-change'
+      fullPath: '/$barbershopSlug/owner/verify-email-change'
+      preLoaderRoute: typeof BarbershopSlugOwnerVerifyEmailChangeRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/verify-password-change': {
+      id: '/$barbershopSlug/owner/verify-password-change'
+      path: '/owner/verify-password-change'
+      fullPath: '/$barbershopSlug/owner/verify-password-change'
+      preLoaderRoute: typeof BarbershopSlugOwnerVerifyPasswordChangeRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
     '/$barbershopSlug/capster/transactions/$transactionId': {
       id: '/$barbershopSlug/capster/transactions/$transactionId'
       path: '/$transactionId'
@@ -1299,6 +1380,8 @@ interface BarbershopSlugRouteChildren {
   BarbershopSlugOwnerResetPasswordRoute: typeof BarbershopSlugOwnerResetPasswordRoute
   BarbershopSlugOwnerServicesRoute: typeof BarbershopSlugOwnerServicesRoute
   BarbershopSlugOwnerSettingsRoute: typeof BarbershopSlugOwnerSettingsRoute
+  BarbershopSlugOwnerVerifyEmailChangeRoute: typeof BarbershopSlugOwnerVerifyEmailChangeRoute
+  BarbershopSlugOwnerVerifyPasswordChangeRoute: typeof BarbershopSlugOwnerVerifyPasswordChangeRoute
   BarbershopSlugCustomerReceiptTransactionIdRoute: typeof BarbershopSlugCustomerReceiptTransactionIdRoute
 }
 
@@ -1342,6 +1425,10 @@ const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
   BarbershopSlugOwnerResetPasswordRoute: BarbershopSlugOwnerResetPasswordRoute,
   BarbershopSlugOwnerServicesRoute: BarbershopSlugOwnerServicesRoute,
   BarbershopSlugOwnerSettingsRoute: BarbershopSlugOwnerSettingsRoute,
+  BarbershopSlugOwnerVerifyEmailChangeRoute:
+    BarbershopSlugOwnerVerifyEmailChangeRoute,
+  BarbershopSlugOwnerVerifyPasswordChangeRoute:
+    BarbershopSlugOwnerVerifyPasswordChangeRoute,
   BarbershopSlugCustomerReceiptTransactionIdRoute:
     BarbershopSlugCustomerReceiptTransactionIdRoute,
 }
@@ -1361,6 +1448,8 @@ const rootRouteChildren: RootRouteChildren = {
   OwnerRegisterRoute: OwnerRegisterRoute,
   OwnerResetPasswordRoute: OwnerResetPasswordRoute,
   OwnerVerifyEmailRoute: OwnerVerifyEmailRoute,
+  OwnerVerifyEmailChangeRoute: OwnerVerifyEmailChangeRoute,
+  OwnerVerifyPasswordChangeRoute: OwnerVerifyPasswordChangeRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   SuperadminLoginRoute: SuperadminLoginRoute,
   SuperadminTenantsRoute: SuperadminTenantsRoute,

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { BarberinLogo } from "@/components/barberin/ui";
 import { loginOwnerBpmn, resendVerificationEmail } from "@/lib/owner-auth";
 import { getOwnerAuth, ownerActions, useOwner } from "@/lib/owner-store";
+import { supabase } from "@/lib/supabase-client";
 
 export const Route = createFileRoute("/owner/login")({
   head: () => ({
@@ -129,6 +130,14 @@ function OwnerLoginPage() {
           password,
         },
       });
+
+      if (res.session) {
+        try {
+          await supabase.auth.setSession(res.session);
+        } catch (e) {
+          console.warn("Could not sync supabase client session:", e);
+        }
+      }
 
       const targetSlug = res.barbershop.slug || "barberin";
 

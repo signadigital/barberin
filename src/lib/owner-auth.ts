@@ -865,6 +865,12 @@ async function handleLoginOwnerBpmn(data: OwnerLoginInput) {
     email: foundUser.email,
     nama_lengkap: foundUser.nama_lengkap,
     role: foundUser.role,
+    session: authResult?.session
+      ? {
+          access_token: authResult.session.access_token,
+          refresh_token: authResult.session.refresh_token,
+        }
+      : null,
     barbershop: {
       id_barbershop: shop.id_barbershop,
       slug: shop.slug,
@@ -1122,4 +1128,3 @@ export const validateOwnerRecoveryContext = createServerFn({
 })
   .validator((data: ValidateRecoveryInput) => data)
   .handler(async ({ data }) => handleValidateOwnerRecoveryContext(data));
-
