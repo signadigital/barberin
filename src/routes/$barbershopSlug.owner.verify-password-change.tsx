@@ -261,8 +261,8 @@ function OwnerVerifyPasswordChangePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070D18] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 space-y-6">
         <div className="text-center">
@@ -271,17 +271,17 @@ function OwnerVerifyPasswordChangePage() {
           </Link>
         </div>
 
-        <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
           {status === "verifying" && (
             <div className="flex flex-col items-center text-center space-y-4 py-8">
-              <div className="h-14 w-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center ring-1 ring-purple-500/20">
-                <Loader2 className="h-7 w-7 animate-spin text-purple-400" />
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-foreground">
                   Memverifikasi Perubahan Password...
                 </h3>
-                <p className="text-xs text-slate-400 max-w-xs">
+                <p className="text-xs text-muted-foreground max-w-xs">
                   Sistem sedang memvalidasi kredensial keamanan tautan verifikasi Anda.
                 </p>
               </div>
@@ -290,12 +290,12 @@ function OwnerVerifyPasswordChangePage() {
 
           {status === "success" && (
             <div className="flex flex-col items-center text-center space-y-4 py-4">
-              <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center ring-1 ring-emerald-500/20">
-                <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+              <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center ring-1 ring-emerald-500/20">
+                <CheckCircle2 className="h-7 w-7 text-emerald-500" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Password Berhasil Diperbarui</h3>
-                <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                <h3 className="text-base font-bold text-foreground">Password Berhasil Diperbarui</h3>
+                <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                   Kata sandi baru untuk akun Owner Anda telah berhasil diverifikasi dan diaktifkan
                   melalui Supabase Auth.
                 </p>
@@ -316,19 +316,19 @@ function OwnerVerifyPasswordChangePage() {
 
           {status === "manual_input" && (
             <form onSubmit={handleManualSubmit} className="space-y-4">
-              <div className="text-center space-y-1 pb-2 border-b border-slate-800">
-                <div className="inline-flex h-12 w-12 rounded-xl bg-purple-500/10 text-purple-400 items-center justify-center ring-1 ring-purple-500/20 mb-2">
-                  <ShieldCheck className="h-6 w-6 text-purple-400" />
+              <div className="text-center space-y-1 pb-2 border-b border-border">
+                <div className="inline-flex h-12 w-12 rounded-xl bg-primary/10 text-primary items-center justify-center ring-1 ring-primary/20 mb-2">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-base font-bold text-white">Konfirmasi Password Baru</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-base font-bold text-foreground">Konfirmasi Password Baru</h3>
+                <p className="text-xs text-muted-foreground">
                   Verifikasi email berhasil. Masukkan password baru untuk menyelesaikan perubahan
                   akun Anda.
                 </p>
               </div>
 
               {formError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-start gap-2">
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-300 text-xs flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>{formError}</span>
                 </div>
@@ -336,8 +336,8 @@ function OwnerVerifyPasswordChangePage() {
 
               {/* Password Baru */}
               <div className="space-y-1.5 text-xs">
-                <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5 text-purple-400" />
+                <label className="text-foreground font-semibold flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5 text-primary" />
                   Password Baru
                 </label>
                 <div className="relative">
@@ -347,12 +347,12 @@ function OwnerVerifyPasswordChangePage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Minimal 6 karakter..."
-                    className="w-full px-3.5 py-2.5 pr-10 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+                    className="w-full px-3.5 py-2.5 pr-10 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -361,8 +361,8 @@ function OwnerVerifyPasswordChangePage() {
 
               {/* Konfirmasi Password Baru */}
               <div className="space-y-1.5 text-xs">
-                <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5 text-purple-400" />
+                <label className="text-foreground font-semibold flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5 text-primary" />
                   Konfirmasi Password Baru
                 </label>
                 <div className="relative">
@@ -372,12 +372,12 @@ function OwnerVerifyPasswordChangePage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ulangi password baru..."
-                    className="w-full px-3.5 py-2.5 pr-10 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+                    className="w-full px-3.5 py-2.5 pr-10 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -392,7 +392,7 @@ function OwnerVerifyPasswordChangePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg shadow-purple-600/20"
+                  className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg shadow-primary/20"
                 >
                   {isSubmitting ? (
                     <>
@@ -412,19 +412,19 @@ function OwnerVerifyPasswordChangePage() {
 
           {status === "error" && (
             <div className="flex flex-col items-center text-center space-y-4 py-4">
-              <div className="h-14 w-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center ring-1 ring-rose-500/20">
-                <AlertCircle className="h-7 w-7 text-rose-400" />
+              <div className="h-14 w-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center ring-1 ring-rose-500/20">
+                <AlertCircle className="h-7 w-7 text-rose-500" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Verifikasi Password Gagal</h3>
-                <p className="text-xs text-rose-300/90 max-w-xs leading-relaxed">{errorMessage}</p>
+                <h3 className="text-base font-bold text-foreground">Verifikasi Password Gagal</h3>
+                <p className="text-xs text-rose-600 dark:text-rose-300 max-w-xs leading-relaxed">{errorMessage}</p>
               </div>
 
               <div className="w-full pt-4">
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/owner/login" as any, replace: true })}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Kembali ke Halaman Login</span>
                   <ArrowRight className="h-4 w-4" />

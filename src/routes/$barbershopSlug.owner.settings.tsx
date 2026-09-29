@@ -492,24 +492,24 @@ function OwnerSettingsPage() {
 
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-28 lg:pb-12 max-w-[1600px] w-full mx-auto">
             {/* Top Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0F1D33]/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card border border-border rounded-2xl p-5 shadow-sm">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase">
                     Konfigurasi Sistem
                   </span>
                   {isDirty && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1 animate-pulse">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 animate-pulse">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                       Ada perubahan belum disimpan
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight mt-1.5 flex items-center gap-2">
-                  <Settings className="h-6 w-6 text-blue-400" />
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mt-1.5 flex items-center gap-2">
+                  <Settings className="h-6 w-6 text-blue-500" />
                   Setelan Operasional
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Kelola profil barbershop, kontak, jam operasional outlet, dan profil akun pemilik.
                 </p>
               </div>
@@ -521,7 +521,7 @@ function OwnerSettingsPage() {
                     type="button"
                     onClick={handleReset}
                     disabled={saving || loading}
-                    className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                    className="px-4 py-2.5 rounded-xl border border-border bg-muted/60 hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     <span>Reset</span>
@@ -534,8 +534,8 @@ function OwnerSettingsPage() {
                   disabled={saving || loading || !isDirty}
                   className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shadow-md active:scale-[0.98] ${
                     isDirty
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/25 ring-2 ring-blue-400/30"
-                      : "bg-slate-800 text-slate-400 border border-slate-700/60 cursor-not-allowed opacity-70"
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/25 ring-2 ring-primary/30"
+                      : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-70"
                   }`}
                 >
                   {saving ? (
@@ -554,34 +554,34 @@ function OwnerSettingsPage() {
             </div>
 
             {loading ? (
-              <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-3">
-                <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                <p className="text-sm text-slate-300 font-medium">
+              <div className="bg-card border border-border rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-3">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <p className="text-sm text-foreground font-medium">
                   Memuat data profil dan setelan...
                 </p>
-                <p className="text-xs text-slate-500">Menghubungkan ke database server</p>
+                <p className="text-xs text-muted-foreground">Menghubungkan ke database server</p>
               </div>
             ) : (
               <form onSubmit={handleSave} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* KIRI: Profil Barbershop (7 Cols) */}
                   <div className="lg:col-span-7 space-y-6">
-                    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                      <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                      <div className="flex items-center justify-between pb-4 border-b border-border">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center ring-1 ring-primary/30 shadow-inner">
                             <Store className="h-5 w-5" />
                           </div>
                           <div>
-                            <h2 className="text-base font-bold text-white flex items-center gap-2">
+                            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                               Profil Barbershop
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                                 OUTLET AKTIF
                               </span>
                             </h2>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-muted-foreground">
                               Informasi identitas outlet yang ditampilkan kepada pelanggan
                             </p>
                           </div>
@@ -591,9 +591,9 @@ function OwnerSettingsPage() {
                       <div className="space-y-4 text-xs">
                         {/* Nama Barbershop */}
                         <div>
-                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                            <Building2 className="h-3.5 w-3.5 text-blue-400" />
-                            Nama Barbershop <span className="text-rose-400">*</span>
+                          <label className="text-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                            Nama Barbershop <span className="text-rose-500">*</span>
                           </label>
                           <input
                             type="text"
@@ -601,9 +601,9 @@ function OwnerSettingsPage() {
                             value={namaBarbershop}
                             onChange={(e) => setNamaBarbershop(e.target.value)}
                             placeholder="Masukkan nama barbershop..."
-                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
+                            className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                           />
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-muted-foreground mt-1">
                             Nama ini akan muncul pada judul nota/struk, sistem booking, dan header
                             aplikasi.
                           </p>
@@ -611,8 +611,8 @@ function OwnerSettingsPage() {
 
                         {/* No HP / WhatsApp Outlet */}
                         <div>
-                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                            <Phone className="h-3.5 w-3.5 text-emerald-400" />
+                          <label className="text-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                            <Phone className="h-3.5 w-3.5 text-emerald-500" />
                             Nomor Telepon / WhatsApp Outlet
                           </label>
                           <input
@@ -620,9 +620,9 @@ function OwnerSettingsPage() {
                             value={noHpBarbershop}
                             onChange={(e) => setNoHpBarbershop(e.target.value)}
                             placeholder="Contoh: 0812-3456-7890"
-                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
+                            className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                           />
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-muted-foreground mt-1">
                             Nomor kontak untuk konfirmasi booking dan layanan pelanggan.
                           </p>
                         </div>
@@ -630,8 +630,8 @@ function OwnerSettingsPage() {
                         {/* Alamat Outlet & Titik Lokasi Maps */}
                         <div className="space-y-3">
                           <div>
-                            <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                              <MapPin className="h-3.5 w-3.5 text-rose-400" />
+                            <label className="text-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-rose-500" />
                               Alamat Outlet Barbershop
                             </label>
                             <textarea
@@ -639,7 +639,7 @@ function OwnerSettingsPage() {
                               value={alamat}
                               onChange={(e) => setAlamat(e.target.value)}
                               placeholder="Alamat lengkap lokasi fisik outlet..."
-                              className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm resize-none"
+                              className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm resize-none"
                             />
                           </div>
 
@@ -657,14 +657,14 @@ function OwnerSettingsPage() {
                         </div>
 
                         {/* Jam Operasional */}
-                        <div className="pt-2 border-t border-slate-800/80">
-                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-2.5">
-                            <Clock className="h-3.5 w-3.5 text-amber-400" />
+                        <div className="pt-2 border-t border-border">
+                          <label className="text-foreground font-semibold flex items-center gap-1.5 mb-2.5">
+                            <Clock className="h-3.5 w-3.5 text-amber-500" />
                             Jam Operasional Harian
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            <div className="bg-[#14233D] border border-slate-700/80 rounded-xl p-3">
-                              <span className="text-[11px] text-slate-400 block mb-1 font-medium">
+                            <div className="bg-muted/30 border border-border rounded-xl p-3">
+                              <span className="text-[11px] text-muted-foreground block mb-1 font-medium">
                                 Jam Buka
                               </span>
                               <div className="flex items-center gap-2">
@@ -672,14 +672,14 @@ function OwnerSettingsPage() {
                                   type="time"
                                   value={jamBuka.replace(" WIB", "")}
                                   onChange={(e) => setJamBuka(e.target.value)}
-                                  className="w-full bg-[#0F1D33] border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
                                 />
-                                <span className="text-xs font-semibold text-slate-400">WIB</span>
+                                <span className="text-xs font-semibold text-muted-foreground">WIB</span>
                               </div>
                             </div>
 
-                            <div className="bg-[#14233D] border border-slate-700/80 rounded-xl p-3">
-                              <span className="text-[11px] text-slate-400 block mb-1 font-medium">
+                            <div className="bg-muted/30 border border-border rounded-xl p-3">
+                              <span className="text-[11px] text-muted-foreground block mb-1 font-medium">
                                 Jam Tutup
                               </span>
                               <div className="flex items-center gap-2">
@@ -687,9 +687,9 @@ function OwnerSettingsPage() {
                                   type="time"
                                   value={jamTutup.replace(" WIB", "")}
                                   onChange={(e) => setJamTutup(e.target.value)}
-                                  className="w-full bg-[#0F1D33] border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
                                 />
-                                <span className="text-xs font-semibold text-slate-400">WIB</span>
+                                <span className="text-xs font-semibold text-muted-foreground">WIB</span>
                               </div>
                             </div>
                           </div>
@@ -698,26 +698,26 @@ function OwnerSettingsPage() {
                     </div>
 
                     {/* Card: Live Preview Tampilan Publik */}
-                    <div className="bg-gradient-to-br from-[#0F1D33] to-[#122340] border border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                           Preview Tampilan Pelanggan
                         </span>
-                        <span className="text-[11px] text-slate-400">Live Preview</span>
+                        <span className="text-[11px] text-muted-foreground">Live Preview</span>
                       </div>
 
-                      <div className="bg-[#0B1526] border border-slate-700/60 rounded-xl p-4 space-y-2">
+                      <div className="bg-muted/40 border border-border rounded-xl p-4 space-y-2">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-white text-sm">
+                          <h4 className="font-bold text-foreground text-sm">
                             {namaBarbershop || "Nama Barbershop"}
                           </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                             BUKA: {jamBuka} - {jamTutup}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 flex items-start gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                           <span>{alamat || "Belum ada alamat diisi"}</span>
                         </p>
                         {location.latitude && location.longitude ? (
@@ -726,7 +726,7 @@ function OwnerSettingsPage() {
                               href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium transition-colors"
                             >
                               <ExternalLink className="h-3 w-3" />
                               <span>
@@ -737,8 +737,8 @@ function OwnerSettingsPage() {
                           </div>
                         ) : null}
                         {noHpBarbershop && (
-                          <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
-                            <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+                            <Phone className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                             <span>WhatsApp: {noHpBarbershop}</span>
                           </p>
                         )}
@@ -748,17 +748,17 @@ function OwnerSettingsPage() {
 
                   {/* KANAN: Akun Pemilik & Keamanan (5 Cols) */}
                   <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                      <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                      <div className="flex items-center justify-between pb-4 border-b border-border">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center ring-1 ring-purple-500/30 shadow-inner">
+                          <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center ring-1 ring-primary/30 shadow-inner">
                             <ShieldCheck className="h-5 w-5" />
                           </div>
                           <div>
-                            <h2 className="text-base font-bold text-white">Akun Pemilik (Owner)</h2>
-                            <p className="text-xs text-slate-400">
+                            <h2 className="text-base font-bold text-foreground">Akun Pemilik (Owner)</h2>
+                            <p className="text-xs text-muted-foreground">
                               Kredensial login & data profil pemilik
                             </p>
                           </div>
@@ -768,9 +768,9 @@ function OwnerSettingsPage() {
                       <div className="space-y-4 text-xs">
                         {/* Nama Lengkap Owner */}
                         <div>
-                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                            <User className="h-3.5 w-3.5 text-purple-400" />
-                            Nama Lengkap Pemilik <span className="text-rose-400">*</span>
+                          <label className="text-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                            <User className="h-3.5 w-3.5 text-primary" />
+                            Nama Lengkap Pemilik <span className="text-rose-500">*</span>
                           </label>
                           <input
                             type="text"
@@ -778,20 +778,20 @@ function OwnerSettingsPage() {
                             value={namaLengkap}
                             onChange={(e) => setNamaLengkap(e.target.value)}
                             placeholder="Nama lengkap Anda..."
-                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm"
+                            className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                           />
                         </div>
 
                         {/* Email Owner */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                              <Mail className="h-3.5 w-3.5 text-blue-400" />
-                              Email Login <span className="text-rose-400">*</span>
+                            <label className="text-foreground font-semibold flex items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 text-blue-500" />
+                              Email Login <span className="text-rose-500">*</span>
                             </label>
                             {pendingEmail && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                                 Verifikasi Tertunda
                               </span>
                             )}
@@ -802,9 +802,9 @@ function OwnerSettingsPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="email@barberin.test"
-                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm"
+                            className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                           />
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-muted-foreground mt-1">
                             Perubahan email login memerlukan verifikasi link aman yang dikirim ke
                             email terdaftar Anda.
                           </p>
@@ -812,19 +812,19 @@ function OwnerSettingsPage() {
                           {/* Status Pending Verification Banner */}
                           {pendingEmail && (
                             <div className="mt-2.5 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl space-y-2">
-                              <div className="flex items-start gap-2 text-amber-300">
-                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
+                              <div className="flex items-start gap-2 text-amber-600 dark:text-amber-300">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
                                 <div className="text-xs">
-                                  <p className="font-semibold text-amber-300">
+                                  <p className="font-semibold text-amber-600 dark:text-amber-300">
                                     Menunggu Verifikasi Perubahan Email
                                   </p>
-                                  <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">
+                                  <p className="text-[11px] text-amber-700 dark:text-amber-200/80 mt-0.5 leading-relaxed">
                                     Link verifikasi telah dikirim. Silakan cek email lama (
-                                    <span className="font-semibold text-white">
+                                    <span className="font-semibold text-foreground">
                                       {savedData?.owner.email}
                                     </span>
                                     ) dan email baru (
-                                    <span className="font-semibold text-white">{pendingEmail}</span>
+                                    <span className="font-semibold text-foreground">{pendingEmail}</span>
                                     ) untuk mengonfirmasi perubahan alamat email.
                                   </p>
                                 </div>
@@ -834,7 +834,7 @@ function OwnerSettingsPage() {
                                   type="button"
                                   onClick={handleResendEmailVerification}
                                   disabled={isResendingEmail}
-                                  className="text-amber-300 hover:text-amber-200 font-semibold underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                  className="text-amber-600 dark:text-amber-300 hover:underline font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                 >
                                   <RefreshCw
                                     className={`h-3 w-3 ${isResendingEmail ? "animate-spin" : ""}`}
@@ -844,7 +844,7 @@ function OwnerSettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => setPendingEmail(null)}
-                                  className="text-slate-400 hover:text-slate-300 transition-colors cursor-pointer"
+                                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                 >
                                   Batalkan Permintaan
                                 </button>
@@ -855,8 +855,8 @@ function OwnerSettingsPage() {
 
                         {/* No HP Owner */}
                         <div>
-                          <label className="text-slate-300 font-semibold flex items-center gap-1.5 mb-1.5">
-                            <Phone className="h-3.5 w-3.5 text-emerald-400" />
+                          <label className="text-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                            <Phone className="h-3.5 w-3.5 text-emerald-500" />
                             Nomor Telepon Pribadi
                           </label>
                           <input
@@ -864,20 +864,20 @@ function OwnerSettingsPage() {
                             value={noHpOwner}
                             onChange={(e) => setNoHpOwner(e.target.value)}
                             placeholder="Contoh: 0812-3456-7890"
-                            className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm"
+                            className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                           />
                         </div>
 
                         {/* Ganti Password */}
-                        <div className="pt-2 border-t border-slate-800/80">
+                        <div className="pt-2 border-t border-border">
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                              <Lock className="h-3.5 w-3.5 text-amber-400" />
+                            <label className="text-foreground font-semibold flex items-center gap-1.5">
+                              <Lock className="h-3.5 w-3.5 text-amber-500" />
                               Ganti Password Baru
                             </label>
                             {hasPendingPasswordVerification && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
                                 Verifikasi Terkirim
                               </span>
                             )}
@@ -888,12 +888,12 @@ function OwnerSettingsPage() {
                               value={newPassword}
                               onChange={(e) => setNewPassword(e.target.value)}
                               placeholder="Biarkan kosong jika tidak ganti"
-                              className="w-full px-3.5 py-2.5 pr-10 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm"
+                              className="w-full px-3.5 py-2.5 pr-10 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                             >
                               {showPassword ? (
                                 <EyeOff className="h-4 w-4" />
@@ -902,7 +902,7 @@ function OwnerSettingsPage() {
                               )}
                             </button>
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-muted-foreground mt-1">
                             Minimal 6 karakter. Password tidak langsung aktif saat tombol Simpan
                             ditekan, melainkan diverifikasi melalui link yang dikirim ke email
                             terdaftar Anda.
@@ -911,16 +911,16 @@ function OwnerSettingsPage() {
                           {/* Status Pending Password Verification Banner */}
                           {hasPendingPasswordVerification && (
                             <div className="mt-2.5 p-3 bg-blue-500/10 border border-blue-500/25 rounded-xl space-y-1.5">
-                              <div className="flex items-start gap-2 text-blue-300">
-                                <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-blue-400" />
+                              <div className="flex items-start gap-2 text-blue-600 dark:text-blue-300">
+                                <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-blue-500" />
                                 <div className="text-xs">
-                                  <p className="font-semibold text-blue-300">
+                                  <p className="font-semibold text-blue-600 dark:text-blue-300">
                                     Verifikasi Keamanan Password Terkirim
                                   </p>
-                                  <p className="text-[11px] text-blue-200/80 mt-0.5 leading-relaxed">
+                                  <p className="text-[11px] text-blue-700 dark:text-blue-200/80 mt-0.5 leading-relaxed">
                                     Tautan verifikasi keamanan telah dikirim ke email terdaftar Anda
                                     (
-                                    <span className="font-semibold text-white">
+                                    <span className="font-semibold text-foreground">
                                       {savedData?.owner.email}
                                     </span>
                                     ). Password baru belum aktif sampai Anda membuka email dan
@@ -946,25 +946,25 @@ function OwnerSettingsPage() {
         {/* Modal Konfirmasi Keamanan (Re-authentication) */}
         {isReauthModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center ring-1 ring-purple-500/30 shadow-inner">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center ring-1 ring-primary/30 shadow-inner">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Konfirmasi Keamanan Owner</h3>
-                  <p className="text-xs text-slate-400">Verifikasi identitas pemilik akun</p>
+                  <h3 className="text-sm font-bold text-foreground">Konfirmasi Keamanan Owner</h3>
+                  <p className="text-xs text-muted-foreground">Verifikasi identitas pemilik akun</p>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Untuk mengajukan pergantian email login ke{" "}
-                <span className="font-semibold text-blue-400">{pendingEmailTarget}</span>, masukkan
+                <span className="font-semibold text-primary">{pendingEmailTarget}</span>, masukkan
                 kata sandi akun Owner Anda saat ini.
               </p>
 
               {reauthError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/25 rounded-xl text-rose-300 text-xs flex items-start gap-2">
+                <div className="p-3 bg-rose-500/10 border border-rose-500/25 rounded-xl text-rose-600 dark:text-rose-300 text-xs flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>{reauthError}</span>
                 </div>
@@ -972,9 +972,9 @@ function OwnerSettingsPage() {
 
               <form onSubmit={handleReauthSubmit} className="space-y-4">
                 <div className="space-y-1.5 text-xs">
-                  <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                    <Lock className="h-3.5 w-3.5 text-purple-400" />
-                    Password Saat Ini <span className="text-rose-400">*</span>
+                  <label className="text-foreground font-semibold flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5 text-primary" />
+                    Password Saat Ini <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -983,12 +983,12 @@ function OwnerSettingsPage() {
                       value={currentPasswordInput}
                       onChange={(e) => setCurrentPasswordInput(e.target.value)}
                       placeholder="Masukkan password Anda saat ini..."
-                      className="w-full px-3.5 py-2.5 pr-10 bg-[#14233D] border border-slate-700/80 rounded-xl text-white font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+                      className="w-full px-3.5 py-2.5 pr-10 bg-background border border-input rounded-xl text-foreground font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowReauthPassword(!showReauthPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showReauthPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1007,14 +1007,14 @@ function OwnerSettingsPage() {
                       setCurrentPasswordInput("");
                       setReauthError(null);
                     }}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={isReauthing || !currentPasswordInput}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-lg shadow-purple-600/20"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-lg shadow-primary/20"
                   >
                     {isReauthing ? (
                       <>

@@ -47,10 +47,10 @@ function OwnerDashboardError({ error, reset }: { error: Error; reset: () => void
           <AlertCircle className="h-6 w-6" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight">
+          <h2 className="text-lg font-bold text-foreground tracking-tight">
             Dashboard Tidak Dapat Dimuat
           </h2>
-          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
             {error?.message || "Terjadi kendala saat memuat data dashboard Owner. Sesi mungkin telah berakhir atau belum terverifikasi."}
           </p>
         </div>
@@ -61,7 +61,7 @@ function OwnerDashboardError({ error, reset }: { error: Error; reset: () => void
               router.invalidate();
               reset();
             }}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors shadow-xs"
+            className="px-4 py-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors shadow-xs"
           >
             Muat Ulang
           </button>
@@ -215,11 +215,11 @@ function OwnerDashboardPage() {
           {/* Dashboard Title & Filter Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 Dashboard
               </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                <span className="text-slate-200 font-medium">Selamat datang, Owner 👋</span>{" "}
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="text-foreground font-medium">Selamat datang, Owner 👋</span>{" "}
                 — Berikut ringkasan kondisi barbershop Anda {metrics?.periodLabel?.toLowerCase() ?? "hari ini"}.
               </p>
             </div>
@@ -230,11 +230,11 @@ function OwnerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                  className="flex items-center gap-2 px-3.5 py-2 bg-[#0F1D33] border border-slate-700/80 rounded-xl text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-xs"
+                  className="flex items-center gap-2 px-3.5 py-2 bg-card border border-border rounded-xl text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-xs"
                 >
-                  <Calendar className="h-4 w-4 text-blue-400" />
+                  <Calendar className="h-4 w-4 text-primary" />
                   <span>{metrics?.periodLabel || "Hari ini"}</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
 
                 {isFilterDropdownOpen && (
@@ -243,7 +243,7 @@ function OwnerDashboardPage() {
                       className="fixed inset-0 z-20"
                       onClick={() => setIsFilterDropdownOpen(false)}
                     />
-                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-44 bg-[#0F1D33] border border-slate-700 rounded-xl shadow-2xl py-1 z-30 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-44 bg-card border border-border rounded-xl shadow-2xl py-1 z-30 animate-in fade-in zoom-in-95 duration-150 text-card-foreground">
                       {periodOptions.map((opt) => (
                         <button
                           key={opt.key}
@@ -252,7 +252,7 @@ function OwnerDashboardPage() {
                           className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors ${
                             activePeriod === opt.key
                               ? "bg-primary text-primary-foreground font-semibold"
-                              : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           {opt.label}
@@ -263,10 +263,10 @@ function OwnerDashboardPage() {
                 )}
               </div>
 
-              <div className="text-xs text-slate-400 font-medium hidden md:flex items-center gap-1.5">
+              <div className="text-xs text-muted-foreground font-medium hidden md:flex items-center gap-1.5">
                 {activePeriod === "today" ? (
                   <>
-                    <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span>
                       {formatWibClock(liveClock, {
                         withSeconds: false,
@@ -285,7 +285,7 @@ function OwnerDashboardPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-between gap-3 text-rose-300 text-xs">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-between gap-3 text-rose-500 dark:text-rose-300 text-xs">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
@@ -307,15 +307,15 @@ function OwnerDashboardPage() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-32 bg-[#0F1D33]/60 rounded-2xl border border-slate-800"
+                    className="h-32 bg-muted/60 rounded-2xl border border-border"
                   />
                 ))}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                <div className="lg:col-span-7 h-72 bg-[#0F1D33]/60 rounded-2xl border border-slate-800" />
-                <div className="lg:col-span-5 h-72 bg-[#0F1D33]/60 rounded-2xl border border-slate-800" />
+                <div className="lg:col-span-7 h-72 bg-muted/60 rounded-2xl border border-border" />
+                <div className="lg:col-span-5 h-72 bg-muted/60 rounded-2xl border border-border" />
               </div>
-              <div className="h-80 bg-[#0F1D33]/60 rounded-2xl border border-slate-800" />
+              <div className="h-80 bg-muted/60 rounded-2xl border border-border" />
             </div>
           ) : metrics ? (
             <>

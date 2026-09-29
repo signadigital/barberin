@@ -119,17 +119,17 @@ function OwnerServicesPage() {
   // Custom Wireframe Success Toast (Dark Mode Themed)
   const showCustomToast = (title: string, message: string) => {
     toast.custom((id) => (
-      <div className="bg-[#0F1D33] border border-emerald-500/40 text-slate-100 rounded-2xl p-4 shadow-2xl flex items-start gap-3 w-full max-w-sm backdrop-blur-md animate-in fade-in slide-in-from-top-2">
-        <div className="h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+      <div className="bg-card border border-border text-card-foreground rounded-2xl p-4 shadow-2xl flex items-start gap-3 w-full max-w-sm backdrop-blur-md animate-in fade-in slide-in-from-top-2">
+        <div className="h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
           <CheckCircle2 className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-bold text-white">{title}</div>
-          <div className="text-[11px] text-slate-300 mt-0.5 truncate">{message}</div>
+          <div className="text-xs font-bold text-foreground">{title}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{message}</div>
         </div>
         <button
           onClick={() => toast.dismiss(id)}
-          className="text-slate-400 hover:text-white p-1 -mr-1"
+          className="text-muted-foreground hover:text-foreground p-1 -mr-1"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -398,23 +398,23 @@ function OwnerServicesPage() {
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-5 pb-32 lg:pb-12 max-w-[1600px] w-full mx-auto">
           {/* Page Title & Subtitle */}
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
               Manajemen Layanan
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Kelola layanan barbershop, harga, dan status layanan.
             </p>
           </div>
 
-          {/* Main Dark Card Container */}
-          <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl shadow-sm p-4 sm:p-6 space-y-5">
+          {/* Main Card Container */}
+          <div className="bg-card border border-border rounded-2xl shadow-sm p-4 sm:p-6 space-y-5 text-card-foreground">
             {/* Top Bar: Search, Filter, & Tambah Layanan */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               {/* Search & Filter Group */}
               <div className="flex items-center gap-2.5 flex-1 max-w-lg">
                 {/* Search Input */}
                 <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Cari nama layanan..."
@@ -423,13 +423,13 @@ function OwnerServicesPage() {
                       setSearchQuery(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full pl-10 pr-8 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all shadow-inner font-medium"
+                    className="w-full pl-10 pr-8 py-2.5 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner font-medium"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-0.5"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -443,13 +443,13 @@ function OwnerServicesPage() {
                     onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                     className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all shadow-sm ${
                       selectedCategory !== "all" || selectedStatus !== "all"
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "bg-[#14233D] border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-700/50"
+                        ? "bg-primary/15 border-primary/40 text-primary"
+                        : "bg-background border-input text-foreground hover:bg-muted"
                     }`}
                   >
-                    <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+                    <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
                     <span className="hidden sm:inline">Filter</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
 
                   {/* Filter Popover Menu */}
@@ -488,7 +488,7 @@ function OwnerServicesPage() {
                               className={`py-1.5 px-2 rounded-lg font-medium text-center transition-all ${
                                 selectedStatus === st
                                   ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                                  : "bg-[#14233D] text-slate-400 hover:text-white border border-slate-700/60"
+                                  : "bg-background text-muted-foreground hover:text-foreground border border-border"
                               }`}
                             >
                               {st === "all" ? "Semua" : st === "active" ? "Aktif" : "Nonaktif"}
@@ -512,7 +512,7 @@ function OwnerServicesPage() {
                             className={`py-1 px-2.5 rounded-lg text-xs font-medium transition-all ${
                               selectedCategory === "all"
                                 ? "bg-primary text-primary-foreground font-semibold"
-                                : "bg-[#14233D] text-slate-300 hover:text-white border border-slate-700/60"
+                                : "bg-background text-muted-foreground hover:text-foreground border border-border"
                             }`}
                           >
                             Semua Kategori
@@ -528,7 +528,7 @@ function OwnerServicesPage() {
                               className={`py-1 px-2.5 rounded-lg text-xs font-medium transition-all ${
                                 selectedCategory === cat
                                   ? "bg-primary text-primary-foreground font-semibold"
-                                  : "bg-[#14233D] text-slate-300 hover:text-white border border-slate-700/60"
+                                  : "bg-background text-muted-foreground hover:text-foreground border border-border"
                               }`}
                             >
                               {cat}
@@ -589,7 +589,7 @@ function OwnerServicesPage() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                         <th className="py-3.5 px-3 w-12 text-center">No.</th>
                         <th className="py-3.5 px-4">Nama Layanan</th>
                         <th className="py-3.5 px-4 w-28">Kategori</th>
@@ -601,7 +601,7 @@ function OwnerServicesPage() {
                         <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-xs">
+                    <tbody className="divide-y divide-border text-xs">
                       {paginatedServices.map((service, index) => {
                         const category = getServiceCategory(service);
                         const isUsed = service.usageCount > 0;
@@ -610,29 +610,29 @@ function OwnerServicesPage() {
                         return (
                           <tr
                             key={service.id_layanan}
-                            className="hover:bg-slate-800/30 transition-colors group"
+                            className="hover:bg-muted/50 transition-colors group"
                           >
                             {/* No. */}
-                            <td className="py-3.5 px-3 text-center text-slate-400 font-medium">
+                            <td className="py-3.5 px-3 text-center text-muted-foreground font-medium">
                               {rowNumber}
                             </td>
 
                             {/* Nama Layanan (Tanpa Foto) */}
                             <td className="py-3.5 px-4">
-                              <span className="font-bold text-white text-sm">
+                              <span className="font-bold text-foreground text-sm">
                                 {service.nama_layanan}
                               </span>
                             </td>
 
                             {/* Kategori Badge */}
                             <td className="py-3.5 px-4">
-                              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                                 {category}
                               </span>
                             </td>
 
                             {/* Deskripsi */}
-                            <td className="py-3.5 px-4 text-slate-400 text-xs max-w-xs leading-relaxed">
+                            <td className="py-3.5 px-4 text-muted-foreground text-xs max-w-xs leading-relaxed">
                               <span className="line-clamp-2">
                                 {service.deskripsi || "—"}
                               </span>
@@ -640,32 +640,32 @@ function OwnerServicesPage() {
 
                             {/* Waktu Pelayanan */}
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-                                <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                                <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                                 <span>{service.durasi_menit} menit</span>
                               </div>
                             </td>
 
                             {/* Harga */}
-                            <td className="py-3.5 px-4 font-bold text-white text-sm whitespace-nowrap">
+                            <td className="py-3.5 px-4 font-bold text-foreground text-sm whitespace-nowrap">
                               {formatRupiah(service.harga)}
                             </td>
 
                             {/* Status */}
                             <td className="py-3.5 px-4 text-center">
                               {service.status === "active" ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                                   Aktif
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
                                   Nonaktif
                                 </span>
                               )}
                             </td>
 
                             {/* Digunakan */}
-                            <td className="py-3.5 px-4 text-center text-slate-300 font-medium">
+                            <td className="py-3.5 px-4 text-center text-muted-foreground font-medium">
                               {isUsed ? "Ya" : "Tidak"}
                             </td>
 
@@ -675,7 +675,7 @@ function OwnerServicesPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenDetailModal(service)}
-                                  className="px-3 py-1 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-semibold text-xs transition-colors shadow-sm"
+                                  className="px-3 py-1 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs transition-colors shadow-xs"
                                 >
                                   Lihat
                                 </button>
@@ -690,19 +690,19 @@ function OwnerServicesPage() {
                                           : service.id_layanan,
                                       )
                                     }
-                                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                                    className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                   >
                                     <MoreVertical className="h-4 w-4" />
                                   </button>
 
                                   {activeMenuId === service.id_layanan && (
-                                    <div className="absolute right-0 mt-1 w-40 bg-[#14233D] border border-slate-700 rounded-xl shadow-2xl z-20 py-1 text-xs animate-in fade-in zoom-in-95 text-slate-200">
+                                    <div className="absolute right-0 mt-1 w-40 bg-card border border-border rounded-xl shadow-2xl z-20 py-1 text-xs animate-in fade-in zoom-in-95 text-card-foreground">
                                       <button
                                         type="button"
                                         onClick={() => handleOpenEditModal(service)}
-                                        className="w-full px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-700/60 flex items-center gap-2"
+                                        className="w-full px-3 py-2 text-left font-medium text-foreground hover:bg-muted flex items-center gap-2"
                                       >
-                                        <Pencil className="h-3.5 w-3.5 text-blue-400" />
+                                        <Pencil className="h-3.5 w-3.5 text-primary" />
                                         <span>Edit Layanan</span>
                                       </button>
                                       <button
@@ -711,16 +711,16 @@ function OwnerServicesPage() {
                                           setActiveMenuId(null);
                                           setDeactivatingService(service);
                                         }}
-                                        className="w-full px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-700/60 flex items-center gap-2"
+                                        className="w-full px-3 py-2 text-left font-medium text-foreground hover:bg-muted flex items-center gap-2"
                                       >
                                         {service.status === "active" ? (
                                           <>
-                                            <PowerOff className="h-3.5 w-3.5 text-amber-400" />
+                                            <PowerOff className="h-3.5 w-3.5 text-amber-500" />
                                             <span>Nonaktifkan</span>
                                           </>
                                         ) : (
                                           <>
-                                            <Power className="h-3.5 w-3.5 text-emerald-400" />
+                                            <Power className="h-3.5 w-3.5 text-emerald-500" />
                                             <span>Aktifkan</span>
                                           </>
                                         )}
@@ -731,9 +731,9 @@ function OwnerServicesPage() {
                                           setActiveMenuId(null);
                                           setDeletingService(service);
                                         }}
-                                        className="w-full px-3 py-2 text-left font-medium text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 border-t border-slate-700/60"
+                                        className="w-full px-3 py-2 text-left font-medium text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 border-t border-border"
                                       >
-                                        <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                                        <Trash2 className="h-3.5 w-3.5 text-rose-500" />
                                         <span>Hapus</span>
                                       </button>
                                     </div>
@@ -756,26 +756,26 @@ function OwnerServicesPage() {
                     return (
                       <div
                         key={service.id_layanan}
-                        className="bg-[#14233D] rounded-2xl p-4 border border-slate-700/80 shadow-sm flex items-center justify-between gap-3 relative transition-all hover:border-slate-600 action-menu-container"
+                        className="bg-card rounded-2xl p-4 border border-border shadow-xs flex items-center justify-between gap-3 relative transition-all hover:border-primary/40 action-menu-container text-card-foreground"
                       >
                         {/* Center Info (click opens detail) */}
                         <div
                           className="flex-1 min-w-0 cursor-pointer"
                           onClick={() => handleOpenDetailModal(service)}
                         >
-                          <h4 className="font-bold text-white text-sm leading-snug truncate">
+                          <h4 className="font-bold text-foreground text-sm leading-snug truncate">
                             {service.nama_layanan}
                           </h4>
                           <div className="mt-1 flex items-center gap-2 flex-wrap">
-                            <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                            <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
                               {category}
                             </span>
-                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-300 font-medium">
-                              <Clock className="h-3 w-3 text-slate-400" />
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
                               <span>{service.durasi_menit} menit</span>
                             </span>
                           </div>
-                          <div className="font-bold text-white text-sm mt-1.5">
+                          <div className="font-bold text-foreground text-sm mt-1.5">
                             {formatRupiah(service.harga)}
                           </div>
                         </div>
@@ -793,27 +793,27 @@ function OwnerServicesPage() {
                                     : service.id_layanan,
                                 )
                               }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                             >
                               <MoreVertical className="h-4 w-4" />
                             </button>
 
                             {activeMenuId === service.id_layanan && (
-                              <div className="absolute right-0 mt-1 w-40 bg-[#0F1D33] border border-slate-700 rounded-xl shadow-2xl z-20 py-1 text-xs animate-in fade-in zoom-in-95 text-slate-200">
+                              <div className="absolute right-0 mt-1 w-40 bg-card border border-border rounded-xl shadow-2xl z-20 py-1 text-xs animate-in fade-in zoom-in-95 text-card-foreground">
                                 <button
                                   type="button"
                                   onClick={() => handleOpenDetailModal(service)}
-                                  className="w-full px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-700/60 flex items-center gap-2"
+                                  className="w-full px-3 py-2 text-left font-medium text-foreground hover:bg-muted flex items-center gap-2"
                                 >
-                                  <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
                                   <span>Lihat Detail</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditModal(service)}
-                                  className="w-full px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-700/60 flex items-center gap-2"
+                                  className="w-full px-3 py-2 text-left font-medium text-foreground hover:bg-muted flex items-center gap-2"
                                 >
-                                  <Pencil className="h-3.5 w-3.5 text-blue-400" />
+                                  <Pencil className="h-3.5 w-3.5 text-primary" />
                                   <span>Edit Layanan</span>
                                 </button>
                                 <button
@@ -822,16 +822,16 @@ function OwnerServicesPage() {
                                     setActiveMenuId(null);
                                     setDeactivatingService(service);
                                   }}
-                                  className="w-full px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-700/60 flex items-center gap-2"
+                                  className="w-full px-3 py-2 text-left font-medium text-foreground hover:bg-muted flex items-center gap-2"
                                 >
                                   {service.status === "active" ? (
                                     <>
-                                      <PowerOff className="h-3.5 w-3.5 text-amber-400" />
+                                      <PowerOff className="h-3.5 w-3.5 text-amber-500" />
                                       <span>Nonaktifkan</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Power className="h-3.5 w-3.5 text-emerald-400" />
+                                      <Power className="h-3.5 w-3.5 text-emerald-500" />
                                       <span>Aktifkan</span>
                                     </>
                                   )}
@@ -842,9 +842,9 @@ function OwnerServicesPage() {
                                     setActiveMenuId(null);
                                     setDeletingService(service);
                                   }}
-                                  className="w-full px-3 py-2 text-left font-medium text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 border-t border-slate-700/60"
+                                  className="w-full px-3 py-2 text-left font-medium text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 border-t border-border"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-500" />
                                   <span>Hapus</span>
                                 </button>
                               </div>
@@ -853,11 +853,11 @@ function OwnerServicesPage() {
 
                           {/* Status Pill Badge */}
                           {service.status === "active" ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                               Aktif
                             </span>
                           ) : (
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
                               Nonaktif
                             </span>
                           )}
@@ -880,14 +880,14 @@ function OwnerServicesPage() {
                 </div>
 
                 {/* 3. PAGINATION FOOTER */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800/80 text-xs text-slate-400">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border text-xs text-muted-foreground">
                   <div>
                     Menampilkan{" "}
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-foreground">
                       {totalItems === 0 ? 0 : startIndex + 1} -{" "}
                       {Math.min(startIndex + pageSize, totalItems)}
                     </span>{" "}
-                    dari <span className="font-semibold text-white">{totalItems}</span> data
+                    dari <span className="font-semibold text-foreground">{totalItems}</span> data
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -896,7 +896,7 @@ function OwnerServicesPage() {
                       type="button"
                       disabled={validPage <= 1}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className="p-1.5 rounded-lg border border-slate-700 bg-[#14233D] text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="p-1.5 rounded-lg border border-input bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -909,8 +909,8 @@ function OwnerServicesPage() {
                         onClick={() => setCurrentPage(pg)}
                         className={`h-8 w-8 rounded-lg font-bold text-xs transition-all ${
                           validPage === pg
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "border border-slate-700 bg-[#14233D] text-slate-300 hover:bg-slate-700"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "border border-input bg-background text-foreground hover:bg-muted"
                         }`}
                       >
                         {pg}
@@ -922,7 +922,7 @@ function OwnerServicesPage() {
                       type="button"
                       disabled={validPage >= totalPages}
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className="p-1.5 rounded-lg border border-slate-700 bg-[#14233D] text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="p-1.5 rounded-lg border border-input bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -935,13 +935,13 @@ function OwnerServicesPage() {
                           setPageSize(Number(e.target.value));
                           setCurrentPage(1);
                         }}
-                        className="appearance-none bg-[#14233D] border border-slate-700 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-200 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                        className="appearance-none bg-background border border-input rounded-lg pl-3 pr-7 py-1.5 text-xs text-foreground font-medium focus:outline-hidden focus:border-primary cursor-pointer"
                       >
                         <option value={5}>5 per halaman</option>
                         <option value={10}>10 per halaman</option>
                         <option value={20}>20 per halaman</option>
                       </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                     </div>
                   </div>
                 </div>
@@ -955,27 +955,27 @@ function OwnerServicesPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: TAMBAH LAYANAN (Dark Mode, Otomatis Titik Harga, Tanpa Foto) */}
+      {/* MODAL 1: TAMBAH LAYANAN */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto animate-in fade-in">
-          <div className="bg-[#0F1D33] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-700/80 overflow-hidden my-auto animate-in zoom-in-95 text-white">
+          <div className="bg-card rounded-3xl w-full max-w-lg shadow-2xl border border-border overflow-hidden my-auto animate-in zoom-in-95 text-card-foreground">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="sm:hidden -ml-2 p-1 text-slate-400 hover:text-white"
+                  className="sm:hidden -ml-2 p-1 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h3 className="text-base sm:text-lg font-bold text-white">Tambah Layanan</h3>
+                <h3 className="text-base sm:text-lg font-bold text-foreground">Tambah Layanan</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -985,8 +985,8 @@ function OwnerServicesPage() {
             <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 text-xs sm:text-sm">
               {/* Nama Layanan * */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Nama Layanan <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Nama Layanan <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -994,39 +994,39 @@ function OwnerServicesPage() {
                   placeholder="Contoh: Potong Rambut"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium"
                 />
               </div>
 
               {/* Kategori (Opsional) */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-foreground mb-1.5">
                   Kategori (Opsional)
                 </label>
                 <div className="relative">
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full appearance-none px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium cursor-pointer pr-9"
+                    className="w-full appearance-none px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium cursor-pointer pr-9"
                   >
                     <option value="">Pilih kategori</option>
                     {SERVICE_CATEGORIES.map((c) => (
-                      <option key={c} value={c} className="bg-[#0F1D33] text-white">
+                      <option key={c} value={c} className="bg-card text-foreground">
                         {c}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
               {/* Harga * (Format Otomatis Titik) */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Harga <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Harga <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs sm:text-sm">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-xs sm:text-sm">
                     Rp
                   </span>
                   <input
@@ -1039,18 +1039,18 @@ function OwnerServicesPage() {
                       const formatted = formatNumberWithDots(e.target.value);
                       setFormPriceFormatted(formatted);
                     }}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-bold tracking-wide"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1">
                   Format otomatis dengan titik pemisah ribuan (contoh: 50.000).
                 </p>
               </div>
 
               {/* Waktu Pelayanan * */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Waktu Pelayanan <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Waktu Pelayanan <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -1064,14 +1064,14 @@ function OwnerServicesPage() {
                       const val = parseInt(e.target.value, 10);
                       setFormDuration(isNaN(val) ? 0 : val);
                     }}
-                    className="w-full pl-3.5 pr-20 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                    className="w-full pl-3.5 pr-20 py-2.5 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-bold tracking-wide"
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Menit</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1">
                   Durasi fisik pengerjaan layanan dalam satuan menit (contoh: 30 menit).
                 </p>
               </div>
@@ -1079,10 +1079,10 @@ function OwnerServicesPage() {
               {/* Deskripsi * */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-300">
-                    Deskripsi <span className="text-rose-400">*</span>
+                  <label className="text-xs font-bold text-foreground">
+                    Deskripsi <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-400 font-medium">
+                  <span className="text-[11px] text-muted-foreground font-medium">
                     {formDesc.length}/500
                   </span>
                 </div>
@@ -1092,13 +1092,13 @@ function OwnerServicesPage() {
                   placeholder="Jelaskan detail layanan, misalnya termasuk apa saja, produk yang digunakan, dll."
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium resize-none"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium resize-none"
                 />
               </div>
 
               {/* Status Switch */}
               <div className="pt-2">
-                <label className="block text-xs font-bold text-slate-300 mb-2">Status</label>
+                <label className="block text-xs font-bold text-foreground mb-2">Status</label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -1107,8 +1107,8 @@ function OwnerServicesPage() {
                     onClick={() =>
                       setFormStatus((s) => (s === "active" ? "inactive" : "active"))
                     }
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formStatus === "active" ? "bg-primary" : "bg-slate-700"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      formStatus === "active" ? "bg-primary" : "bg-muted"
                     }`}
                   >
                     <span
@@ -1117,19 +1117,19 @@ function OwnerServicesPage() {
                       }`}
                     />
                   </button>
-                  <span className="text-xs font-semibold text-slate-300">
+                  <span className="text-xs font-semibold text-foreground">
                     {formStatus === "active" ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
               </div>
 
               {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 font-semibold text-xs sm:text-sm hover:bg-slate-700 hover:text-white transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-border bg-muted/60 text-muted-foreground font-semibold text-xs sm:text-sm hover:bg-muted hover:text-foreground transition-colors"
                 >
                   Batal
                 </button>
@@ -1148,44 +1148,44 @@ function OwnerServicesPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: EDIT LAYANAN (Dark Mode, Otomatis Titik Harga, Tanpa Foto) */}
+      {/* MODAL 2: EDIT LAYANAN */}
       {/* ========================================================================= */}
       {editingService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto animate-in fade-in">
-          <div className="bg-[#0F1D33] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-700/80 overflow-hidden my-auto animate-in zoom-in-95 text-white">
+          <div className="bg-card rounded-3xl w-full max-w-lg shadow-2xl border border-border overflow-hidden my-auto animate-in zoom-in-95 text-card-foreground">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setEditingService(null)}
-                  className="sm:hidden -ml-2 p-1 text-slate-400 hover:text-white"
+                  className="sm:hidden -ml-2 p-1 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h3 className="text-base sm:text-lg font-bold text-white">Edit Layanan</h3>
+                <h3 className="text-base sm:text-lg font-bold text-foreground">Edit Layanan</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingService(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Service Header Info (Tanpa Foto) */}
+            {/* Service Header Info */}
             <div className="px-6 pt-5 pb-1">
-              <div className="p-3.5 rounded-2xl bg-[#14233D] border border-slate-700/60 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-white text-sm">
+                  <h4 className="font-bold text-foreground text-sm">
                     {editingService.nama_layanan}
                   </h4>
-                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
                     {getServiceCategory(editingService)}
                   </span>
                 </div>
-                <div className="font-bold text-white text-sm">
+                <div className="font-bold text-foreground text-sm">
                   {formatRupiah(editingService.harga)}
                 </div>
               </div>
@@ -1195,46 +1195,46 @@ function OwnerServicesPage() {
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4 text-xs sm:text-sm">
               {/* Nama Layanan * */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Nama Layanan <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Nama Layanan <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium"
                 />
               </div>
 
               {/* Kategori (Opsional) */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-foreground mb-1.5">
                   Kategori (Opsional)
                 </label>
                 <div className="relative">
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full appearance-none px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium cursor-pointer pr-9"
+                    className="w-full appearance-none px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium cursor-pointer pr-9"
                   >
                     {SERVICE_CATEGORIES.map((c) => (
-                      <option key={c} value={c} className="bg-[#0F1D33] text-white">
+                      <option key={c} value={c} className="bg-card text-foreground">
                         {c}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
               {/* Harga * (Format Otomatis Titik) */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Harga <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Harga <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs sm:text-sm">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-xs sm:text-sm">
                     Rp
                   </span>
                   <input
@@ -1247,18 +1247,18 @@ function OwnerServicesPage() {
                       const formatted = formatNumberWithDots(e.target.value);
                       setFormPriceFormatted(formatted);
                     }}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-bold tracking-wide"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1">
                   Format otomatis dengan titik pemisah ribuan (contoh: 50.000).
                 </p>
               </div>
 
               {/* Waktu Pelayanan * */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Waktu Pelayanan <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  Waktu Pelayanan <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -1272,14 +1272,14 @@ function OwnerServicesPage() {
                       const val = parseInt(e.target.value, 10);
                       setFormDuration(isNaN(val) ? 0 : val);
                     }}
-                    className="w-full pl-3.5 pr-20 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-bold tracking-wide"
+                    className="w-full pl-3.5 pr-20 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-bold tracking-wide"
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Menit</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1">
                   Durasi fisik pengerjaan layanan dalam satuan menit (contoh: 30 menit).
                 </p>
               </div>
@@ -1287,10 +1287,10 @@ function OwnerServicesPage() {
               {/* Deskripsi * */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-300">
-                    Deskripsi <span className="text-rose-400">*</span>
+                  <label className="text-xs font-bold text-foreground">
+                    Deskripsi <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-400 font-medium">
+                  <span className="text-[11px] text-muted-foreground font-medium">
                     {formDesc.length}/500
                   </span>
                 </div>
@@ -1299,13 +1299,13 @@ function OwnerServicesPage() {
                   maxLength={500}
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#14233D] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all font-medium resize-none"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all font-medium resize-none"
                 />
               </div>
 
               {/* Alert: Perubahan Harga */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-950/40 border border-blue-800/60 text-blue-300 text-xs">
-                <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/10 border border-primary/20 text-foreground text-xs">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
                   Perubahan harga akan digunakan untuk transaksi baru. Transaksi sebelumnya
                   tetap menggunakan harga saat transaksi dibuat.
@@ -1314,7 +1314,7 @@ function OwnerServicesPage() {
 
               {/* Status Switch */}
               <div className="pt-1">
-                <label className="block text-xs font-bold text-slate-300 mb-2">Status</label>
+                <label className="block text-xs font-bold text-foreground mb-2">Status</label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -1323,8 +1323,8 @@ function OwnerServicesPage() {
                     onClick={() =>
                       setFormStatus((s) => (s === "active" ? "inactive" : "active"))
                     }
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formStatus === "active" ? "bg-primary" : "bg-slate-700"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      formStatus === "active" ? "bg-primary" : "bg-muted"
                     }`}
                   >
                     <span
@@ -1333,19 +1333,19 @@ function OwnerServicesPage() {
                       }`}
                     />
                   </button>
-                  <span className="text-xs font-semibold text-slate-300">
+                  <span className="text-xs font-semibold text-foreground">
                     {formStatus === "active" ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
               </div>
 
               {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setEditingService(null)}
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 font-semibold text-xs sm:text-sm hover:bg-slate-700 hover:text-white transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-border bg-muted/60 text-muted-foreground font-semibold text-xs sm:text-sm hover:bg-muted hover:text-foreground transition-colors"
                 >
                   Batal
                 </button>
@@ -1366,25 +1366,28 @@ function OwnerServicesPage() {
       {/* ========================================================================= */}
       {/* MODAL 3: DETAIL LAYANAN (Dark Mode, Tanpa Foto) */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* MODAL 3: DETAIL LAYANAN */}
+      {/* ========================================================================= */}
       {detailService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto animate-in fade-in">
-          <div className="bg-[#0F1D33] rounded-3xl w-full max-w-xl shadow-2xl border border-slate-700/80 overflow-hidden my-auto animate-in zoom-in-95 text-white">
+          <div className="bg-card rounded-3xl w-full max-w-xl shadow-2xl border border-border overflow-hidden my-auto animate-in zoom-in-95 text-card-foreground">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setDetailService(null)}
-                  className="sm:hidden -ml-2 p-1 text-slate-400 hover:text-white"
+                  className="sm:hidden -ml-2 p-1 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h3 className="text-base sm:text-lg font-bold text-white">Detail Layanan</h3>
+                <h3 className="text-base sm:text-lg font-bold text-foreground">Detail Layanan</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setDetailService(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1392,22 +1395,22 @@ function OwnerServicesPage() {
 
             {/* Service Banner (Tanpa Foto) */}
             <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-[#14233D] border border-slate-700/60">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border">
                 <div>
-                  <h4 className="font-bold text-white text-base">
+                  <h4 className="font-bold text-foreground text-base">
                     {detailService.nama_layanan}
                   </h4>
-                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                     {getServiceCategory(detailService)}
                   </span>
                 </div>
 
                 {detailService.status === "active" ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                     Aktif
                   </span>
                 ) : (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
                     Nonaktif
                   </span>
                 )}
@@ -1417,54 +1420,54 @@ function OwnerServicesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm">
                 {/* Kolom 1: Informasi Layanan */}
                 <div className="space-y-3.5">
-                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+                  <h5 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                     Informasi Layanan
                   </h5>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
                       Nama Layanan
                     </span>
-                    <span className="font-bold text-white">{detailService.nama_layanan}</span>
+                    <span className="font-bold text-foreground">{detailService.nama_layanan}</span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <FolderTree className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <FolderTree className="h-3.5 w-3.5 text-primary" />
                       Kategori
                     </span>
-                    <span className="font-medium text-slate-200">
+                    <span className="font-medium text-foreground">
                       {getServiceCategory(detailService)}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <Wallet className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <Wallet className="h-3.5 w-3.5 text-primary" />
                       Harga Saat Ini
                     </span>
-                    <span className="font-bold text-white text-sm">
+                    <span className="font-bold text-foreground text-sm">
                       {formatRupiah(detailService.harga)}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
                       Waktu Pelayanan
                     </span>
-                    <span className="font-bold text-white text-sm">
+                    <span className="font-bold text-foreground text-sm">
                       {detailService.durasi_menit} menit
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <FileText className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-primary" />
                       Deskripsi
                     </span>
-                    <p className="text-slate-300 font-medium leading-relaxed">
+                    <p className="text-foreground font-medium leading-relaxed">
                       {detailService.deskripsi || "Tidak ada deskripsi rinci untuk layanan ini."}
                     </p>
                   </div>
@@ -1472,18 +1475,20 @@ function OwnerServicesPage() {
 
                 {/* Kolom 2: Informasi Penggunaan */}
                 <div className="space-y-3.5">
-                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+                  <h5 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                     Informasi Penggunaan
                   </h5>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                       Status
                     </span>
                     <span
                       className={`font-bold ${
-                        detailService.status === "active" ? "text-emerald-400" : "text-rose-400"
+                        detailService.status === "active"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
                       {detailService.status === "active" ? "Aktif" : "Nonaktif"}
@@ -1491,27 +1496,27 @@ function OwnerServicesPage() {
                   </div>
 
                   <div>
-                    <span className="text-slate-400 text-xs block mb-0.5 flex items-center gap-1.5">
-                      <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-muted-foreground text-xs mb-0.5 flex items-center gap-1.5">
+                      <BarChart3 className="h-3.5 w-3.5 text-primary" />
                       Digunakan dalam Transaksi
                     </span>
-                    <div className="font-bold text-white">
+                    <div className="font-bold text-foreground">
                       {detailService.usageCount > 0 ? (
                         <>
                           Ya{" "}
-                          <span className="text-xs text-slate-400 font-normal">
+                          <span className="text-xs text-muted-foreground font-normal">
                             (Total {detailService.usageCount} transaksi)
                           </span>
                         </>
                       ) : (
-                        <span className="text-slate-400 font-normal">Belum pernah digunakan</span>
+                        <span className="text-muted-foreground font-normal">Belum pernah digunakan</span>
                       )}
                     </div>
                   </div>
 
                   {/* Info Notice Box */}
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-950/40 border border-blue-800/60 text-blue-300 text-xs mt-3">
-                    <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/10 border border-primary/20 text-foreground text-xs mt-3">
+                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
                       {detailService.usageCount > 0
                         ? "Layanan ini sudah pernah digunakan dalam transaksi. Anda tidak dapat menghapus layanan ini, namun dapat menonaktifkan kembali jika diperlukan."
@@ -1522,7 +1527,7 @@ function OwnerServicesPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(detailService)}
@@ -1556,27 +1561,27 @@ function OwnerServicesPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 4: KONFIRMASI NONAKTIFKAN (Dark Mode) */}
+      {/* MODAL 4: KONFIRMASI NONAKTIFKAN */}
       {/* ========================================================================= */}
       {deactivatingService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-[#0F1D33] rounded-3xl w-full max-w-sm shadow-2xl border border-slate-700/80 p-6 text-center space-y-4 animate-in zoom-in-95 text-white">
+          <div className="bg-card rounded-3xl w-full max-w-sm shadow-2xl border border-border p-6 text-center space-y-4 animate-in zoom-in-95 text-card-foreground">
             {/* Warning Icon */}
-            <div className="h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+            <div className="h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center mx-auto">
               <AlertTriangle className="h-8 w-8" />
             </div>
 
             <div>
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-foreground">
                 {deactivatingService.status === "active"
                   ? "Nonaktifkan Layanan?"
                   : "Aktifkan Layanan?"}
               </h3>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 {deactivatingService.status === "active" ? (
                   <>
                     Layanan{" "}
-                    <span className="font-bold text-white">
+                    <span className="font-bold text-foreground">
                       "{deactivatingService.nama_layanan}"
                     </span>{" "}
                     tidak akan tersedia untuk transaksi baru, tetapi data transaksi sebelumnya
@@ -1585,7 +1590,7 @@ function OwnerServicesPage() {
                 ) : (
                   <>
                     Layanan{" "}
-                    <span className="font-bold text-white">
+                    <span className="font-bold text-foreground">
                       "{deactivatingService.nama_layanan}"
                     </span>{" "}
                     akan kembali aktif dan dapat dipilih oleh pelanggan serta capster.
@@ -1599,7 +1604,7 @@ function OwnerServicesPage() {
                 type="button"
                 disabled={submitting}
                 onClick={() => setDeactivatingService(null)}
-                className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 font-semibold text-xs sm:text-sm hover:bg-slate-700 hover:text-white transition-colors"
+                className="w-full py-2.5 rounded-xl border border-input bg-background text-foreground font-semibold text-xs sm:text-sm hover:bg-muted transition-colors"
               >
                 Batal
               </button>
@@ -1627,21 +1632,21 @@ function OwnerServicesPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 5: KONFIRMASI HAPUS (Dark Mode) */}
+      {/* MODAL 5: KONFIRMASI HAPUS */}
       {/* ========================================================================= */}
       {deletingService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-[#0F1D33] rounded-3xl w-full max-w-sm shadow-2xl border border-slate-700/80 p-6 text-center space-y-4 animate-in zoom-in-95 text-white">
+          <div className="bg-card rounded-3xl w-full max-w-sm shadow-2xl border border-border p-6 text-center space-y-4 animate-in zoom-in-95 text-card-foreground">
             {/* Trash Icon */}
-            <div className="h-16 w-16 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+            <div className="h-16 w-16 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center mx-auto">
               <Trash2 className="h-8 w-8" />
             </div>
 
             <div>
-              <h3 className="text-lg font-bold text-white">Hapus Layanan?</h3>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">Hapus Layanan?</h3>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 Apakah Anda yakin ingin menghapus layanan{" "}
-                <span className="font-bold text-white">
+                <span className="font-bold text-foreground">
                   "{deletingService.nama_layanan}"
                 </span>
                 ? Tindakan ini tidak dapat dibatalkan. Layanan hanya dapat dihapus jika belum pernah
@@ -1654,7 +1659,7 @@ function OwnerServicesPage() {
                 type="button"
                 disabled={submitting}
                 onClick={() => setDeletingService(null)}
-                className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 font-semibold text-xs sm:text-sm hover:bg-slate-700 hover:text-white transition-colors"
+                className="w-full py-2.5 rounded-xl border border-input bg-background text-foreground font-semibold text-xs sm:text-sm hover:bg-muted transition-colors"
               >
                 Batal
               </button>

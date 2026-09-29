@@ -252,7 +252,7 @@ export function OwnerDateRangePicker({
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               title="Bulan sebelumnya"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -261,7 +261,7 @@ export function OwnerDateRangePicker({
             <div className="w-8" />
           )}
 
-          <div className="text-sm font-semibold text-white tracking-wide">
+          <div className="text-sm font-semibold text-foreground tracking-wide">
             {MONTH_NAMES[month]} {year}
           </div>
 
@@ -269,7 +269,7 @@ export function OwnerDateRangePicker({
             <button
               type="button"
               onClick={handleNextMonth}
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               title="Bulan berikutnya"
             >
               <ChevronRight className="h-4 w-4" />
@@ -282,7 +282,7 @@ export function OwnerDateRangePicker({
         {/* Weekday Labels */}
         <div className="grid grid-cols-7 mb-1.5 text-center">
           {WEEKDAY_NAMES.map((w, idx) => (
-            <div key={idx} className="text-[11px] font-medium text-slate-400 py-1">
+            <div key={idx} className="text-[11px] font-medium text-muted-foreground py-1">
               {w}
             </div>
           ))}
@@ -318,9 +318,9 @@ export function OwnerDateRangePicker({
               <div
                 key={dayDate.toISOString()}
                 className={`relative flex items-center justify-center h-8 w-full ${
-                  inRange ? "bg-blue-600/25" : ""
-                } ${isRangeStartConnected ? "bg-gradient-to-r from-transparent to-blue-600/25" : ""} ${
-                  isRangeEndConnected ? "bg-gradient-to-l from-transparent to-blue-600/25" : ""
+                  inRange ? "bg-primary/20" : ""
+                } ${isRangeStartConnected ? "bg-gradient-to-r from-transparent to-primary/20" : ""} ${
+                  isRangeEndConnected ? "bg-gradient-to-l from-transparent to-primary/20" : ""
                 }`}
                 onMouseEnter={() => setHoveredDate(dayDate)}
                 onMouseLeave={() => setHoveredDate(null)}
@@ -330,10 +330,10 @@ export function OwnerDateRangePicker({
                   onClick={() => handleDayClick(dayDate)}
                   className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs transition-colors cursor-pointer select-none ${
                     isStart || isEnd
-                      ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30 ring-1 ring-blue-400"
+                      ? "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/30 ring-1 ring-primary/40"
                       : inRange
-                        ? "text-blue-100 font-semibold hover:bg-blue-500/30"
-                        : "text-slate-200 hover:bg-slate-800/80 hover:text-white"
+                        ? "text-primary font-semibold hover:bg-primary/20"
+                        : "text-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   {dayDate.getDate()}
@@ -351,11 +351,11 @@ export function OwnerDateRangePicker({
 
   return (
     <div
-      className="bg-[#0B1528] border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-black/80 text-slate-100 w-full max-w-[660px] max-h-[85vh] overflow-y-auto"
+      className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-2xl text-foreground w-full max-w-[660px] max-h-[85vh] overflow-y-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {/* 2-Month Dual Calendar */}
-      <div className="flex flex-col sm:flex-row gap-6 pb-4 border-b border-slate-800/80">
+      <div className="flex flex-col sm:flex-row gap-6 pb-4 border-b border-border">
         {renderMonth(viewMonth, true)}
         {renderMonth(rightMonth, false)}
       </div>
@@ -367,9 +367,9 @@ export function OwnerDateRangePicker({
             type="checkbox"
             checked={compareChecked}
             onChange={(e) => setCompareChecked(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-700 bg-[#0A1424] text-blue-600 focus:ring-0 cursor-pointer"
+            className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-0 cursor-pointer"
           />
-          <span className="text-xs text-slate-300 font-medium">Compare</span>
+          <span className="text-xs text-muted-foreground font-medium">Compare</span>
         </label>
       </div>
 
@@ -380,31 +380,31 @@ export function OwnerDateRangePicker({
           <select
             value={draftPreset}
             onChange={(e) => applyPresetDates(e.target.value as PresetKey)}
-            className="w-full appearance-none px-3 py-2 pr-8 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="w-full appearance-none px-3 py-2 pr-8 bg-background border border-input rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
           >
             <option value="today">Hari ini</option>
             <option value="7d">Minggu ini</option>
             <option value="month">Bulan ini</option>
             <option value="custom">Custom</option>
           </select>
-          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         </div>
 
         {/* Start Date & End Date Inputs */}
         <div className="flex items-center gap-2 flex-1">
-          <div className="flex-1 px-3 py-2 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-medium text-white text-center select-none">
+          <div className="flex-1 px-3 py-2 bg-muted/40 border border-border rounded-xl text-xs font-medium text-foreground text-center select-none">
             {startFormatted || "Start Date"}
           </div>
-          <span className="text-slate-400 text-xs font-bold">-</span>
-          <div className="flex-1 px-3 py-2 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-medium text-white text-center select-none">
+          <span className="text-muted-foreground text-xs font-bold">-</span>
+          <div className="flex-1 px-3 py-2 bg-muted/40 border border-border rounded-xl text-xs font-medium text-foreground text-center select-none">
             {endFormatted || "End Date"}
           </div>
         </div>
       </div>
 
       {/* Footer: Timezone notice & Action buttons */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
-        <span className="text-[11px] text-slate-400 font-medium">
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <span className="text-[11px] text-muted-foreground font-medium">
           Dates are shown in WIB
         </span>
 
@@ -412,14 +412,14 @@ export function OwnerDateRangePicker({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/70 hover:bg-slate-800 border border-slate-700/60 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 border border-border transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleApply}
-            className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors cursor-pointer shadow-md shadow-blue-600/20"
+            className="px-5 py-2 rounded-xl text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors cursor-pointer shadow-md shadow-primary/20"
           >
             Update
           </button>

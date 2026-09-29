@@ -99,7 +99,7 @@ function OwnerAuditFinanceDetailPage() {
           <div>
             <Link
               to={`/${barbershopSlug}/owner/audit-finance` as any}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Audit Keuangan</span>
@@ -107,13 +107,13 @@ function OwnerAuditFinanceDetailPage() {
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-slate-500 text-xs animate-pulse">
+            <div className="py-20 text-center text-muted-foreground text-xs animate-pulse">
               Memuat detail transaksi audit...
             </div>
           ) : error || !detail ? (
-            <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-              <AlertCircle className="h-8 w-8 text-rose-400 mx-auto" />
-              <div className="text-white font-semibold text-sm">
+            <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3 text-foreground">
+              <AlertCircle className="h-8 w-8 text-rose-500 dark:text-rose-400 mx-auto" />
+              <div className="text-foreground font-semibold text-sm">
                 {error || "Transaksi tidak ditemukan"}
               </div>
               <button
@@ -127,7 +127,7 @@ function OwnerAuditFinanceDetailPage() {
           ) : (
             <div className="space-y-5">
               {/* Header Card */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
                     <div className="h-12 w-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
@@ -135,11 +135,11 @@ function OwnerAuditFinanceDetailPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-base md:text-lg font-bold font-mono text-white">
+                        <span className="text-base md:text-lg font-bold font-mono text-foreground">
                           {detail.shortId}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-400 mt-1 font-mono">
+                      <div className="text-xs text-muted-foreground mt-1 font-mono">
                         {detail.tanggal} • {detail.waktu}
                       </div>
                     </div>
@@ -149,8 +149,8 @@ function OwnerAuditFinanceDetailPage() {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                         detail.statusTransaksi === "Berhasil"
-                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                          : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                          : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
                       }`}
                     >
                       {detail.statusTransaksi}
@@ -160,51 +160,51 @@ function OwnerAuditFinanceDetailPage() {
               </div>
 
               {/* 1. Informasi Transaksi */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-400" />
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
                   <span>Informasi Transaksi</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div>
-                    <div className="text-slate-400 font-medium">Pelanggan</div>
-                    <div className="text-white font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Pelanggan</div>
+                    <div className="text-foreground font-semibold mt-1">
                       {detail.customerName}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Layanan</div>
-                    <div className="text-white font-semibold mt-1 truncate">
+                    <div className="text-muted-foreground font-medium">Layanan</div>
+                    <div className="text-foreground font-semibold mt-1 truncate">
                       {detail.serviceNames}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Capster</div>
-                    <div className="text-white font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Capster</div>
+                    <div className="text-foreground font-semibold mt-1">
                       {detail.capsterName}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Nominal</div>
-                    <div className="text-emerald-400 font-bold mt-1">
+                    <div className="text-muted-foreground font-medium">Nominal</div>
+                    <div className="text-emerald-600 dark:text-emerald-400 font-bold mt-1">
                       {formatRupiah(detail.amount)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Metode Pembayaran</div>
-                    <div className="text-slate-200 font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Metode Pembayaran</div>
+                    <div className="text-foreground font-semibold mt-1">
                       {detail.paymentMethod}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Status Transaksi</div>
-                    <div className="text-slate-200 font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Status Transaksi</div>
+                    <div className="text-foreground font-semibold mt-1">
                       {detail.statusTransaksi}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Status Pembayaran</div>
-                    <div className="text-emerald-400 font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Status Pembayaran</div>
+                    <div className="text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
                       {detail.statusPembayaran}
                     </div>
                   </div>
@@ -214,27 +214,27 @@ function OwnerAuditFinanceDetailPage() {
               {/* 2. Data Sistem vs Data Aktual (Grid 2 Kolom) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Data Sistem */}
-                <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
-                  <h4 className="text-xs font-bold text-blue-400 flex items-center gap-2">
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+                  <h4 className="text-xs font-bold text-primary flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     <span>Data Sistem</span>
                   </h4>
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between pb-1.5 border-b border-slate-800/80">
-                      <span className="text-slate-400">Nominal (Sistem):</span>
-                      <span className="font-bold text-white">
+                    <div className="flex justify-between pb-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Nominal (Sistem):</span>
+                      <span className="font-bold text-foreground">
                         {formatRupiah(detail.systemNominal)}
                       </span>
                     </div>
-                    <div className="flex justify-between pb-1.5 border-b border-slate-800/80">
-                      <span className="text-slate-400">Metode Pembayaran Sistem:</span>
-                      <span className="text-slate-200 font-semibold">
+                    <div className="flex justify-between pb-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Metode Pembayaran Sistem:</span>
+                      <span className="text-foreground font-semibold">
                         {detail.systemMethod}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Status Pembayaran:</span>
-                      <span className="text-emerald-400 font-semibold">
+                      <span className="text-muted-foreground">Status Pembayaran:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                         {detail.systemPaymentStatus}
                       </span>
                     </div>
@@ -242,27 +242,27 @@ function OwnerAuditFinanceDetailPage() {
                 </div>
 
                 {/* Data Aktual */}
-                <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
-                  <h4 className="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+                  <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4" />
                     <span>Data Aktual</span>
                   </h4>
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between pb-1.5 border-b border-slate-800/80">
-                      <span className="text-slate-400">Nominal Diterima:</span>
-                      <span className="font-bold text-emerald-400">
+                    <div className="flex justify-between pb-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Nominal Diterima:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {formatRupiah(detail.actualNominal)}
                       </span>
                     </div>
-                    <div className="flex justify-between pb-1.5 border-b border-slate-800/80">
-                      <span className="text-slate-400">Metode Aktual:</span>
-                      <span className="text-slate-200 font-semibold">
+                    <div className="flex justify-between pb-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Metode Aktual:</span>
+                      <span className="text-foreground font-semibold">
                         {detail.actualMethod}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Bukti Pembayaran:</span>
-                      <span className="text-slate-300 font-medium">
+                      <span className="text-muted-foreground">Bukti Pembayaran:</span>
+                      <span className="text-foreground font-medium">
                         {detail.actualProof}
                       </span>
                     </div>
@@ -271,27 +271,27 @@ function OwnerAuditFinanceDetailPage() {
               </div>
 
               {/* 3. Selisih & Status */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-slate-400 font-medium">
+                  <div className="text-xs text-muted-foreground font-medium">
                     Kesesuaian Keuangan
                   </div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
+                  <div className="text-sm font-semibold text-foreground mt-0.5">
                     Selisih:{" "}
-                    <span className="font-mono text-emerald-400">
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400">
                       {formatRupiah(detail.difference)}
                     </span>
                   </div>
                 </div>
-                <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   {detail.checkStatus}
                 </span>
               </div>
 
               {/* 4. Catatan Pemeriksaan */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm space-y-3">
-                <h3 className="text-sm font-bold text-white">Catatan Pemeriksaan</h3>
-                <p className="text-xs text-slate-400">
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm space-y-3">
+                <h3 className="text-sm font-bold text-foreground">Catatan Pemeriksaan</h3>
+                <p className="text-xs text-muted-foreground">
                   Owner dapat menambahkan catatan rekonsiliasi atau verifikasi transaksi ini.
                 </p>
                 <textarea
@@ -299,11 +299,11 @@ function OwnerAuditFinanceDetailPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Tambahkan catatan pemeriksaan transaksi ini..."
-                  className="w-full px-3.5 py-2.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 />
                 <div className="flex items-center justify-between pt-1">
                   {saveSuccess && (
-                    <span className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                       <CheckCircle2 className="h-4 w-4" />
                       <span>Catatan berhasil disimpan!</span>
                     </span>
@@ -313,7 +313,7 @@ function OwnerAuditFinanceDetailPage() {
                       type="button"
                       disabled={savingNote}
                       onClick={handleSaveNotes}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 rounded-xl text-xs font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <Save className="h-4 w-4" />
                       <span>{savingNote ? "Menyimpan..." : "Simpan Catatan"}</span>
@@ -327,7 +327,7 @@ function OwnerAuditFinanceDetailPage() {
                 <button
                   type="button"
                   onClick={() => navigate({ to: `/${barbershopSlug}/owner/audit-finance` as any })}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
+                  className="w-full py-3 border border-border bg-card hover:bg-muted rounded-xl text-xs font-semibold text-foreground transition-colors cursor-pointer"
                 >
                   Tutup
                 </button>

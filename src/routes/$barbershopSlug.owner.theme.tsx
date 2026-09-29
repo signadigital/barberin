@@ -378,7 +378,7 @@ function OwnerWhiteLabelingPage() {
                     {/* Upload Logo */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                        <label className="text-xs font-semibold text-foreground flex items-center gap-1">
                           <span>Logo</span>
                           <span className="text-rose-400">*</span>
                         </label>
@@ -412,40 +412,40 @@ function OwnerWhiteLabelingPage() {
                           const file = e.dataTransfer.files?.[0];
                           if (file) handleLogoFile(file);
                         }}
-                        className="border-2 border-dashed border-slate-700/80 hover:border-blue-500/80 bg-[#070D18]/70 hover:bg-[#070D18] rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
+                        className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
                       >
                         {logoUrl ? (
                           <div className="flex items-center gap-4">
                             <img
                               src={logoUrl}
                               alt="Logo Barbershop"
-                              className="h-16 w-16 object-contain rounded-lg bg-slate-900 border border-slate-700 p-1"
+                              className="h-16 w-16 object-contain rounded-lg bg-background border border-border p-1"
                             />
                             <div className="text-left">
-                              <span className="text-xs font-semibold text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                 Logo Terpasang
                               </span>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
                                 Klik untuk mengganti logo
                               </p>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <div className="h-9 w-9 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                            <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                               <Upload className="h-4 w-4" />
                             </div>
-                            <div className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                            <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                               Upload Logo
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
                               Klik atau drag &amp; drop di sini
                             </div>
                           </>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-muted-foreground">
                         Format: JPG, PNG, atau SVG. Maksimal ukuran file 5 MB.
                       </div>
                     </div>
@@ -453,7 +453,7 @@ function OwnerWhiteLabelingPage() {
                     {/* Upload Favicon */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-slate-300">Favicon</label>
+                        <label className="text-xs font-semibold text-foreground">Favicon</label>
                         {faviconUrl && (
                           <button
                             type="button"
@@ -484,40 +484,40 @@ function OwnerWhiteLabelingPage() {
                           const file = e.dataTransfer.files?.[0];
                           if (file) handleFaviconFile(file);
                         }}
-                        className="border-2 border-dashed border-slate-700/80 hover:border-blue-500/80 bg-[#070D18]/70 hover:bg-[#070D18] rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
+                        className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
                       >
                         {faviconUrl ? (
                           <div className="flex items-center gap-4">
                             <img
                               src={faviconUrl}
                               alt="Favicon"
-                              className="h-10 w-10 object-contain rounded-md bg-slate-900 border border-slate-700 p-1"
+                              className="h-10 w-10 object-contain rounded-md bg-background border border-border p-1"
                             />
                             <div className="text-left">
-                              <span className="text-xs font-semibold text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                 Favicon Terpasang
                               </span>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
                                 Klik untuk mengganti favicon
                               </p>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <div className="h-9 w-9 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                            <div className="h-9 w-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                               <Upload className="h-4 w-4" />
                             </div>
-                            <div className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                            <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                               Upload Favicon
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
                               Rekomendasi 32×32px • ICO/PNG
                             </div>
                           </>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-muted-foreground">
                         Ikon yang ditampilkan pada tab browser pelanggan.
                       </div>
                     </div>
@@ -540,7 +540,7 @@ function OwnerWhiteLabelingPage() {
 
                   {/* Theme Presets: 4 cards (Default, Secondary, Tertiary, Natural) */}
                   <div className="space-y-3">
-                    <span className="text-xs font-semibold text-slate-300">Preset Tampilan UI</span>
+                    <span className="text-xs font-semibold text-foreground">Preset Tampilan UI</span>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {/* 1. Default */}
                       <div
@@ -548,7 +548,7 @@ function OwnerWhiteLabelingPage() {
                         className={`cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden ${
                           selectedTheme === "default"
                             ? "border-blue-500 bg-blue-950/30 ring-2 ring-blue-500/40"
-                            : "border-slate-800 bg-[#070D18] hover:border-slate-700"
+                            : "border-border bg-muted/30 hover:border-primary/50"
                         }`}
                       >
                         {selectedTheme === "default" && (
@@ -557,19 +557,19 @@ function OwnerWhiteLabelingPage() {
                           </div>
                         )}
                         {/* Mini window illustration */}
-                        <div className="bg-[#0F1D33] rounded-lg p-2 space-y-1.5 border border-slate-800 mb-2.5">
+                        <div className="bg-background rounded-lg p-2 space-y-1.5 border border-border mb-2.5">
                           <div className="flex items-center gap-1 mb-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           </div>
                           <div className="h-3 bg-blue-600/70 rounded-xs w-3/4" />
-                          <div className="h-2 bg-slate-700/50 rounded-xs w-full" />
-                          <div className="h-2 bg-slate-700/30 rounded-xs w-1/2" />
+                          <div className="h-2 bg-muted rounded-xs w-full" />
+                          <div className="h-2 bg-muted/60 rounded-xs w-1/2" />
                         </div>
                         <div className="text-center">
-                          <div className="text-xs font-bold text-white">Default</div>
-                          <div className="text-[10px] text-slate-400">Classic Blue</div>
+                          <div className="text-xs font-bold text-foreground">Default</div>
+                          <div className="text-[10px] text-muted-foreground">Classic Blue</div>
                         </div>
                       </div>
 
@@ -579,7 +579,7 @@ function OwnerWhiteLabelingPage() {
                         className={`cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden ${
                           selectedTheme === "secondary"
                             ? "border-rose-500 bg-rose-950/30 ring-2 ring-rose-500/40"
-                            : "border-slate-800 bg-[#070D18] hover:border-slate-700"
+                            : "border-border bg-muted/30 hover:border-rose-500/50"
                         }`}
                       >
                         {selectedTheme === "secondary" && (
@@ -587,19 +587,19 @@ function OwnerWhiteLabelingPage() {
                             <Check className="h-3 w-3 stroke-[3]" />
                           </div>
                         )}
-                        <div className="bg-[#2B0B13] rounded-lg p-2 space-y-1.5 border border-rose-900/50 mb-2.5">
+                        <div className="bg-background rounded-lg p-2 space-y-1.5 border border-border mb-2.5">
                           <div className="flex items-center gap-1 mb-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           </div>
                           <div className="h-3 bg-rose-600/70 rounded-xs w-3/4" />
-                          <div className="h-2 bg-rose-900/50 rounded-xs w-full" />
-                          <div className="h-2 bg-rose-900/30 rounded-xs w-1/2" />
+                          <div className="h-2 bg-muted rounded-xs w-full" />
+                          <div className="h-2 bg-muted/60 rounded-xs w-1/2" />
                         </div>
                         <div className="text-center">
-                          <div className="text-xs font-bold text-white">Secondary</div>
-                          <div className="text-[10px] text-slate-400">Bold Rose</div>
+                          <div className="text-xs font-bold text-foreground">Secondary</div>
+                          <div className="text-[10px] text-muted-foreground">Bold Rose</div>
                         </div>
                       </div>
 
@@ -609,7 +609,7 @@ function OwnerWhiteLabelingPage() {
                         className={`cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden ${
                           selectedTheme === "tertiary"
                             ? "border-purple-500 bg-purple-950/40 ring-2 ring-purple-500/50 shadow-lg shadow-purple-500/10"
-                            : "border-slate-800 bg-[#070D18] hover:border-slate-700"
+                            : "border-border bg-muted/30 hover:border-purple-500/50"
                         }`}
                       >
                         {selectedTheme === "tertiary" && (
@@ -617,19 +617,19 @@ function OwnerWhiteLabelingPage() {
                             <Check className="h-3 w-3 stroke-[3]" />
                           </div>
                         )}
-                        <div className="bg-[#1E1238] rounded-lg p-2 space-y-1.5 border border-purple-900/50 mb-2.5">
+                        <div className="bg-background rounded-lg p-2 space-y-1.5 border border-border mb-2.5">
                           <div className="flex items-center gap-1 mb-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           </div>
                           <div className="h-3 bg-purple-600/80 rounded-xs w-3/4" />
-                          <div className="h-2 bg-purple-900/60 rounded-xs w-full" />
-                          <div className="h-2 bg-purple-900/40 rounded-xs w-1/2" />
+                          <div className="h-2 bg-muted rounded-xs w-full" />
+                          <div className="h-2 bg-muted/60 rounded-xs w-1/2" />
                         </div>
                         <div className="text-center">
-                          <div className="text-xs font-bold text-white">Tertiary</div>
-                          <div className="text-[10px] text-purple-400">Vibrant Purple</div>
+                          <div className="text-xs font-bold text-foreground">Tertiary</div>
+                          <div className="text-[10px] text-primary">Vibrant Purple</div>
                         </div>
                       </div>
 
@@ -639,7 +639,7 @@ function OwnerWhiteLabelingPage() {
                         className={`cursor-pointer rounded-xl border p-3 transition-all relative overflow-hidden ${
                           selectedTheme === "natural"
                             ? "border-slate-400 bg-slate-900/60 ring-2 ring-slate-400/40"
-                            : "border-slate-800 bg-[#070D18] hover:border-slate-700"
+                            : "border-border bg-muted/30 hover:border-primary/50"
                         }`}
                       >
                         {selectedTheme === "natural" && (
@@ -647,19 +647,19 @@ function OwnerWhiteLabelingPage() {
                             <Check className="h-3 w-3 stroke-[3]" />
                           </div>
                         )}
-                        <div className="bg-[#111827] rounded-lg p-2 space-y-1.5 border border-slate-800 mb-2.5">
+                        <div className="bg-background rounded-lg p-2 space-y-1.5 border border-border mb-2.5">
                           <div className="flex items-center gap-1 mb-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           </div>
                           <div className="h-3 bg-slate-500/80 rounded-xs w-3/4" />
-                          <div className="h-2 bg-slate-700/50 rounded-xs w-full" />
-                          <div className="h-2 bg-slate-700/30 rounded-xs w-1/2" />
+                          <div className="h-2 bg-muted rounded-xs w-full" />
+                          <div className="h-2 bg-muted/60 rounded-xs w-1/2" />
                         </div>
                         <div className="text-center">
-                          <div className="text-xs font-bold text-white">Natural</div>
-                          <div className="text-[10px] text-slate-400">Minimalist Slate</div>
+                          <div className="text-xs font-bold text-foreground">Natural</div>
+                          <div className="text-[10px] text-muted-foreground">Minimalist Slate</div>
                         </div>
                       </div>
                     </div>
@@ -668,10 +668,10 @@ function OwnerWhiteLabelingPage() {
                   {/* Mode Tampilan (Light / Dark) */}
                   <div className="pt-2 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Sun className="h-4 w-4 text-amber-400" />
-                      <span className="text-xs font-semibold text-white">Mode Tampilan</span>
+                      <Sun className="h-4 w-4 text-amber-500" />
+                      <span className="text-xs font-semibold text-foreground">Mode Tampilan</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-muted-foreground">
                       Pilih skema warna dasar tampilan website barbershop Anda.
                     </p>
 
@@ -681,7 +681,7 @@ function OwnerWhiteLabelingPage() {
                         onClick={() => setDisplayMode("light")}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                           displayMode === "light"
-                            ? "bg-white text-slate-900 shadow-md font-bold"
+                            ? "bg-card text-foreground shadow-md font-bold"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
@@ -821,18 +821,18 @@ function OwnerWhiteLabelingPage() {
         {/* MODAL 1: PREVIEW (BPMN Step 3: Klik Preview -> Sesuai?) */}
         {showPreviewModal && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-[#0B1526] border border-slate-800 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-[#0F1E36]">
+            <div className="bg-card border border-border rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/40">
                 <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4 text-purple-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  <Eye className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Preview Website Barbershop
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -936,7 +936,7 @@ function OwnerWhiteLabelingPage() {
               {/* Footer BPMN Decision: Sesuai? */}
               <div className="p-4 bg-card border-t border-border flex items-center justify-between gap-4 text-card-foreground">
                 <div className="text-xs text-muted-foreground">
-                  <span className="text-amber-400 font-bold">Decision (BPMN):</span> Apakah tampilan sudah sesuai keinginan Anda?
+                  <span className="text-amber-500 font-bold">Decision (BPMN):</span> Apakah tampilan sudah sesuai keinginan Anda?
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -976,18 +976,18 @@ function OwnerWhiteLabelingPage() {
         {/* MODAL 3: AUDIT HISTORY */}
         {showHistoryModal && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-[#0B1526] border border-slate-800 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl">
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-[#0F1E36]">
+            <div className="bg-card border border-border rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl">
+              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/40">
                 <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-blue-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  <History className="h-4 w-4 text-blue-500" />
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Riwayat Perubahan Branding (Audit Log)
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowHistoryModal(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -995,11 +995,11 @@ function OwnerWhiteLabelingPage() {
 
               <div className="p-4 max-h-[420px] overflow-y-auto space-y-3">
                 {loadingHistories ? (
-                  <div className="py-8 text-center text-slate-400 text-xs">
+                  <div className="py-8 text-center text-muted-foreground text-xs">
                     Memuat riwayat perubahan...
                   </div>
                 ) : histories.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 text-xs">
+                  <div className="py-8 text-center text-muted-foreground text-xs">
                     Belum ada riwayat perubahan branding.
                   </div>
                 ) : (
@@ -1014,11 +1014,11 @@ function OwnerWhiteLabelingPage() {
                     return (
                       <div
                         key={h.id_history}
-                        className="bg-[#070D18] border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs"
+                        className="bg-muted/40 border border-border p-3.5 rounded-xl space-y-2 text-xs"
                       >
-                        <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                        <div className="flex items-center justify-between text-muted-foreground text-[11px]">
                           <span>
-                            Diubah oleh: <strong className="text-white">{h.user?.nama_lengkap || "Owner"}</strong>
+                            Diubah oleh: <strong className="text-foreground">{h.user?.nama_lengkap || "Owner"}</strong>
                           </span>
                           <span className="font-mono">
                             {new Date(h.created_at).toLocaleString("id-ID")}
@@ -1026,14 +1026,14 @@ function OwnerWhiteLabelingPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                          <div className="bg-slate-900/60 p-2 rounded border border-slate-800 text-slate-400">
-                            <span className="text-[10px] text-rose-400 block font-sans font-bold">Sebelum:</span>
+                          <div className="bg-background p-2 rounded border border-border text-muted-foreground">
+                            <span className="text-[10px] text-rose-500 block font-sans font-bold">Sebelum:</span>
                             <div>Brand: {beforeObj?.nama_brand || "-"}</div>
                             <div>Warna: {beforeObj?.warna_primary || "-"}</div>
                             <div>Theme: {beforeObj?.theme || "-"}</div>
                           </div>
-                          <div className="bg-slate-900/60 p-2 rounded border border-slate-800 text-slate-200">
-                            <span className="text-[10px] text-emerald-400 block font-sans font-bold">Sesudah:</span>
+                          <div className="bg-background p-2 rounded border border-border text-foreground">
+                            <span className="text-[10px] text-emerald-500 block font-sans font-bold">Sesudah:</span>
                             <div>Brand: {afterObj?.nama_brand || "-"}</div>
                             <div>Warna: {afterObj?.warna_primary || "-"}</div>
                             <div>Theme: {afterObj?.theme || "-"}</div>
@@ -1045,11 +1045,11 @@ function OwnerWhiteLabelingPage() {
                 )}
               </div>
 
-              <div className="p-3 bg-[#081220] border-t border-slate-800 text-right">
+              <div className="p-3 bg-muted/40 border-t border-border text-right">
                 <button
                   type="button"
                   onClick={() => setShowHistoryModal(false)}
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white"
+                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground"
                 >
                   Tutup
                 </button>

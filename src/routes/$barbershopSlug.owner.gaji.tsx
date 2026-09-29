@@ -391,7 +391,7 @@ function OwnerGajiPage() {
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
             {label}
           </span>
         );
@@ -420,10 +420,10 @@ function OwnerGajiPage() {
             {/* Top Page Header & Atur Komisi Button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                   Gaji
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Kelola komisi capster berdasarkan transaksi layanan yang berhasil.
                 </p>
               </div>
@@ -442,7 +442,7 @@ function OwnerGajiPage() {
             </div>
 
             {/* 3 Tabs Bar */}
-            <div className="flex items-center gap-2 border-b border-slate-800/80 pb-px">
+            <div className="flex items-center gap-2 border-b border-border pb-px">
               <button
                 type="button"
                 onClick={() => {
@@ -451,8 +451,8 @@ function OwnerGajiPage() {
                 }}
                 className={`px-4 py-3 text-sm font-semibold transition-all relative cursor-pointer ${
                   activeTab === "rekap"
-                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "text-primary border-b-2 border-primary font-bold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Rekap Komisi
@@ -465,8 +465,8 @@ function OwnerGajiPage() {
                 }}
                 className={`px-4 py-3 text-sm font-semibold transition-all relative flex items-center gap-2 cursor-pointer ${
                   activeTab === "pengajuan"
-                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "text-primary border-b-2 border-primary font-bold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <span>Pengajuan Penarikan</span>
@@ -485,8 +485,8 @@ function OwnerGajiPage() {
                 }}
                 className={`px-4 py-3 text-sm font-semibold transition-all relative cursor-pointer ${
                   activeTab === "riwayat"
-                    ? "text-blue-400 border-b-2 border-blue-500 font-bold"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "text-primary border-b-2 border-primary font-bold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Riwayat Pembayaran
@@ -507,12 +507,12 @@ function OwnerGajiPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedPengajuanId(null)}
-                          className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-medium mb-2 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium mb-2 transition-colors cursor-pointer"
                         >
                           <ArrowLeft className="h-4 w-4" />
                           <span>Kembali ke Daftar Pengajuan</span>
                         </button>
-                        <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
+                        <h2 className="text-xl lg:text-2xl font-bold text-foreground tracking-tight">
                           Detail Pengajuan Penarikan Komisi
                         </h2>
                       </div>
@@ -529,34 +529,34 @@ function OwnerGajiPage() {
 
                     {isLoadingDetail ? (
                       <div className="p-12 flex flex-col items-center justify-center gap-3">
-                        <RefreshCw className="h-8 w-8 text-blue-500 animate-spin" />
-                        <p className="text-sm text-slate-400">Memuat detail pengajuan...</p>
+                        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+                        <p className="text-sm text-muted-foreground">Memuat detail pengajuan...</p>
                       </div>
                     ) : detailData ? (
                       <>
                         {/* 2-Column Info Grid: Capster Info + Pengajuan Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Card 1: Informasi Capster */}
-                          <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-4">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               Informasi Capster
                             </h3>
                             <div className="flex items-center gap-4">
-                              <div className="h-14 w-14 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xl font-bold shrink-0">
+                              <div className="h-14 w-14 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center text-xl font-bold shrink-0">
                                 {detailData.capster.avatarLetter}
                               </div>
                               <div className="space-y-1">
-                                <div className="text-base font-bold text-white">
+                                <div className="text-base font-bold text-foreground">
                                   {detailData.capster.name}
                                 </div>
-                                <div className="text-xs text-slate-400">
+                                <div className="text-xs text-muted-foreground">
                                   {detailData.capster.phone}
                                 </div>
                                 <div className="flex items-center gap-2 pt-1">
-                                  <span className="text-xs text-slate-300">
+                                  <span className="text-xs text-muted-foreground">
                                     {detailData.capster.role}
                                   </span>
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                     {detailData.capster.status}
                                   </span>
                                 </div>
@@ -565,25 +565,25 @@ function OwnerGajiPage() {
                           </div>
 
                           {/* Card 2: Informasi Pengajuan */}
-                          <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-3">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <div className="rounded-2xl bg-card border border-border p-5 space-y-3">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               Informasi Pengajuan
                             </h3>
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Jumlah Diajukan</span>
-                                <span className="font-bold text-white text-base">
+                                <span className="text-muted-foreground">Jumlah Diajukan</span>
+                                <span className="font-bold text-foreground text-base">
                                   {formatRupiah(detailData.pengajuan.jumlah)}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Tanggal Pengajuan</span>
-                                <span className="text-slate-200">
+                                <span className="text-muted-foreground">Tanggal Pengajuan</span>
+                                <span className="text-foreground">
                                   {detailData.pengajuan.diajukanAtFormatted}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Status</span>
+                                <span className="text-muted-foreground">Status</span>
                                 <span>
                                   {renderStatusBadge(
                                     detailData.pengajuan.uiStatus,
@@ -593,32 +593,32 @@ function OwnerGajiPage() {
                               </div>
 
                               {detailData.pengajuan.alasanPenolakan && (
-                                <div className="mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                                <div className="mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-300">
                                   <span className="font-semibold block mb-0.5">Alasan Penolakan:</span>
                                   {detailData.pengajuan.alasanPenolakan}
                                 </div>
                               )}
 
                               {detailData.pengajuan.dibayarAtFormatted && (
-                                <div className="mt-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                                <div className="mt-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-300 space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-400">Dibayarkan Pada:</span>
-                                    <span className="font-semibold text-white">
+                                    <span className="text-muted-foreground">Dibayarkan Pada:</span>
+                                    <span className="font-semibold text-foreground">
                                       {detailData.pengajuan.dibayarAtFormatted}
                                     </span>
                                   </div>
                                   {detailData.pengajuan.metodePembayaran && (
                                     <div className="flex justify-between">
-                                      <span className="text-slate-400">Metode:</span>
-                                      <span className="uppercase text-white font-medium">
+                                      <span className="text-muted-foreground">Metode:</span>
+                                      <span className="uppercase text-foreground font-medium">
                                         {detailData.pengajuan.metodePembayaran}
                                       </span>
                                     </div>
                                   )}
                                   {detailData.pengajuan.referensi && (
                                     <div className="flex justify-between">
-                                      <span className="text-slate-400">Referensi:</span>
-                                      <span className="font-mono text-white text-[11px]">
+                                      <span className="text-muted-foreground">Referensi:</span>
+                                      <span className="font-mono text-foreground text-[11px]">
                                         {detailData.pengajuan.referensi}
                                       </span>
                                     </div>
@@ -630,29 +630,29 @@ function OwnerGajiPage() {
                         </div>
 
                         {/* Card 3: Dasar Komisi */}
-                        <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-5 space-y-4">
+                        <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-start gap-3">
-                              <div className="h-9 w-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                 <ShieldCheck className="h-5 w-5" />
                               </div>
                               <div>
-                                <h3 className="text-base font-bold text-white">Dasar Komisi</h3>
-                                <p className="text-xs text-slate-400">
+                                <h3 className="text-base font-bold text-foreground">Dasar Komisi</h3>
+                                <p className="text-xs text-muted-foreground">
                                   Komisi berasal dari transaksi yang telah selesai pada hari ini. Berikut daftar transaksi yang membentuk komisi:
                                 </p>
                               </div>
                             </div>
 
-                            <span className="text-xs text-blue-400 hover:text-blue-300 font-medium shrink-0 cursor-pointer self-end sm:self-auto">
+                            <span className="text-xs text-primary hover:text-primary/80 font-medium shrink-0 cursor-pointer self-end sm:self-auto">
                               Lihat Semua Transaksi
                             </span>
                           </div>
 
                           {/* Table of transactions */}
-                          <div className="overflow-x-auto rounded-xl border border-slate-800/80">
+                          <div className="overflow-x-auto rounded-xl border border-border">
                             <table className="w-full text-left text-sm">
-                              <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold">
+                              <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold">
                                 <tr>
                                   <th className="px-4 py-3">Tanggal</th>
                                   <th className="px-4 py-3">Layanan</th>
@@ -662,42 +662,42 @@ function OwnerGajiPage() {
                                   </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-800/50">
+                              <tbody className="divide-y divide-border">
                                 {detailData.dasarKomisi.transactions.length > 0 ? (
                                   detailData.dasarKomisi.transactions.map((tx: any) => (
-                                    <tr key={tx.id} className="hover:bg-slate-800/30 transition-colors">
-                                      <td className="px-4 py-3 text-slate-300 font-mono text-xs">
+                                    <tr key={tx.id} className="hover:bg-muted/50 transition-colors">
+                                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                                         {tx.tanggalFormatted}
                                       </td>
-                                      <td className="px-4 py-3 text-white font-medium">
+                                      <td className="px-4 py-3 text-foreground font-medium">
                                         {tx.layananName}
                                       </td>
-                                      <td className="px-4 py-3 text-slate-300 text-right">
+                                      <td className="px-4 py-3 text-muted-foreground text-right">
                                         {formatRupiah(tx.nominal)}
                                       </td>
-                                      <td className="px-4 py-3 text-emerald-400 font-semibold text-right">
+                                      <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold text-right">
                                         {formatRupiah(tx.komisi)}
                                       </td>
                                     </tr>
                                   ))
                                 ) : (
                                   <tr>
-                                    <td colSpan={4} className="px-4 py-6 text-center text-slate-500 text-xs">
+                                    <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground text-xs">
                                       Tidak ada rincian transaksi pembentuk komisi yang tercatat.
                                     </td>
                                   </tr>
                                 )}
                               </tbody>
                               {detailData.dasarKomisi.transactions.length > 0 && (
-                                <tfoot className="bg-slate-900/60 font-semibold border-t border-slate-800 text-xs">
+                                <tfoot className="bg-muted/40 font-semibold border-t border-border text-xs">
                                   <tr>
-                                    <td colSpan={2} className="px-4 py-3 text-slate-400">
+                                    <td colSpan={2} className="px-4 py-3 text-muted-foreground">
                                       Total Transaksi ({detailData.dasarKomisi.transactions.length})
                                     </td>
-                                    <td className="px-4 py-3 text-slate-300 text-right">
+                                    <td className="px-4 py-3 text-muted-foreground text-right">
                                       {formatRupiah(detailData.dasarKomisi.totalNominal)}
                                     </td>
-                                    <td className="px-4 py-3 text-emerald-400 font-bold text-right">
+                                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-bold text-right">
                                       {formatRupiah(detailData.dasarKomisi.totalKomisi)}
                                     </td>
                                   </tr>
@@ -717,7 +717,7 @@ function OwnerGajiPage() {
                                   setRejectReason("");
                                   setIsRejectModalOpen(true);
                                 }}
-                                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-red-500/50 hover:bg-red-500/10 text-red-400 text-sm font-semibold transition-all cursor-pointer"
+                                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-red-500/50 hover:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-semibold transition-all cursor-pointer"
                               >
                                 Tolak Pengajuan
                               </button>
@@ -740,12 +740,12 @@ function OwnerGajiPage() {
                                   <Clock className="h-5 w-5" />
                                 </div>
                                 <div className="space-y-1">
-                                  <div className="font-bold text-white text-base">
+                                  <div className="font-bold text-foreground text-base">
                                     Pengajuan Telah Disetujui
                                   </div>
-                                  <p className="text-xs text-slate-300">
+                                  <p className="text-xs text-muted-foreground">
                                     Komisi sebesar {formatRupiah(detailData.pengajuan.jumlah)} untuk{" "}
-                                    <span className="font-semibold text-white">
+                                    <span className="font-semibold text-foreground">
                                       {detailData.capster.name}
                                     </span>{" "}
                                     telah disetujui. Silakan lakukan pembayaran dan konfirmasi setelah komisi diberikan kepada Capster.
@@ -764,15 +764,15 @@ function OwnerGajiPage() {
                           )}
 
                           {detailData.pengajuan.uiStatus === "paid" && (
-                            <div className="rounded-2xl bg-emerald-950/40 border border-emerald-800/50 p-5 flex items-center gap-4">
-                              <CheckCircle2 className="h-8 w-8 text-emerald-400 shrink-0" />
+                            <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-5 flex items-center gap-4">
+                              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <div>
-                                <div className="font-bold text-emerald-400 text-base">
+                                <div className="font-bold text-emerald-600 dark:text-emerald-400 text-base">
                                   Sudah Terbayarkan
                                 </div>
-                                <p className="text-xs text-slate-300">
+                                <p className="text-xs text-muted-foreground">
                                   Komisi sebesar {formatRupiah(detailData.pengajuan.jumlah)} telah berhasil dibayarkan kepada{" "}
-                                  <span className="font-semibold text-white">{detailData.capster.name}</span> pada{" "}
+                                  <span className="font-semibold text-foreground">{detailData.capster.name}</span> pada{" "}
                                   {detailData.pengajuan.dibayarAtFormatted}.
                                 </p>
                               </div>
@@ -780,13 +780,13 @@ function OwnerGajiPage() {
                           )}
 
                           {detailData.pengajuan.uiStatus === "rejected" && (
-                            <div className="rounded-2xl bg-red-950/40 border border-red-800/50 p-5 flex items-center gap-4">
-                              <AlertTriangle className="h-8 w-8 text-red-400 shrink-0" />
+                            <div className="rounded-2xl bg-red-500/10 border border-red-500/30 p-5 flex items-center gap-4">
+                              <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400 shrink-0" />
                               <div>
-                                <div className="font-bold text-red-400 text-base">
+                                <div className="font-bold text-red-600 dark:text-red-400 text-base">
                                   Pengajuan Ditolak
                                 </div>
-                                <p className="text-xs text-slate-300">
+                                <p className="text-xs text-muted-foreground">
                                   Pengajuan ini ditolak oleh Owner. Komisi telah dikembalikan ke saldo belum dibayar milik Capster.
                                 </p>
                               </div>
@@ -808,7 +808,7 @@ function OwnerGajiPage() {
                           <select
                             value={period}
                             onChange={(e) => setPeriod(e.target.value as PeriodType)}
-                            className="appearance-none bg-[#0A1424] border border-slate-700/80 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-medium text-slate-200 hover:border-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
+                            className="appearance-none bg-card border border-input rounded-xl px-3.5 py-2.5 pr-8 text-xs font-medium text-foreground hover:border-border focus:outline-none focus:border-primary cursor-pointer transition-colors"
                           >
                             <option value="month">1 - 30 September 2026</option>
                             <option value="today">Hari Ini</option>
@@ -816,7 +816,7 @@ function OwnerGajiPage() {
                             <option value="30d">30 Hari Terakhir</option>
                             <option value="all">Semua Waktu</option>
                           </select>
-                          <Calendar className="h-3.5 w-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
 
                         {/* Segarkan Data Button */}
@@ -824,7 +824,7 @@ function OwnerGajiPage() {
                           type="button"
                           onClick={() => fetchRequests()}
                           disabled={isLoadingRequests}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-xs font-semibold shadow-md shadow-primary/20 transition-all cursor-pointer"
                         >
                           <RefreshCw className={`h-3.5 w-3.5 ${isLoadingRequests ? "animate-spin" : ""}`} />
                           <span>Segarkan Data</span>
@@ -838,14 +838,14 @@ function OwnerGajiPage() {
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Cari capster..."
-                          className="w-full bg-[#0A1424] border border-slate-700/80 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                          className="w-full bg-card border border-input rounded-xl px-3.5 py-2.5 pl-9 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                         />
-                        <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                         {searchQuery && (
                           <button
                             type="button"
                             onClick={() => setSearchQuery("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -861,7 +861,7 @@ function OwnerGajiPage() {
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "all"
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                            : "bg-card hover:bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         Semua ({counts.all})
@@ -873,7 +873,7 @@ function OwnerGajiPage() {
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "pending"
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                            : "bg-card hover:bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         Menunggu ({counts.pending})
@@ -885,7 +885,7 @@ function OwnerGajiPage() {
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "approved"
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                            : "bg-card hover:bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         Disetujui ({counts.approved})
@@ -897,7 +897,7 @@ function OwnerGajiPage() {
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "rejected"
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                            : "bg-card hover:bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         Ditolak ({counts.rejected})
@@ -909,7 +909,7 @@ function OwnerGajiPage() {
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                           statusFilter === "paid"
                             ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                            : "bg-[#0A1424] hover:bg-slate-800 text-slate-300 border border-slate-800"
+                            : "bg-card hover:bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         Terbayarkan ({counts.paid})
@@ -917,10 +917,10 @@ function OwnerGajiPage() {
                     </div>
 
                     {/* Table (Screen 1 & Screen 7) */}
-                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
+                    <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                          <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                          <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold border-b border-border">
                             <tr>
                               <th className="px-5 py-3.5 w-14">NO.</th>
                               <th className="px-5 py-3.5">NAMA CAPSTER</th>
@@ -931,60 +931,58 @@ function OwnerGajiPage() {
                               <th className="px-5 py-3.5 text-right w-24">AKSI</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-800/60">
+                          <tbody className="divide-y divide-border">
                             {isLoadingRequests ? (
                               <tr>
-                                <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                                <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                                   <div className="flex flex-col items-center justify-center gap-3">
-                                    <RefreshCw className="h-6 w-6 text-blue-500 animate-spin" />
+                                    <RefreshCw className="h-6 w-6 text-primary animate-spin" />
                                     <span className="text-xs">Memuat daftar pengajuan komisi...</span>
                                   </div>
                                 </td>
                               </tr>
                             ) : requestsList.length > 0 ? (
                               requestsList.map((item, idx) => (
-                                <tr key={item.idPengajuan} className="hover:bg-slate-800/30 transition-colors">
-                                  <td className="px-5 py-4 text-xs font-mono text-slate-400">
+                                <tr key={item.idPengajuan} className="hover:bg-muted/50 transition-colors">
+                                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">
                                     {idx + 1}
                                   </td>
                                   <td className="px-5 py-4">
                                     <div className="flex items-center gap-3">
                                       <div
-                                        className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${
-                                          idx % 2 === 0 ? "bg-blue-600" : "bg-purple-600"
-                                        }`}
+                                        className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-primary bg-primary/10 border border-primary/20 shrink-0"
                                       >
                                         {item.avatarLetter}
                                       </div>
                                       <div>
-                                        <div className="font-semibold text-white text-sm">
+                                        <div className="font-semibold text-foreground text-sm">
                                           {item.capsterName}
                                         </div>
                                         {item.noPegawai && (
-                                          <div className="text-[11px] text-slate-400">
+                                          <div className="text-[11px] text-muted-foreground">
                                             {item.noPegawai}
                                           </div>
                                         )}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="px-5 py-4 font-semibold text-white">
+                                  <td className="px-5 py-4 font-semibold text-foreground">
                                     {formatRupiah(item.jumlah)}
                                   </td>
-                                  <td className="px-5 py-4 text-slate-300 font-mono text-xs">
+                                  <td className="px-5 py-4 text-muted-foreground font-mono text-xs">
                                     {item.diajukanAtShort}
                                   </td>
                                   <td className="px-5 py-4">
                                     {renderStatusBadge(item.uiStatus, item.statusLabel)}
                                   </td>
-                                  <td className="px-5 py-4 text-slate-400 font-mono text-xs">
+                                  <td className="px-5 py-4 text-muted-foreground font-mono text-xs">
                                     {item.dibayarAt || "-"}
                                   </td>
                                   <td className="px-5 py-4 text-right">
                                     <button
                                       type="button"
                                       onClick={() => setSelectedPengajuanId(item.idPengajuan)}
-                                      className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                                      className="px-4 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-all cursor-pointer"
                                     >
                                       Lihat
                                     </button>
@@ -993,7 +991,7 @@ function OwnerGajiPage() {
                               ))
                             ) : (
                               <tr>
-                                <td colSpan={7} className="px-5 py-12 text-center text-slate-500 text-xs">
+                                <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground text-xs">
                                   Tidak ada data pengajuan komisi yang sesuai dengan filter.
                                 </td>
                               </tr>
@@ -1003,23 +1001,23 @@ function OwnerGajiPage() {
                       </div>
 
                       {/* Footer Pagination */}
-                      <div className="px-5 py-3.5 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                      <div className="px-5 py-3.5 bg-card border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                         <span>Menampilkan {requestsList.length} dari {counts.all} data</span>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             disabled
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-500 cursor-not-allowed text-xs"
+                            className="px-2.5 py-1 rounded-lg border border-border text-muted-foreground/40 cursor-not-allowed text-xs"
                           >
                             &lt;
                           </button>
-                          <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold text-xs">
+                          <span className="px-3 py-1 rounded-lg bg-primary text-primary-foreground font-semibold text-xs">
                             1
                           </span>
                           <button
                             type="button"
                             disabled
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-500 cursor-not-allowed text-xs"
+                            className="px-2.5 py-1 rounded-lg border border-border text-muted-foreground/40 cursor-not-allowed text-xs"
                           >
                             &gt;
                           </button>
@@ -1039,42 +1037,42 @@ function OwnerGajiPage() {
                 {/* 4 Summary Cards */}
                 {rekapData?.summary && (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
-                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <div className="rounded-2xl bg-card border border-border p-4 space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground text-xs">
                         <span>Total Komisi Belum Dibayar</span>
-                        <Coins className="h-4 w-4 text-amber-400" />
+                        <Coins className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                       </div>
-                      <div className="text-xl font-bold text-amber-400">
+                      <div className="text-xl font-bold text-amber-600 dark:text-amber-400">
                         {formatRupiah(rekapData.summary.totalKomisiBelumDibayar)}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
-                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <div className="rounded-2xl bg-card border border-border p-4 space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground text-xs">
                         <span>Total Komisi Terbayarkan</span>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                       </div>
-                      <div className="text-xl font-bold text-emerald-400">
+                      <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                         {formatRupiah(rekapData.summary.totalKomisiTerbayar)}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
-                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <div className="rounded-2xl bg-card border border-border p-4 space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground text-xs">
                         <span>Transaksi Selesai</span>
-                        <Receipt className="h-4 w-4 text-blue-400" />
+                        <Receipt className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="text-xl font-bold text-white">
+                      <div className="text-xl font-bold text-foreground">
                         {rekapData.summary.totalTransaksiSelesai} Transaksi
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 p-4 space-y-1">
-                      <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <div className="rounded-2xl bg-card border border-border p-4 space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground text-xs">
                         <span>Total Omset Layanan</span>
-                        <TrendingUp className="h-4 w-4 text-cyan-400" />
+                        <TrendingUp className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="text-xl font-bold text-white">
+                      <div className="text-xl font-bold text-foreground">
                         {formatRupiah(rekapData.summary.totalOmset)}
                       </div>
                     </div>
@@ -1082,18 +1080,18 @@ function OwnerGajiPage() {
                 )}
 
                 {/* Rekap Table */}
-                <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
-                  <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-bold text-white">Rekapitulasi Komisi Capster</h2>
-                      <p className="text-xs text-slate-400">
+                      <h2 className="text-base font-bold text-foreground">Rekapitulasi Komisi Capster</h2>
+                      <p className="text-xs text-muted-foreground">
                         Akumulasi komisi capster yang dihitung dari transaksi layanan completed.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fetchRekap()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs text-foreground transition-colors cursor-pointer"
                     >
                       <RefreshCw className={`h-3 w-3 ${isLoadingRekap ? "animate-spin" : ""}`} />
                       <span>Muat Ulang</span>
@@ -1102,7 +1100,7 @@ function OwnerGajiPage() {
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                      <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold border-b border-border">
                         <tr>
                           <th className="px-5 py-3.5 w-14">NO.</th>
                           <th className="px-5 py-3.5">NAMA CAPSTER</th>
@@ -1115,66 +1113,66 @@ function OwnerGajiPage() {
                           <th className="px-5 py-3.5">TERAKHIR</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-border">
                         {isLoadingRekap ? (
                           <tr>
-                            <td colSpan={9} className="px-5 py-12 text-center text-slate-400 text-xs">
+                            <td colSpan={9} className="px-5 py-12 text-center text-muted-foreground text-xs">
                               Memuat rekapitulasi komisi...
                             </td>
                           </tr>
                         ) : rekapData?.items?.length ? (
                           rekapData.items.map((item: any, idx: number) => (
-                            <tr key={item.capsterId} className="hover:bg-slate-800/30 transition-colors">
-                              <td className="px-5 py-4 text-xs font-mono text-slate-400">{idx + 1}</td>
+                            <tr key={item.capsterId} className="hover:bg-muted/50 transition-colors">
+                              <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{idx + 1}</td>
                               <td className="px-5 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="h-8 w-8 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">
+                                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                                     {item.avatarLetter}
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-white text-sm">{item.capsterName}</div>
-                                    <div className="text-[11px] text-slate-400">{item.noPegawai || "-"}</div>
+                                    <div className="font-semibold text-foreground text-sm">{item.capsterName}</div>
+                                    <div className="text-[11px] text-muted-foreground">{item.noPegawai || "-"}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-center font-semibold text-white">
+                              <td className="px-5 py-4 text-center font-semibold text-foreground">
                                 {item.jumlahTransaksi}
                               </td>
-                              <td className="px-5 py-4 text-right text-slate-300">
+                              <td className="px-5 py-4 text-right text-muted-foreground">
                                 {formatRupiah(item.dasarKomisi)}
                               </td>
                               <td className="px-5 py-4 text-center">
-                                <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                                   {item.persentaseKomisi}%
                                 </span>
                               </td>
-                              <td className="px-5 py-4 text-right font-bold text-white">
+                              <td className="px-5 py-4 text-right font-bold text-foreground">
                                 {formatRupiah(item.nominalKomisi)}
                               </td>
-                              <td className="px-5 py-4 text-right font-semibold text-amber-400">
+                              <td className="px-5 py-4 text-right font-semibold text-amber-600 dark:text-amber-400">
                                 {formatRupiah(item.komisiBelumDibayar)}
                               </td>
                               <td className="px-5 py-4">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                     item.statusKomisi === "Sudah Terbayarkan"
-                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                       : item.statusKomisi === "Belum Dibayar"
-                                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                      : "bg-slate-800 text-slate-400"
+                                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                      : "bg-muted text-muted-foreground"
                                   }`}
                                 >
                                   {item.statusKomisi}
                                 </span>
                               </td>
-                              <td className="px-5 py-4 text-slate-400 font-mono text-xs">
+                              <td className="px-5 py-4 text-muted-foreground font-mono text-xs">
                                 {item.tanggalTerakhirFormatted}
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={9} className="px-5 py-12 text-center text-slate-500 text-xs">
+                            <td colSpan={9} className="px-5 py-12 text-center text-muted-foreground text-xs">
                               Tidak ada data komisi untuk periode ini.
                             </td>
                           </tr>
@@ -1191,18 +1189,18 @@ function OwnerGajiPage() {
             {/* ========================================================================= */}
             {activeTab === "riwayat" && (
               <div className="space-y-4 animate-in fade-in duration-200">
-                <div className="rounded-2xl bg-[#0A1424] border border-slate-800/80 overflow-hidden shadow-xl">
-                  <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-bold text-white">Riwayat Pembayaran Komisi</h2>
-                      <p className="text-xs text-slate-400">
+                      <h2 className="text-base font-bold text-foreground">Riwayat Pembayaran Komisi</h2>
+                      <p className="text-xs text-muted-foreground">
                         Daftar komisi yang telah berhasil dibayarkan kepada capster.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fetchHistory()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs text-foreground transition-colors cursor-pointer"
                     >
                       <RefreshCw className={`h-3 w-3 ${isLoadingHistory ? "animate-spin" : ""}`} />
                       <span>Muat Ulang</span>
@@ -1211,7 +1209,7 @@ function OwnerGajiPage() {
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                      <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold border-b border-border">
                         <tr>
                           <th className="px-5 py-3.5 w-14">NO.</th>
                           <th className="px-5 py-3.5">NAMA CAPSTER</th>
@@ -1223,44 +1221,44 @@ function OwnerGajiPage() {
                           <th className="px-5 py-3.5 text-right w-24">AKSI</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-border">
                         {isLoadingHistory ? (
                           <tr>
-                            <td colSpan={8} className="px-5 py-12 text-center text-slate-400 text-xs">
+                            <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground text-xs">
                               Memuat riwayat pembayaran komisi...
                             </td>
                           </tr>
                         ) : historyList.length > 0 ? (
                           historyList.map((item, idx) => (
-                            <tr key={item.idPembayaran} className="hover:bg-slate-800/30 transition-colors">
-                              <td className="px-5 py-4 text-xs font-mono text-slate-400">{idx + 1}</td>
+                            <tr key={item.idPembayaran} className="hover:bg-muted/50 transition-colors">
+                              <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{idx + 1}</td>
                               <td className="px-5 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="h-8 w-8 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
+                                  <div className="h-8 w-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
                                     {item.avatarLetter}
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-white text-sm">{item.capsterName}</div>
-                                    <div className="text-[11px] text-slate-400">{item.capsterPhone || "-"}</div>
+                                    <div className="font-semibold text-foreground text-sm">{item.capsterName}</div>
+                                    <div className="text-[11px] text-muted-foreground">{item.capsterPhone || "-"}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-5 py-4 font-bold text-white">
+                              <td className="px-5 py-4 font-bold text-foreground">
                                 {formatRupiah(item.jumlahBayar)}
                               </td>
-                              <td className="px-5 py-4 text-slate-300 font-mono text-xs">
+                              <td className="px-5 py-4 text-muted-foreground font-mono text-xs">
                                 {item.dibayarAtFormatted}
                               </td>
                               <td className="px-5 py-4">
-                                <span className="uppercase text-xs font-medium text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
+                                <span className="uppercase text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
                                   {item.metodePembayaran}
                                 </span>
                               </td>
-                              <td className="px-5 py-4 font-mono text-xs text-slate-400">
+                              <td className="px-5 py-4 font-mono text-xs text-muted-foreground">
                                 {item.referensi}
                               </td>
                               <td className="px-5 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
                                   {item.statusLabel}
                                 </span>
@@ -1272,7 +1270,7 @@ function OwnerGajiPage() {
                                     setActiveTab("pengajuan");
                                     setSelectedPengajuanId(item.idPengajuan);
                                   }}
-                                  className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                                  className="px-3.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-all cursor-pointer"
                                 >
                                   Lihat
                                 </button>
@@ -1281,7 +1279,7 @@ function OwnerGajiPage() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={8} className="px-5 py-12 text-center text-slate-500 text-xs">
+                            <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground text-xs">
                               Belum ada pembayaran komisi yang tercatat.
                             </td>
                           </tr>
@@ -1303,23 +1301,23 @@ function OwnerGajiPage() {
         {/* ========================================================================= */}
         {isApproveModalOpen && detailData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
-              <div className="h-16 w-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+            <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 text-center text-foreground">
+              <div className="h-16 w-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/30">
                 <Check className="h-8 w-8 stroke-[3]" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-foreground tracking-tight">
                   Setujui Penarikan Komisi?
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-muted-foreground">
                   Anda akan menyetujui penarikan komisi sebesar{" "}
-                  <span className="font-bold text-white">
+                  <span className="font-bold text-foreground">
                     {formatRupiah(detailData.pengajuan.jumlah)}
                   </span>{" "}
-                  untuk <span className="font-semibold text-white">{detailData.capster.name}</span>.
+                  untuk <span className="font-semibold text-foreground">{detailData.capster.name}</span>.
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Setelah disetujui, pengajuan masuk ke tahap pembayaran.
                 </p>
               </div>
@@ -1329,7 +1327,7 @@ function OwnerGajiPage() {
                   type="button"
                   onClick={() => setIsApproveModalOpen(false)}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1337,7 +1335,7 @@ function OwnerGajiPage() {
                   type="button"
                   onClick={handleApprove}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                 >
                   {isSubmitting ? "Menyetujui..." : "Setujui Pengajuan"}
                 </button>
@@ -1351,33 +1349,33 @@ function OwnerGajiPage() {
         {/* ========================================================================= */}
         {isRejectModalOpen && detailData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5">
-              <div className="h-16 w-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+            <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 text-foreground">
+              <div className="h-16 w-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto border border-red-500/30">
                 <AlertTriangle className="h-8 w-8 stroke-[2.5]" />
               </div>
 
               <div className="text-center space-y-1">
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-foreground tracking-tight">
                   Tolak Pengajuan?
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-muted-foreground">
                   Masukkan alasan penolakan pengajuan komisi dari{" "}
-                  <span className="font-semibold text-white">{detailData.capster.name}</span>.
+                  <span className="font-semibold text-foreground">{detailData.capster.name}</span>.
                 </p>
               </div>
 
               <div className="space-y-1.5 text-left">
-                <label className="text-xs font-semibold text-slate-300">
-                  Alasan Penolakan <span className="text-red-400">*</span>
+                <label className="text-xs font-semibold text-foreground">
+                  Alasan Penolakan <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value.slice(0, 200))}
                   placeholder="Contoh: Nominal pengajuan tidak sesuai dengan komisi yang tersedia."
                   rows={4}
-                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
+                  className="w-full bg-background border border-input rounded-xl p-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 />
-                <div className="text-right text-[11px] text-slate-500 font-mono">
+                <div className="text-right text-[11px] text-muted-foreground font-mono">
                   {rejectReason.length}/200
                 </div>
               </div>
@@ -1387,7 +1385,7 @@ function OwnerGajiPage() {
                   type="button"
                   onClick={() => setIsRejectModalOpen(false)}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1409,21 +1407,21 @@ function OwnerGajiPage() {
         {/* ========================================================================= */}
         {isPostApproveModalOpen && detailData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
-              <div className="h-16 w-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
+            <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 text-center text-foreground">
+              <div className="h-16 w-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto border border-primary/30">
                 <Clock className="h-8 w-8 stroke-[2.5]" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-foreground tracking-tight">
                   Pengajuan Telah Disetujui
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-muted-foreground">
                   Komisi sebesar{" "}
-                  <span className="font-bold text-white">
+                  <span className="font-bold text-foreground">
                     {formatRupiah(detailData.pengajuan.jumlah)}
                   </span>{" "}
-                  untuk <span className="font-semibold text-white">{detailData.capster.name}</span>{" "}
+                  untuk <span className="font-semibold text-foreground">{detailData.capster.name}</span>{" "}
                   telah disetujui. Silakan lakukan pembayaran dan konfirmasi setelah komisi diberikan kepada Capster.
                 </p>
               </div>
@@ -1435,14 +1433,14 @@ function OwnerGajiPage() {
                     setIsPostApproveModalOpen(false);
                     setIsPayModalOpen(true);
                   }}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                  className="w-full py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                 >
                   Konfirmasi Komisi Sudah Dibayarkan
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsPostApproveModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Tutup
                 </button>
@@ -1456,39 +1454,39 @@ function OwnerGajiPage() {
         {/* ========================================================================= */}
         {isPayModalOpen && detailData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5 text-center">
-              <div className="h-16 w-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
+            <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 text-center text-foreground">
+              <div className="h-16 w-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto border border-primary/30">
                 <CreditCard className="h-8 w-8 stroke-[2]" />
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-foreground tracking-tight">
                   Konfirmasi Komisi Terbayarkan?
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-muted-foreground">
                   Pastikan komisi telah diberikan kepada{" "}
-                  <span className="font-semibold text-white">{detailData.capster.name}</span> sebelum melakukan konfirmasi.
+                  <span className="font-semibold text-foreground">{detailData.capster.name}</span> sebelum melakukan konfirmasi.
                 </p>
               </div>
 
               {/* Details card inside modal */}
-              <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 text-left text-xs space-y-2">
+              <div className="rounded-xl bg-muted/40 border border-border p-4 text-left text-xs space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Capster</span>
-                  <span className="font-semibold text-white">{detailData.capster.name}</span>
+                  <span className="text-muted-foreground">Capster</span>
+                  <span className="font-semibold text-foreground">{detailData.capster.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Jumlah</span>
-                  <span className="font-bold text-white text-sm">
+                  <span className="text-muted-foreground">Jumlah</span>
+                  <span className="font-bold text-foreground text-sm">
                     {formatRupiah(detailData.pengajuan.jumlah)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Status</span>
-                  <span className="text-cyan-400 font-semibold">Menunggu Pembayaran</span>
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="text-primary font-semibold">Menunggu Pembayaran</span>
                 </div>
-                <div className="pt-2 border-t border-slate-800/80">
-                  <label className="text-[11px] text-slate-400 block mb-1">
+                <div className="pt-2 border-t border-border">
+                  <label className="text-[11px] text-muted-foreground block mb-1">
                     Metode Pembayaran
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -1499,8 +1497,8 @@ function OwnerGajiPage() {
                         onClick={() => setPayMethod(m)}
                         className={`py-1.5 rounded-lg text-xs font-semibold uppercase transition-all cursor-pointer ${
                           payMethod === m
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                            : "bg-slate-800 text-slate-400 hover:text-white"
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                            : "bg-card border border-border text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         {m}
@@ -1515,7 +1513,7 @@ function OwnerGajiPage() {
                   type="button"
                   onClick={() => setIsPayModalOpen(false)}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1523,7 +1521,7 @@ function OwnerGajiPage() {
                   type="button"
                   onClick={handlePay}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-all cursor-pointer"
                 >
                   {isSubmitting ? "Menyimpan..." : "Konfirmasi Sudah Dibayarkan"}
                 </button>
@@ -1537,13 +1535,13 @@ function OwnerGajiPage() {
         {/* ========================================================================= */}
         {isCommissionModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg rounded-2xl bg-[#0A1424] border border-slate-800 p-6 shadow-2xl space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 text-foreground">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2.5">
-                  <SlidersHorizontal className="h-5 w-5 text-blue-400" />
+                  <SlidersHorizontal className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="text-base font-bold text-white">Atur Komisi Capster</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="text-base font-bold text-foreground">Atur Komisi Capster</h3>
+                    <p className="text-xs text-muted-foreground">
                       Tentukan persentase komisi per capster. Berlaku snapshot pada transaksi baru.
                     </p>
                   </div>
@@ -1551,15 +1549,15 @@ function OwnerGajiPage() {
                 <button
                   type="button"
                   onClick={() => setIsCommissionModalOpen(false)}
-                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {isLoadingCapsters ? (
-                <div className="p-8 text-center text-slate-400 text-xs">
-                  <RefreshCw className="h-6 w-6 text-blue-500 animate-spin mx-auto mb-2" />
+                <div className="p-8 text-center text-muted-foreground text-xs">
+                  <RefreshCw className="h-6 w-6 text-primary animate-spin mx-auto mb-2" />
                   Memuat daftar capster...
                 </div>
               ) : (
@@ -1567,15 +1565,15 @@ function OwnerGajiPage() {
                   {capsters.map((c) => (
                     <div
                       key={c.id_capster}
-                      className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                      className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                           {c.name ? c.name.charAt(0).toUpperCase() : "C"}
                         </div>
                         <div>
-                          <div className="font-semibold text-white text-sm">{c.name}</div>
-                          <div className="text-[11px] text-slate-400">{c.no_pegawai || c.role}</div>
+                          <div className="font-semibold text-foreground text-sm">{c.name}</div>
+                          <div className="text-[11px] text-muted-foreground">{c.no_pegawai || c.role}</div>
                         </div>
                       </div>
 
@@ -1589,9 +1587,9 @@ function OwnerGajiPage() {
                                 max={100}
                                 value={inputPercentage}
                                 onChange={(e) => setInputPercentage(e.target.value)}
-                                className="w-full bg-slate-800 border border-blue-500 rounded-lg px-2.5 py-1 text-xs text-white text-center focus:outline-none"
+                                className="w-full bg-background border border-input rounded-lg px-2.5 py-1 text-xs text-foreground text-center focus:outline-none focus:border-primary"
                               />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                                 %
                               </span>
                             </div>
@@ -1606,21 +1604,21 @@ function OwnerGajiPage() {
                                   toast.error("Persentase harus antara 0 dan 100.");
                                 }
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer"
                             >
                               Simpan
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingCapster(null)}
-                              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs cursor-pointer"
+                              className="px-2 py-1 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground text-xs cursor-pointer"
                             >
                               Batal
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-3">
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                               {c.persentase_komisi || "15"}%
                             </span>
                             <button
@@ -1633,7 +1631,7 @@ function OwnerGajiPage() {
                                 });
                                 setInputPercentage(String(c.persentase_komisi || 15));
                               }}
-                              className="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                              className="text-xs text-primary hover:text-primary/80 font-semibold cursor-pointer"
                             >
                               Ubah
                             </button>
@@ -1649,7 +1647,7 @@ function OwnerGajiPage() {
                 <button
                   type="button"
                   onClick={() => setIsCommissionModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer"
                 >
                   Tutup
                 </button>

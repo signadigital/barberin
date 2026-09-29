@@ -202,8 +202,8 @@ function OwnerVerifyEmailChangePage() {
   const targetSlug = barbershopSlug || ownerState.user?.barbershopSlug || "barberin";
 
   return (
-    <div className="min-h-screen bg-[#070D18] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 space-y-6">
         <div className="text-center">
@@ -212,15 +212,15 @@ function OwnerVerifyEmailChangePage() {
           </Link>
         </div>
 
-        <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
           {status === "loading" && (
             <div className="flex flex-col items-center text-center space-y-4 py-8">
-              <div className="h-14 w-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center ring-1 ring-blue-500/20">
-                <Loader2 className="h-7 w-7 animate-spin text-blue-400" />
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Memverifikasi Perubahan Email...</h3>
-                <p className="text-xs text-slate-400 max-w-xs">
+                <h3 className="text-base font-bold text-foreground">Memverifikasi Perubahan Email...</h3>
+                <p className="text-xs text-muted-foreground max-w-xs">
                   Mohon tunggu sebentar, sistem sedang memvalidasi tautan konfirmasi Supabase Auth
                   Anda.
                 </p>
@@ -230,14 +230,14 @@ function OwnerVerifyEmailChangePage() {
 
           {status === "success" && (
             <div className="flex flex-col items-center text-center space-y-4 py-4">
-              <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center ring-1 ring-emerald-500/20">
-                <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+              <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center ring-1 ring-emerald-500/20">
+                <CheckCircle2 className="h-7 w-7 text-emerald-500" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Email Berhasil Diperbarui</h3>
-                <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                <h3 className="text-base font-bold text-foreground">Email Berhasil Diperbarui</h3>
+                <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                   Alamat email login Owner Anda telah berhasil diverifikasi dan disinkronkan menjadi{" "}
-                  <span className="font-semibold text-white">{confirmedEmail}</span>.
+                  <span className="font-semibold text-foreground">{confirmedEmail}</span>.
                 </p>
               </div>
 
@@ -258,17 +258,17 @@ function OwnerVerifyEmailChangePage() {
 
           {status === "pending_second_email" && (
             <div className="flex flex-col items-center text-center space-y-4 py-4">
-              <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center ring-1 ring-amber-500/20">
-                <Mail className="h-7 w-7 text-amber-400" />
+              <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center ring-1 ring-amber-500/20">
+                <Mail className="h-7 w-7 text-amber-500" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-base font-bold text-white">Konfirmasi Tahap 1 Berhasil</h3>
-                <p className="text-xs text-slate-300 max-w-xs leading-relaxed">
+                <h3 className="text-base font-bold text-foreground">Konfirmasi Tahap 1 Berhasil</h3>
+                <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                   Konfirmasi dari link ini telah diterima. Supabase Auth menggunakan fitur keamanan
                   ganda (Secure Email Change).
                 </p>
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left text-xs text-amber-200/90 space-y-1">
-                  <p className="font-semibold flex items-center gap-1.5 text-amber-300">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left text-xs text-amber-700 dark:text-amber-200/90 space-y-1">
+                  <p className="font-semibold flex items-center gap-1.5 text-amber-600 dark:text-amber-300">
                     <ShieldCheck className="h-4 w-4" />
                     Langkah Terakhir:
                   </p>
@@ -285,7 +285,7 @@ function OwnerVerifyEmailChangePage() {
                   onClick={() =>
                     navigate({ to: `/${targetSlug}/owner/settings` as any, replace: true })
                   }
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Kembali ke Pengaturan</span>
                   <ArrowRight className="h-4 w-4" />
@@ -296,12 +296,12 @@ function OwnerVerifyEmailChangePage() {
 
           {status === "error" && (
             <div className="flex flex-col items-center text-center space-y-4 py-4">
-              <div className="h-14 w-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center ring-1 ring-rose-500/20">
-                <AlertCircle className="h-7 w-7 text-rose-400" />
+              <div className="h-14 w-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center ring-1 ring-rose-500/20">
+                <AlertCircle className="h-7 w-7 text-rose-500" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Verifikasi Email Gagal</h3>
-                <p className="text-xs text-rose-300/90 max-w-xs leading-relaxed">{errorMessage}</p>
+                <h3 className="text-base font-bold text-foreground">Verifikasi Email Gagal</h3>
+                <p className="text-xs text-rose-600 dark:text-rose-300 max-w-xs leading-relaxed">{errorMessage}</p>
               </div>
 
               <div className="w-full pt-4">
@@ -310,7 +310,7 @@ function OwnerVerifyEmailChangePage() {
                   onClick={() =>
                     navigate({ to: `/${targetSlug}/owner/settings` as any, replace: true })
                   }
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Kembali ke Pengaturan</span>
                   <ArrowRight className="h-4 w-4" />

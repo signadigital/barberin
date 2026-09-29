@@ -70,13 +70,13 @@ function OwnerAuditActivityDetailPage() {
   const statusBadge = (s?: string) => {
     if (s === "Dibatalkan") {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
           Dibatalkan
         </span>
       );
     }
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
         Berhasil
       </span>
     );
@@ -95,7 +95,7 @@ function OwnerAuditActivityDetailPage() {
           <div>
             <Link
               to={`/${barbershopSlug}/owner/audit-activities` as any}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Audit Aktivitas</span>
@@ -103,13 +103,13 @@ function OwnerAuditActivityDetailPage() {
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-slate-500 text-xs animate-pulse">
+            <div className="py-20 text-center text-muted-foreground text-xs animate-pulse">
               Memuat detail aktivitas...
             </div>
           ) : error || !activity ? (
-            <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3">
               <AlertCircle className="h-8 w-8 text-rose-400 mx-auto" />
-              <div className="text-white font-semibold text-sm">{error || "Data tidak ditemukan"}</div>
+              <div className="text-foreground font-semibold text-sm">{error || "Data tidak ditemukan"}</div>
               <button
                 type="button"
                 onClick={() => navigate({ to: `/${barbershopSlug}/owner/audit-activities` as any })}
@@ -121,7 +121,7 @@ function OwnerAuditActivityDetailPage() {
           ) : (
             <div className="space-y-5">
               {/* Header Card */}
-              <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
                     <div className="h-12 w-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
@@ -133,10 +133,10 @@ function OwnerAuditActivityDetailPage() {
                           {activity.id}
                         </span>
                       </div>
-                      <h2 className="text-lg md:text-xl font-bold text-white mt-1">
+                      <h2 className="text-lg md:text-xl font-bold text-foreground mt-1">
                         {activity.aktivitas}
                       </h2>
-                      <div className="text-xs text-slate-400 mt-1 font-mono">
+                      <div className="text-xs text-muted-foreground mt-1 font-mono">
                         {activity.dateFormatted} • {activity.timeFormatted}
                       </div>
                     </div>
@@ -146,36 +146,36 @@ function OwnerAuditActivityDetailPage() {
                 </div>
 
                 {/* Metadata Details */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-slate-800/80 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-border text-xs">
                   <div>
-                    <div className="text-slate-400 font-medium">Pengguna</div>
-                    <div className="text-white font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Pengguna</div>
+                    <div className="text-foreground font-semibold mt-1">
                       {activity.pengguna}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Role</div>
-                    <div className="text-white font-semibold mt-1">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 font-medium border border-blue-500/30">
+                    <div className="text-muted-foreground font-medium">Role</div>
+                    <div className="text-foreground font-semibold mt-1">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-300 font-medium border border-blue-500/30">
                         {activity.role}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Data Terkait</div>
-                    <div className="text-blue-400 font-mono font-semibold mt-1">
+                    <div className="text-muted-foreground font-medium">Data Terkait</div>
+                    <div className="text-blue-600 dark:text-blue-400 font-mono font-semibold mt-1">
                       {activity.dataTerkait}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Waktu Lengkap</div>
-                    <div className="text-slate-200 font-mono mt-1">
+                    <div className="text-muted-foreground font-medium">Waktu Lengkap</div>
+                    <div className="text-foreground font-mono mt-1">
                       {activity.dateFormatted} • {activity.timeFormatted}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400 font-medium">Status Eksekusi</div>
-                    <div className="text-slate-200 font-medium mt-1">
+                    <div className="text-muted-foreground font-medium">Status Eksekusi</div>
+                    <div className="text-foreground font-medium mt-1">
                       {activity.status}
                     </div>
                   </div>
@@ -184,27 +184,27 @@ function OwnerAuditActivityDetailPage() {
 
               {/* Section: Detail Transaksi (if available) */}
               {activity.details?.nominal !== undefined && (
-                <div className="bg-[#0F1D33] border border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Scissors className="h-4 w-4 text-blue-400" />
+                <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Scissors className="h-4 w-4 text-blue-500" />
                     <span>Detail Transaksi</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-1">
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Layanan</div>
-                      <div className="text-white font-semibold mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Layanan</div>
+                      <div className="text-foreground font-semibold mt-1">
                         {activity.details.serviceNames || "Gentleman Cut"}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Capster Penanggung Jawab</div>
-                      <div className="text-white font-semibold mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Capster Penanggung Jawab</div>
+                      <div className="text-foreground font-semibold mt-1">
                         {activity.details.capsterName || activity.pengguna}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Nominal Transaksi</div>
-                      <div className="text-emerald-400 font-bold mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Nominal Transaksi</div>
+                      <div className="text-emerald-600 dark:text-emerald-400 font-bold mt-1">
                         {formatRupiah(activity.details.nominal)}
                       </div>
                     </div>
@@ -214,33 +214,33 @@ function OwnerAuditActivityDetailPage() {
 
               {/* Section: Alasan Pembatalan (if cancellation) */}
               {(activity.activityType === "pembatalan" || activity.status === "Dibatalkan") && (
-                <div className="bg-[#0F1D33] border border-rose-500/30 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-                  <h3 className="text-sm font-bold text-rose-300 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-rose-400" />
+                <div className="bg-card border border-rose-500/30 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-rose-600 dark:text-rose-300 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-rose-500" />
                     <span>Alasan Pembatalan</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Alasan</div>
-                      <div className="text-rose-300 font-semibold mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Alasan</div>
+                      <div className="text-rose-600 dark:text-rose-400 font-semibold mt-1">
                         {activity.details?.cancelReason || "Menunggu terlalu lama"}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Dibatalkan Oleh</div>
-                      <div className="text-white font-semibold mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Dibatalkan Oleh</div>
+                      <div className="text-foreground font-semibold mt-1">
                         {activity.details?.cancelledBy || activity.pengguna}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Waktu Pembatalan</div>
-                      <div className="text-slate-300 font-mono mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Waktu Pembatalan</div>
+                      <div className="text-foreground font-mono mt-1">
                         {activity.details?.cancelTime || `${activity.dateFormatted} • ${activity.timeFormatted}`}
                       </div>
                     </div>
-                    <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                      <div className="text-slate-400">Catatan Tambahan</div>
-                      <div className="text-slate-300 mt-1">
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                      <div className="text-muted-foreground">Catatan Tambahan</div>
+                      <div className="text-foreground mt-1">
                         {activity.details?.cancelNotes || "-"}
                       </div>
                     </div>

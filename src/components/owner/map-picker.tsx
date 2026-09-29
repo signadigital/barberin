@@ -351,7 +351,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
               }
             }}
             placeholder="Cari nama jalan, gedung, atau area (misal: Sudirman Jakarta)"
-            className="w-full pl-9 pr-3 py-1.5 bg-[#14233D] text-xs text-white placeholder-slate-500 border border-slate-700/80 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full pl-9 pr-3 py-1.5 bg-background text-xs text-foreground placeholder:text-muted-foreground border border-input rounded-xl focus:outline-none focus:border-primary transition-colors"
           />
         </div>
         <button
@@ -362,20 +362,20 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
             handleSearchLocation(e);
           }}
           disabled={searchLoading || !searchQuery.trim()}
-          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
+          className="px-3 py-1.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
         >
           {searchLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Cari"}
         </button>
       </div>
 
       {searchMessage && (
-        <div className="text-[11px] text-slate-300 px-1 italic">
+        <div className="text-[11px] text-muted-foreground px-1 italic">
           {searchMessage}
         </div>
       )}
 
       {/* REAL INTERACTIVE LEAFLET MAP CONTAINER (Isolated Stacking Context) */}
-      <div className="relative isolate z-0 w-full h-72 sm:h-80 bg-[#0B1527] border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative isolate z-0 w-full h-72 sm:h-80 bg-card border border-border rounded-2xl overflow-hidden shadow-md">
         {/* The Leaflet Map DOM Element */}
         <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -413,7 +413,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/90 hover:bg-blue-600 text-[11px] font-semibold text-white shadow-md backdrop-blur-md transition-colors pointer-events-auto"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/90 hover:bg-primary text-[11px] font-semibold text-primary-foreground shadow-md backdrop-blur-md transition-colors pointer-events-auto"
             title="Buka titik ini di Google Maps"
           >
             <span>Buka di Google Maps</span>
@@ -424,7 +424,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
 
       {/* Preset Cepat Kota-Kota Besar di Indonesia */}
       <div>
-        <div className="text-[10px] text-slate-400 mb-1.5 font-medium">
+        <div className="text-[10px] text-muted-foreground mb-1.5 font-medium">
           Pilihan Cepat Kota:
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -433,7 +433,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
               key={city.name}
               type="button"
               onClick={() => handlePresetSelect(city)}
-              className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-[11px] text-slate-200 transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 border border-border text-[11px] text-foreground transition-colors"
             >
               {city.name}
             </button>
@@ -444,7 +444,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
       {/* Input Angka Latitude & Longitude Manual (Sinkron Dua Arah) */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         <div>
-          <label className="block text-[11px] font-medium text-slate-400 mb-1">
+          <label className="block text-[11px] font-medium text-muted-foreground mb-1">
             Latitude (Lintang)
           </label>
           <input
@@ -453,11 +453,11 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
             value={value.latitude || ""}
             onChange={(e) => handleLatChange(e.target.value)}
             placeholder="-6.2088"
-            className="w-full px-3 py-2 bg-[#14233D] text-xs text-white placeholder-slate-500 border border-slate-700/80 rounded-xl focus:outline-none focus:border-blue-500 transition-colors font-mono"
+            className="w-full px-3 py-2 bg-background text-xs text-foreground placeholder:text-muted-foreground border border-input rounded-xl focus:outline-none focus:border-primary transition-colors font-mono"
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-400 mb-1">
+          <label className="block text-[11px] font-medium text-muted-foreground mb-1">
             Longitude (Bujur)
           </label>
           <input
@@ -466,7 +466,7 @@ export function MapPicker({ value, onChange, error }: MapPickerProps) {
             value={value.longitude || ""}
             onChange={(e) => handleLngChange(e.target.value)}
             placeholder="106.8456"
-            className="w-full px-3 py-2 bg-[#14233D] text-xs text-white placeholder-slate-500 border border-slate-700/80 rounded-xl focus:outline-none focus:border-blue-500 transition-colors font-mono"
+            className="w-full px-3 py-2 bg-background text-xs text-foreground placeholder:text-muted-foreground border border-input rounded-xl focus:outline-none focus:border-primary transition-colors font-mono"
           />
         </div>
       </div>

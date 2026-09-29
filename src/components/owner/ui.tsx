@@ -104,10 +104,10 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-          <p className="text-xs text-slate-400 font-medium">Memuat sesi...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-xs text-muted-foreground font-medium">Memuat sesi...</p>
         </div>
       </div>
     );
@@ -116,10 +116,10 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
   const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
   if (!hasAuth) {
     return (
-      <div className="min-h-screen bg-[#070D18] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-          <p className="text-xs text-slate-400 font-medium">Mengarahkan ke login...</p>
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-xs text-muted-foreground font-medium">Mengarahkan ke login...</p>
         </div>
       </div>
     );
@@ -221,7 +221,7 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all text-left"
+          className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-all text-left"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Log Out</span>
@@ -360,37 +360,27 @@ export function OwnerNotificationBell({
           isMobile
             ? `p-1.5 rounded-lg transition-colors relative ${
                 isOpen
-                  ? isLight
-                    ? "bg-slate-200 text-blue-600"
-                    : "bg-slate-800 text-blue-400"
-                  : isLight
-                    ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                  ? "bg-muted text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`
             : `p-2 rounded-xl transition-colors relative ${
                 isOpen
-                  ? isLight
-                    ? "bg-slate-200 text-blue-600"
-                    : "bg-slate-800 text-blue-400"
-                  : isLight
-                    ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                  ? "bg-muted text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`
         }
       >
         <Bell className={isMobile ? "h-5 w-5" : "h-5 w-5"} />
         {unreadCount > 0 ? (
           <>
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#0A1424]">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
             <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-rose-500 animate-ping opacity-40 pointer-events-none" />
           </>
         ) : (
           <span
-            className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-slate-500/40 ring-2 ${
-              isLight ? "ring-white" : "ring-[#0A1424]"
-            }`}
+            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-muted-foreground/40 ring-2 ring-card"
           />
         )}
       </button>
@@ -405,26 +395,22 @@ export function OwnerNotificationBell({
           />
 
           <div
-            className={`absolute right-0 top-[calc(100%+8px)] z-50 rounded-2xl shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-150 ${
+            className={`absolute right-0 top-[calc(100%+8px)] z-50 rounded-2xl shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-150 bg-card border border-border text-card-foreground ${
               isMobile
                 ? "w-[330px] sm:w-[380px] -right-12 sm:right-0"
                 : "w-[420px]"
-            } ${
-              isLight
-                ? "bg-white/95 border border-slate-200 backdrop-blur-xl text-slate-800 shadow-slate-300/50"
-                : "bg-[#0D192B]/95 border border-slate-700/80 backdrop-blur-xl text-slate-100 shadow-black/80"
             }`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-700/40">
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm tracking-wide">Notifikasi</h3>
+                <h3 className="font-bold text-sm tracking-wide text-foreground">Notifikasi</h3>
                 {unreadCount > 0 ? (
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary border border-primary/30">
                     {unreadCount} baru
                   </span>
                 ) : (
-                  <span className="text-[11px] text-slate-400">Semua sudah dibaca</span>
+                  <span className="text-[11px] text-muted-foreground">Semua sudah dibaca</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -432,7 +418,7 @@ export function OwnerNotificationBell({
                   <button
                     type="button"
                     onClick={handleMarkAllRead}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-1 hover:underline"
+                    className="text-xs text-primary hover:text-primary/80 transition-colors font-medium flex items-center gap-1 hover:underline"
                   >
                     <Check className="h-3.5 w-3.5" />
                     Tandai dibaca
@@ -441,7 +427,7 @@ export function OwnerNotificationBell({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -449,14 +435,14 @@ export function OwnerNotificationBell({
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-700/40 overflow-x-auto text-xs scrollbar-none">
+            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border overflow-x-auto text-xs scrollbar-none">
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap ${
                   activeTab === "all"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 Semua ({notifications.length})
@@ -467,7 +453,7 @@ export function OwnerNotificationBell({
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "komisi"
                     ? "bg-amber-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
@@ -479,7 +465,7 @@ export function OwnerNotificationBell({
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "transaksi"
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -491,7 +477,7 @@ export function OwnerNotificationBell({
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "pembatalan"
                     ? "bg-rose-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
@@ -502,27 +488,27 @@ export function OwnerNotificationBell({
                 onClick={() => setActiveTab("shift")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "shift"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 Shift Capster ({countShift})
               </button>
             </div>
 
             {/* List Body */}
-            <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-800/40 p-2 space-y-1">
+            <div className="max-h-[380px] overflow-y-auto divide-y divide-border p-2 space-y-1">
               {loading && notifications.length === 0 ? (
-                <div className="py-8 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-5 w-5 animate-spin text-blue-500 mb-2" />
+                <div className="py-8 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto h-5 w-5 animate-spin text-primary mb-2" />
                   <p className="text-xs">Memuat notifikasi...</p>
                 </div>
               ) : filteredNotifs.length === 0 ? (
-                <div className="py-8 text-center text-slate-400">
-                  <CheckCircle2 className="mx-auto h-7 w-7 text-slate-500 mb-2 opacity-60" />
-                  <p className="text-xs font-semibold text-slate-300">Belum Ada Notifikasi</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                <div className="py-8 text-center text-muted-foreground">
+                  <CheckCircle2 className="mx-auto h-7 w-7 text-muted-foreground mb-2 opacity-60" />
+                  <p className="text-xs font-semibold text-foreground">Belum Ada Notifikasi</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     Aktivitas transaksi, komisi capster, dan shift akan muncul di sini.
                   </p>
                 </div>
@@ -533,31 +519,31 @@ export function OwnerNotificationBell({
                   let iconBadge;
                   if (isCommissionType(item.type)) {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
                         <Wallet className="h-4 w-4" />
                       </div>
                     );
                   } else if (item.type === "tx_success") {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shrink-0">
                         <CheckCircle2 className="h-4 w-4" />
                       </div>
                     );
                   } else if (item.type === "tx_cancelled") {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-500 shrink-0">
                         <XCircle className="h-4 w-4" />
                       </div>
                     );
                   } else if (item.type === "capster_checkin") {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0">
                         <UserCheck className="h-4 w-4" />
                       </div>
                     );
                   } else {
                     iconBadge = (
-                      <div className="h-8 w-8 rounded-xl bg-slate-500/15 border border-slate-500/30 flex items-center justify-center text-slate-400 shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0">
                         <LogOut className="h-4 w-4" />
                       </div>
                     );
@@ -569,12 +555,8 @@ export function OwnerNotificationBell({
                       onClick={() => handleItemClick(item)}
                       className={`group p-2.5 rounded-xl cursor-pointer transition-all flex items-start gap-3 relative ${
                         isRead
-                          ? isLight
-                            ? "hover:bg-slate-100 opacity-80"
-                            : "hover:bg-slate-800/50 opacity-75"
-                          : isLight
-                            ? "bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/60"
-                            : "bg-blue-950/25 hover:bg-blue-900/35 border border-blue-500/15"
+                          ? "hover:bg-muted/50 opacity-75"
+                          : "bg-primary/5 hover:bg-primary/10 border border-primary/20"
                       }`}
                     >
                       {iconBadge}
@@ -584,40 +566,36 @@ export function OwnerNotificationBell({
                           <span
                             className={`text-xs font-semibold truncate ${
                               isCommissionType(item.type)
-                                ? "text-amber-400"
+                                ? "text-amber-500"
                                 : item.type === "tx_success"
-                                  ? "text-emerald-400"
+                                  ? "text-emerald-500"
                                   : item.type === "tx_cancelled"
-                                    ? "text-rose-400"
+                                    ? "text-rose-500"
                                     : item.type === "capster_checkin"
-                                      ? "text-blue-400"
-                                      : "text-slate-400"
+                                      ? "text-primary"
+                                      : "text-muted-foreground"
                             }`}
                           >
                             {item.title}
                           </span>
-                          <span className="text-[10px] text-slate-400 shrink-0">
+                          <span className="text-[10px] text-muted-foreground shrink-0">
                             {item.timeAgo}
                           </span>
                         </div>
 
-                        <p
-                          className={`text-xs font-medium leading-snug mt-0.5 ${
-                            isLight ? "text-slate-900" : "text-slate-200"
-                          }`}
-                        >
+                        <p className="text-xs font-medium leading-snug mt-0.5 text-foreground">
                           {item.message}
                         </p>
 
                         {item.detail && (
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                             {item.detail}
                           </p>
                         )}
                       </div>
 
                       {!isRead && (
-                        <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1 shadow-sm" />
+                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1 shadow-sm" />
                       )}
                     </div>
                   );
@@ -626,14 +604,14 @@ export function OwnerNotificationBell({
             </div>
 
             {/* Footer */}
-            <div className="p-2.5 border-t border-slate-700/40 text-center bg-slate-900/40 rounded-b-2xl">
+            <div className="p-2.5 border-t border-border text-center bg-muted/30 rounded-b-2xl">
               <button
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
                   navigate({ to: getTenantPath(slug, "/owner/audit-activities") as any });
                 }}
-                className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1.5 transition-colors"
+                className="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1.5 transition-colors"
               >
                 <span>Lihat Riwayat Aktivitas Lengkap</span>
                 <ArrowRight className="h-3 w-3" />
@@ -725,17 +703,13 @@ export function OwnerHeader({
       {/* Optional Left Search Bar (Wireframe-compliant) */}
       {searchPlaceholder ? (
         <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={searchValue || ""}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder={searchPlaceholder}
-            className={`w-full pl-9 pr-3.5 py-2 text-xs rounded-xl transition-all border outline-hidden ${
-              isLight
-                ? "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                : "bg-slate-900/60 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-blue-500"
-            }`}
+            className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl transition-all border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
       ) : null}
@@ -758,14 +732,10 @@ export function OwnerHeader({
             type="button"
             onClick={onRefresh}
             title="Refresh Data"
-            className={`p-2 rounded-xl transition-colors relative ${
-              isLight
-                ? "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-            }`}
+            className="p-2 rounded-xl transition-colors relative text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-500" : ""}`}
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`}
             />
           </button>
         )}
@@ -782,11 +752,7 @@ export function OwnerHeader({
             <div className="text-sm font-semibold leading-tight text-foreground">
               {user.nama_lengkap || "Owner"}
             </div>
-            <div
-              className={`text-xs leading-tight ${
-                isLight ? "text-slate-500" : "text-slate-400"
-              }`}
-            >
+            <div className="text-xs leading-tight text-muted-foreground">
               {user.barbershopName || "Barberin Barbershop"}
             </div>
           </div>
@@ -846,21 +812,13 @@ export function OwnerMobileHeader({
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isLight
-                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
-            }`}
+            className="p-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
             <BarberinLogo className="h-7 w-7 shrink-0" />
-            <span
-              className={`font-extrabold tracking-wider text-sm ${
-                isLight ? "text-slate-900" : "text-white"
-              }`}
-            >
+            <span className="font-extrabold tracking-wider text-sm text-foreground">
               BARBERIN
             </span>
           </div>
@@ -871,14 +829,10 @@ export function OwnerMobileHeader({
             <button
               type="button"
               onClick={onRefresh}
-              className={`p-1.5 rounded-lg transition-colors ${
-                isLight
-                  ? "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className="p-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-500" : ""}`}
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`}
               />
             </button>
           )}
@@ -908,17 +862,17 @@ export function OwnerMobileHeader({
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                className="p-1 text-slate-400 hover:text-white"
+                className="p-1 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="py-4 border-b border-slate-800/80">
-              <div className="text-sm font-semibold text-white">
+            <div className="py-4 border-b border-border">
+              <div className="text-sm font-semibold text-foreground">
                 {user.nama_lengkap}
               </div>
-              <div className="text-xs text-slate-400">{user.barbershopName}</div>
+              <div className="text-xs text-muted-foreground">{user.barbershopName}</div>
             </div>
 
             {/* Main Navigation (Scrollable) */}
@@ -945,7 +899,7 @@ export function OwnerMobileHeader({
             </nav>
 
             {/* Divider */}
-            <div className="h-px bg-slate-800/80 my-3 shrink-0" />
+            <div className="h-px bg-border my-3 shrink-0" />
 
             {/* Bottom Nav & Logout (Pinned to bottom) */}
             <div className="space-y-1.5 shrink-0 pt-1">
@@ -959,8 +913,8 @@ export function OwnerMobileHeader({
                     onClick={() => setDrawerOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? "bg-slate-800 text-white font-semibold"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                        ? "bg-muted text-foreground font-semibold"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -972,7 +926,7 @@ export function OwnerMobileHeader({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 w-full text-left transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 w-full text-left transition-all"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span>Log Out</span>
@@ -1064,11 +1018,11 @@ export function OwnerSummaryCard({
       </div>
 
       <div className="mt-3">
-        <div className="text-xs text-slate-400 font-medium">{title}</div>
-        <div className="text-xl md:text-2xl font-bold text-white tracking-tight mt-0.5">
+        <div className="text-xs text-muted-foreground font-medium">{title}</div>
+        <div className="text-xl md:text-2xl font-bold text-foreground tracking-tight mt-0.5">
           {value}
         </div>
-        <div className="text-[11px] text-slate-400 mt-1">{subtitle}</div>
+        <div className="text-[11px] text-muted-foreground mt-1">{subtitle}</div>
       </div>
     </div>
   );
@@ -1095,14 +1049,14 @@ export function RevenueChartCard({
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-semibold text-white">Grafik Pendapatan</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h3 className="text-base font-semibold text-foreground">Grafik Pendapatan</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Perbandingan pendapatan 7 hari terakhir
           </p>
         </div>
         <div className="text-right">
-          <span className="text-xs text-slate-400">Total Periode:</span>
-          <div className="text-sm font-bold text-blue-400">
+          <span className="text-xs text-muted-foreground">Total Periode:</span>
+          <div className="text-sm font-bold text-primary">
             {formatRupiah(total)}
           </div>
         </div>
@@ -1145,14 +1099,14 @@ export function RevenueChartCard({
                     const rev = Number(payload[0]?.value || 0);
                     const cnt = (payload[0]?.payload as any)?.count || 0;
                     return (
-                      <div className="bg-[#0B1526] border border-blue-500/30 rounded-xl px-3 py-2 shadow-xl">
-                        <div className="text-[11px] text-slate-400 font-medium">
+                      <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-xl text-card-foreground">
+                        <div className="text-[11px] text-muted-foreground font-medium">
                           {label}
                         </div>
-                        <div className="text-sm font-bold text-white mt-0.5">
+                        <div className="text-sm font-bold text-foreground mt-0.5">
                           {formatRupiah(rev)}
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
                           {cnt} transaksi
                         </div>
                       </div>
@@ -1213,8 +1167,8 @@ export function PaymentMethodsDonutCard({
   return (
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between text-card-foreground">
       <div className="mb-3">
-        <h3 className="text-base font-semibold text-white">Metode Pembayaran</h3>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <h3 className="text-base font-semibold text-foreground">Metode Pembayaran</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
           Distribusi pembayaran pelanggan
         </p>
       </div>
@@ -1233,22 +1187,22 @@ export function PaymentMethodsDonutCard({
                   dataKey="value"
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#0F1D33" strokeWidth={2} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
                   ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="w-full h-full rounded-full border-4 border-slate-800 flex items-center justify-center text-xs text-slate-500">
+            <div className="w-full h-full rounded-full border-4 border-muted flex items-center justify-center text-xs text-muted-foreground">
               0 Transaksi
             </div>
           )}
           {hasData && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-lg font-bold text-white leading-tight">
+              <span className="text-lg font-bold text-foreground leading-tight">
                 {totalTransactions}
               </span>
-              <span className="text-[10px] text-slate-400 leading-tight">
+              <span className="text-[10px] text-muted-foreground leading-tight">
                 Transaksi
               </span>
             </div>
@@ -1267,11 +1221,11 @@ export function PaymentMethodsDonutCard({
                   className="h-2.5 w-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: m.color }}
                 />
-                <span className="text-slate-300 font-medium">{m.label}</span>
+                <span className="text-foreground font-medium">{m.label}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold text-white">{m.count}</span>
-                <span className="text-slate-400 w-9 text-right font-mono text-[11px]">
+                <span className="font-semibold text-foreground">{m.count}</span>
+                <span className="text-muted-foreground w-9 text-right font-mono text-[11px]">
                   {m.percentage}%
                 </span>
               </div>
@@ -1297,14 +1251,14 @@ export function RecentTransactionsTable({
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-semibold text-white">Transaksi Terbaru</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h3 className="text-base font-semibold text-foreground">Transaksi Terbaru</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Daftar transaksi terkini dari pelanggan
           </p>
         </div>
         <Link
           to={getTenantPath(useTenantSlug(), "/owner/audit-finance")}
-          className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Semua <ArrowRight className="h-3 w-3" />
         </Link>
@@ -1313,7 +1267,7 @@ export function RecentTransactionsTable({
       <div className="overflow-x-auto -mx-5 px-5">
         <table className="w-full text-left text-xs whitespace-nowrap">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-800 font-medium">
+            <tr className="text-muted-foreground border-b border-border font-medium">
               <th className="pb-3 font-medium">No. Transaksi</th>
               <th className="pb-3 font-medium">Layanan</th>
               <th className="pb-3 font-medium">Capster</th>
@@ -1323,10 +1277,10 @@ export function RecentTransactionsTable({
               <th className="pb-3 font-medium text-right">Waktu</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border">
             {(transactions || []).length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-500 text-xs">
+                <td colSpan={7} className="py-8 text-center text-muted-foreground text-xs">
                   Belum ada transaksi pada periode ini
                 </td>
               </tr>
@@ -1340,26 +1294,26 @@ export function RecentTransactionsTable({
                   <tr
                     key={tx.id}
                     onClick={() => onSelectTransaction?.(tx)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors"
+                    className="hover:bg-muted/50 cursor-pointer transition-colors"
                   >
-                    <td className="py-3.5 font-mono text-slate-300 font-semibold">
+                    <td className="py-3.5 font-mono text-muted-foreground font-semibold">
                       {tx.shortId}
                     </td>
-                    <td className="py-3.5 text-white font-medium max-w-[180px] truncate">
+                    <td className="py-3.5 text-foreground font-medium max-w-[180px] truncate">
                       {tx.serviceNames}
                     </td>
-                    <td className="py-3.5 text-slate-300">{tx.capsterName}</td>
-                    <td className="py-3.5 font-semibold text-white">
+                    <td className="py-3.5 text-muted-foreground">{tx.capsterName}</td>
+                    <td className="py-3.5 font-semibold text-foreground">
                       {formatRupiah(tx.amount)}
                     </td>
                     <td className="py-3.5">
                       <span
                         className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium capitalize ${
                           tx.paymentMethod === "tunai"
-                            ? "bg-emerald-500/15 text-emerald-300"
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                             : tx.paymentMethod === "qris"
-                            ? "bg-blue-500/15 text-blue-300"
-                            : "bg-purple-500/15 text-purple-300"
+                            ? "bg-blue-500/15 text-blue-600 dark:text-blue-300"
+                            : "bg-purple-500/15 text-purple-600 dark:text-purple-300"
                         }`}
                       >
                         {tx.paymentMethodLabel}
@@ -1369,16 +1323,16 @@ export function RecentTransactionsTable({
                       <span
                         className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${
                           isPaid
-                            ? "bg-emerald-500/15 text-emerald-300"
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                             : isCancelled
-                            ? "bg-rose-500/15 text-rose-300"
-                            : "bg-amber-500/15 text-amber-300"
+                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+                            : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
                         }`}
                       >
                         {tx.status}
                       </span>
                     </td>
-                    <td className="py-3.5 text-slate-400 text-right font-mono text-[11px]">
+                    <td className="py-3.5 text-muted-foreground text-right font-mono text-[11px]">
                       {tx.dateTime}
                     </td>
                   </tr>
@@ -1404,14 +1358,14 @@ export function CapsterPerformanceTable({
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-semibold text-white">Performa Capster</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h3 className="text-base font-semibold text-foreground">Performa Capster</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Kontribusi transaksi dan estimasi komisi per capster
           </p>
         </div>
         <Link
           to={getTenantPath(useTenantSlug(), "/owner/capsters")}
-          className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Capster <ArrowRight className="h-3 w-3" />
         </Link>
@@ -1420,7 +1374,7 @@ export function CapsterPerformanceTable({
       <div className="overflow-x-auto -mx-5 px-5">
         <table className="w-full text-left text-xs whitespace-nowrap">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-800 font-medium">
+            <tr className="text-muted-foreground border-b border-border font-medium">
               <th className="pb-3 font-medium">Nama Capster</th>
               <th className="pb-3 font-medium text-center">Total Transaksi</th>
               <th className="pb-3 font-medium">Total Pendapatan Layanan</th>
@@ -1428,39 +1382,39 @@ export function CapsterPerformanceTable({
               <th className="pb-3 font-medium text-right">Persentase</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border">
             {(performance || []).length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-slate-500 text-xs">
+                <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">
                   Belum ada data performa capster
                 </td>
               </tr>
             ) : (
               (performance || []).map((c) => (
-                <tr key={c.capsterId} className="hover:bg-slate-800/40 transition-colors">
+                <tr key={c.capsterId} className="hover:bg-muted/50 transition-colors">
                   <td className="py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-300 flex items-center justify-center font-bold text-xs">
+                      <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/30 text-primary flex items-center justify-center font-bold text-xs">
                         {c.avatarLetter}
                       </div>
                       <div>
-                        <div className="text-white font-medium">{c.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-foreground font-medium">{c.name}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono">
                           {c.noPegawai}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 text-center font-semibold text-white">
+                  <td className="py-3.5 text-center font-semibold text-foreground">
                     {c.totalTransactions}
                   </td>
-                  <td className="py-3.5 font-semibold text-white">
+                  <td className="py-3.5 font-semibold text-foreground">
                     {formatRupiah(c.totalRevenue)}
                   </td>
-                  <td className="py-3.5 font-semibold text-emerald-400">
+                  <td className="py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
                     {formatRupiah(c.commissionAmount)}
                   </td>
-                  <td className="py-3.5 text-right text-slate-300 font-mono">
+                  <td className="py-3.5 text-right text-muted-foreground font-mono">
                     {c.commissionPercentage}%
                   </td>
                 </tr>
@@ -1485,14 +1439,14 @@ export function RecentCancellationsTable({
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm text-card-foreground">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-semibold text-white">Pembatalan Terbaru</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h3 className="text-base font-semibold text-foreground">Pembatalan Terbaru</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Audit riwayat transaksi yang dibatalkan
           </p>
         </div>
         <Link
           to={getTenantPath(useTenantSlug(), "/owner/audit-activities")}
-          className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
         >
           Lihat Semua <ArrowRight className="h-3 w-3" />
         </Link>
@@ -1501,7 +1455,7 @@ export function RecentCancellationsTable({
       <div className="overflow-x-auto -mx-5 px-5">
         <table className="w-full text-left text-xs whitespace-nowrap">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-800 font-medium">
+            <tr className="text-muted-foreground border-b border-border font-medium">
               <th className="pb-3 font-medium">No. Transaksi</th>
               <th className="pb-3 font-medium">Capster</th>
               <th className="pb-3 font-medium">Alasan Pembatalan</th>
@@ -1510,29 +1464,29 @@ export function RecentCancellationsTable({
               <th className="pb-3 font-medium text-right">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border">
             {(cancellations || []).length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
+                <td colSpan={6} className="py-8 text-center text-muted-foreground text-xs">
                   Tidak ada transaksi yang dibatalkan
                 </td>
               </tr>
             ) : (
               (cancellations || []).map((c) => (
-                <tr key={c.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 font-mono text-slate-300 font-semibold">
+                <tr key={c.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="py-3 font-mono text-muted-foreground font-semibold">
                     {c.shortId}
                   </td>
-                  <td className="py-3 text-slate-300">{c.capsterName}</td>
-                  <td className="py-3 text-rose-300 max-w-[200px] truncate">
+                  <td className="py-3 text-muted-foreground">{c.capsterName}</td>
+                  <td className="py-3 text-rose-500 dark:text-rose-300 max-w-[200px] truncate">
                     {c.reason}
                   </td>
-                  <td className="py-3 text-slate-400">{c.cancelledBy}</td>
-                  <td className="py-3 text-slate-400 text-right font-mono text-[11px]">
+                  <td className="py-3 text-muted-foreground">{c.cancelledBy}</td>
+                  <td className="py-3 text-muted-foreground text-right font-mono text-[11px]">
                     {c.date} {c.time}
                   </td>
                   <td className="py-3 text-right">
-                    <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/15 text-rose-300">
+                    <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/15 text-rose-600 dark:text-rose-300">
                       {c.status}
                     </span>
                   </td>
@@ -1564,82 +1518,82 @@ export function TransactionDetailModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="h-10 w-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
             <Receipt className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Detail Transaksi</h3>
-            <p className="text-xs text-slate-400 font-mono">
+            <h3 className="text-base font-bold text-foreground">Detail Transaksi</h3>
+            <p className="text-xs text-muted-foreground font-mono">
               {transaction.shortId}
             </p>
           </div>
         </div>
 
         <div className="space-y-3.5 text-xs">
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Status</span>
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Status</span>
             <span
               className={`px-2 py-0.5 rounded-md font-semibold text-[11px] ${
                 transaction.status === "Selesai"
-                  ? "bg-emerald-500/15 text-emerald-300"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                   : transaction.status === "Batal"
-                  ? "bg-rose-500/15 text-rose-300"
-                  : "bg-amber-500/15 text-amber-300"
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
               }`}
             >
               {transaction.status}
             </span>
           </div>
 
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Pelanggan</span>
-            <span className="text-white font-medium">
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Pelanggan</span>
+            <span className="text-foreground font-medium">
               {transaction.customerName}
             </span>
           </div>
 
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Capster yang Melayani</span>
-            <span className="text-white font-medium">
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Capster yang Melayani</span>
+            <span className="text-foreground font-medium">
               {transaction.capsterName}
             </span>
           </div>
 
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Layanan</span>
-            <span className="text-white font-medium text-right max-w-[200px]">
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Layanan</span>
+            <span className="text-foreground font-medium text-right max-w-[200px]">
               {transaction.serviceNames}
             </span>
           </div>
 
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Metode Pembayaran</span>
-            <span className="text-white font-medium capitalize">
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Metode Pembayaran</span>
+            <span className="text-foreground font-medium capitalize">
               {transaction.paymentMethodLabel}
             </span>
           </div>
 
-          <div className="flex justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Waktu Transaksi</span>
-            <span className="text-white font-mono">{transaction.dateTime}</span>
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Waktu Transaksi</span>
+            <span className="text-foreground font-mono">{transaction.dateTime}</span>
           </div>
 
           {transaction.notes && (
-            <div className="py-2 border-b border-slate-800">
-              <span className="text-slate-400 block mb-1">Catatan</span>
-              <span className="text-slate-200">{transaction.notes}</span>
+            <div className="py-2 border-b border-border">
+              <span className="text-muted-foreground block mb-1">Catatan</span>
+              <span className="text-foreground">{transaction.notes}</span>
             </div>
           )}
 
           <div className="flex justify-between items-center pt-2">
-            <span className="text-sm font-semibold text-slate-300">Total Biaya</span>
-            <span className="text-lg font-extrabold text-emerald-400">
+            <span className="text-sm font-semibold text-muted-foreground">Total Biaya</span>
+            <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
               {formatRupiah(transaction.amount)}
             </span>
           </div>
@@ -1649,7 +1603,7 @@ export function TransactionDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors"
+            className="w-full py-2.5 rounded-xl border border-input bg-background hover:bg-muted text-foreground font-semibold text-xs transition-colors"
           >
             Tutup
           </button>

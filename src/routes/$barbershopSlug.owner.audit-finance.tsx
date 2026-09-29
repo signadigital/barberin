@@ -671,10 +671,10 @@ function OwnerAuditFinancePage() {
           {/* Header Title & Date Range */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 Audit Keuangan
               </h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Periksa dan cocokkan data keuangan berdasarkan transaksi yang tercatat di sistem.
               </p>
             </div>
@@ -684,9 +684,9 @@ function OwnerAuditFinancePage() {
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen((prev) => !prev)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-[#0F1D33] hover:bg-[#152744] border border-slate-700/80 hover:border-slate-600 rounded-xl text-xs font-semibold text-white transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-2 px-3.5 py-2 bg-card hover:bg-muted border border-border rounded-xl text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
               >
-                <Calendar className="h-4 w-4 text-blue-400" />
+                <Calendar className="h-4 w-4 text-primary" />
                 <span>
                   {data?.dateRangeText ||
                     (period === "today"
@@ -700,7 +700,7 @@ function OwnerAuditFinancePage() {
                       : "Pilih Tanggal")}
                 </span>
                 <ChevronDown
-                  className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                  className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${
                     isDatePickerOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -735,9 +735,9 @@ function OwnerAuditFinancePage() {
           </div>
 
           {/* Filter Bar */}
-          <div className="flex flex-wrap items-center gap-3 bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-3 shadow-xs">
+          <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-2xl p-3 shadow-xs">
             {/* Quick Period Buttons */}
-            <div className="flex items-center gap-1.5 p-1 bg-[#0A1424] rounded-xl border border-slate-800/80">
+            <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border">
               {[
                 { key: "today", label: "Hari ini" },
                 { key: "7d", label: "Minggu ini" },
@@ -778,7 +778,7 @@ function OwnerAuditFinancePage() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     period === b.key || (b.key === "custom" && period === "custom")
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-slate-400 hover:text-white"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {b.label}
@@ -789,14 +789,14 @@ function OwnerAuditFinancePage() {
             {/* Search Input */}
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleApplyFilter()}
                   placeholder="Cari transaksi..."
-                  className="w-full pl-9 pr-3 py-2 bg-[#0A1424] border border-slate-700/60 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary"
+                  className="w-full pl-9 pr-3 py-2 bg-background border border-input rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -814,19 +814,19 @@ function OwnerAuditFinancePage() {
           {/* 4 Statistics Cards (Desktop 4 cols, Mobile 2x2) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4">
             {/* Total Transaksi */}
-            <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
+            <div className="bg-card border border-border rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
                 <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                   <Receipt className="h-5 w-5" />
                 </div>
               </div>
               <div className="mt-3">
-                <div className="text-xs text-slate-400 font-medium">Total Transaksi</div>
-                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                <div className="text-xs text-muted-foreground font-medium">Total Transaksi</div>
+                <div className="text-2xl font-bold text-foreground tracking-tight mt-0.5">
                   {data?.stats.totalTransactions ?? 0}{" "}
-                  <span className="text-sm font-normal text-slate-400">transaksi</span>
+                  <span className="text-sm font-normal text-muted-foreground">transaksi</span>
                 </div>
-                <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1 font-medium">
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1 font-medium">
                   <TrendingUp className="h-3 w-3" />
                   <span>{data?.stats.totalTransactionsDelta || "+8%"}</span>
                 </div>
@@ -834,19 +834,19 @@ function OwnerAuditFinancePage() {
             </div>
 
             {/* Transaksi Berhasil */}
-            <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
+            <div className="bg-card border border-border rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               </div>
               <div className="mt-3">
-                <div className="text-xs text-slate-400 font-medium">Transaksi Berhasil</div>
-                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                <div className="text-xs text-muted-foreground font-medium">Transaksi Berhasil</div>
+                <div className="text-2xl font-bold text-foreground tracking-tight mt-0.5">
                   {data?.stats.successfulTransactions ?? 0}{" "}
-                  <span className="text-sm font-normal text-slate-400">transaksi</span>
+                  <span className="text-sm font-normal text-muted-foreground">transaksi</span>
                 </div>
-                <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1 font-medium">
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1 font-medium">
                   <TrendingUp className="h-3 w-3" />
                   <span>{data?.stats.successfulDelta || "+10%"}</span>
                 </div>
@@ -854,19 +854,19 @@ function OwnerAuditFinancePage() {
             </div>
 
             {/* Transaksi Dibatalkan */}
-            <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
+            <div className="bg-card border border-border rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                   <XCircle className="h-5 w-5" />
                 </div>
               </div>
               <div className="mt-3">
-                <div className="text-xs text-slate-400 font-medium">Transaksi Dibatalkan</div>
-                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                <div className="text-xs text-muted-foreground font-medium">Transaksi Dibatalkan</div>
+                <div className="text-2xl font-bold text-foreground tracking-tight mt-0.5">
                   {data?.stats.cancelledTransactions ?? 0}{" "}
-                  <span className="text-sm font-normal text-slate-400">transaksi</span>
+                  <span className="text-sm font-normal text-muted-foreground">transaksi</span>
                 </div>
-                <div className="text-[11px] text-rose-400 flex items-center gap-1 mt-1 font-medium">
+                <div className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 font-medium">
                   <TrendingDown className="h-3 w-3" />
                   <span>{data?.stats.cancelledDelta || "-25%"}</span>
                 </div>
@@ -874,18 +874,18 @@ function OwnerAuditFinancePage() {
             </div>
 
             {/* Total Pendapatan */}
-            <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs">
+            <div className="bg-card border border-border rounded-2xl p-4 md:p-5 shadow-xs">
               <div className="flex items-start justify-between">
                 <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
               <div className="mt-3">
-                <div className="text-xs text-slate-400 font-medium">Total Pendapatan</div>
-                <div className="text-xl md:text-2xl font-bold text-white tracking-tight mt-0.5 truncate">
+                <div className="text-xs text-muted-foreground font-medium">Total Pendapatan</div>
+                <div className="text-xl md:text-2xl font-bold text-foreground tracking-tight mt-0.5 truncate">
                   {formatRupiah(data?.stats.totalRevenue ?? 0)}
                 </div>
-                <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1 font-medium">
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1 font-medium">
                   <TrendingUp className="h-3 w-3" />
                   <span>{data?.stats.totalRevenueDelta || "+12%"}</span>
                 </div>
@@ -894,73 +894,73 @@ function OwnerAuditFinancePage() {
           </div>
 
           {/* Section: Metode Pembayaran (Di Dalam Kotakan Card Sesuai Gambar 2) */}
-          <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-xs space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-4 md:p-5 shadow-xs space-y-4">
             <div>
-              <h3 className="text-base md:text-lg font-bold text-white tracking-tight">
+              <h3 className="text-base md:text-lg font-bold text-foreground tracking-tight">
                 Metode Pembayaran
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4">
               {/* Tunai */}
-              <div className="bg-[#0A1424] border border-slate-700/60 rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-slate-600 transition-colors">
-                <div className="h-11 w-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="bg-muted/30 border border-border rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-border transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <Banknote className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-blue-400 font-semibold">Tunai</div>
-                  <div className="text-xs text-slate-200 font-bold mt-0.5">
+                  <div className="text-xs text-primary font-semibold">Tunai</div>
+                  <div className="text-xs text-muted-foreground font-medium mt-0.5">
                     {data?.paymentMethods.tunai.count || 0} transaksi
                   </div>
-                  <div className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                  <div className="text-sm md:text-base font-extrabold text-foreground truncate mt-0.5">
                     {formatRupiah(data?.paymentMethods.tunai.total || 0)}
                   </div>
                 </div>
               </div>
 
               {/* QRIS */}
-              <div className="bg-[#0A1424] border border-slate-700/60 rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-slate-600 transition-colors">
-                <div className="h-11 w-11 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+              <div className="bg-muted/30 border border-border rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-border transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center shrink-0">
                   <QrCode className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-blue-400 font-semibold">QRIS</div>
-                  <div className="text-xs text-slate-200 font-bold mt-0.5">
+                  <div className="text-xs text-primary font-semibold">QRIS</div>
+                  <div className="text-xs text-muted-foreground font-medium mt-0.5">
                     {data?.paymentMethods.qris.count || 0} transaksi
                   </div>
-                  <div className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                  <div className="text-sm md:text-base font-extrabold text-foreground truncate mt-0.5">
                     {formatRupiah(data?.paymentMethods.qris.total || 0)}
                   </div>
                 </div>
               </div>
 
               {/* Transfer */}
-              <div className="bg-[#0A1424] border border-slate-700/60 rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-slate-600 transition-colors">
-                <div className="h-11 w-11 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0">
+              <div className="bg-muted/30 border border-border rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-border transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-blue-400 font-semibold truncate">Transfer Antar Bank</div>
-                  <div className="text-xs text-slate-200 font-bold mt-0.5">
+                  <div className="text-xs text-primary font-semibold truncate">Transfer Antar Bank</div>
+                  <div className="text-xs text-muted-foreground font-medium mt-0.5">
                     {data?.paymentMethods.transfer.count || 0} transaksi
                   </div>
-                  <div className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                  <div className="text-sm md:text-base font-extrabold text-foreground truncate mt-0.5">
                     {formatRupiah(data?.paymentMethods.transfer.total || 0)}
                   </div>
                 </div>
               </div>
 
               {/* Total Non-Tunai */}
-              <div className="bg-[#0A1424] border border-slate-700/60 rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-slate-600 transition-colors">
-                <div className="h-11 w-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0">
+              <div className="bg-muted/30 border border-border rounded-xl p-3.5 md:p-4 flex items-center gap-3.5 hover:border-border transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-blue-400 font-semibold">Total Non-Tunai</div>
-                  <div className="text-xs text-slate-200 font-bold mt-0.5">
+                  <div className="text-xs text-primary font-semibold">Total Non-Tunai</div>
+                  <div className="text-xs text-muted-foreground font-medium mt-0.5">
                     {data?.paymentMethods.totalNonTunai.count || 0} transaksi
                   </div>
-                  <div className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                  <div className="text-sm md:text-base font-extrabold text-foreground truncate mt-0.5">
                     {formatRupiah(data?.paymentMethods.totalNonTunai.total || 0)}
                   </div>
                 </div>
@@ -969,11 +969,11 @@ function OwnerAuditFinancePage() {
           </div>
 
           {/* Section: Detail Transaksi */}
-          <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="bg-card border border-border rounded-2xl p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">Detail Transaksi</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <h3 className="text-base font-bold text-foreground">Detail Transaksi</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Daftar seluruh transaksi yang diverifikasi pada audit keuangan.
                 </p>
               </div>
@@ -985,7 +985,7 @@ function OwnerAuditFinancePage() {
                     setPaymentMethod(e.target.value);
                     setPage(1);
                   }}
-                  className="px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs text-slate-300 hover:border-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
+                  className="px-3 py-1.5 bg-background border border-input rounded-xl text-xs text-foreground hover:border-border focus:outline-none focus:border-primary cursor-pointer transition-colors"
                 >
                   <option value="all">Semua Metode</option>
                   <option value="tunai">Tunai</option>
@@ -1000,7 +1000,7 @@ function OwnerAuditFinancePage() {
                     setStatus(e.target.value);
                     setPage(1);
                   }}
-                  className="px-3 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs text-slate-300 hover:border-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
+                  className="px-3 py-1.5 bg-background border border-input rounded-xl text-xs text-foreground hover:border-border focus:outline-none focus:border-primary cursor-pointer transition-colors"
                 >
                   <option value="all">Semua Status</option>
                   <option value="paid">Berhasil / Lunas</option>
@@ -1013,7 +1013,7 @@ function OwnerAuditFinancePage() {
                   type="button"
                   disabled={isExportingPdf || loading || !data || data.totalTransactionsCount === 0}
                   onClick={handleExportPDF}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/15 hover:bg-primary/25 border border-primary/40 rounded-xl text-xs font-semibold text-primary hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-xs font-semibold text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
                   title="Unduh laporan transaksi dalam format dokumen PDF"
                 >
                   {isExportingPdf ? (
@@ -1029,13 +1029,13 @@ function OwnerAuditFinancePage() {
                   type="button"
                   disabled={isExporting || loading || !data || data.totalTransactionsCount === 0}
                   onClick={handleExportCSV}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0A1424] border border-slate-700/80 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   title="Unduh data mentah transaksi dalam format CSV"
                 >
                   {isExporting ? (
-                    <Loader2 className="h-3.5 w-3.5 text-slate-400 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
                   ) : (
-                    <Download className="h-3.5 w-3.5 text-slate-400" />
+                    <Download className="h-3.5 w-3.5 text-muted-foreground" />
                   )}
                   <span>CSV</span>
                 </button>
@@ -1043,11 +1043,11 @@ function OwnerAuditFinancePage() {
             </div>
 
             {loading ? (
-              <div className="py-16 text-center text-slate-500 text-xs animate-pulse">
+              <div className="py-16 text-center text-muted-foreground text-xs animate-pulse">
                 Memuat data transaksi audit...
               </div>
             ) : data && data.transactions.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 text-xs">
+              <div className="py-16 text-center text-muted-foreground text-xs">
                 Tidak ada transaksi yang cocok dengan filter.
               </div>
             ) : (
@@ -1056,7 +1056,7 @@ function OwnerAuditFinancePage() {
                 <div className="hidden lg:block overflow-x-auto -mx-4 md:-mx-6 px-4 md:px-6 pt-2">
                   <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 font-medium">
+                      <tr className="text-muted-foreground border-b border-border font-medium">
                         <th className="py-3 px-2.5">No</th>
                         <th className="py-3 px-2.5">No. Transaksi</th>
                         <th className="py-3 px-2.5">Tanggal & Waktu</th>
@@ -1070,32 +1070,32 @@ function OwnerAuditFinancePage() {
                         <th className="py-3 px-2.5 text-right">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/50">
+                    <tbody className="divide-y divide-border">
                       {data?.transactions.map((tx) => (
                         <tr
                           key={tx.id}
-                          className="hover:bg-slate-800/40 transition-colors"
+                          className="hover:bg-muted/50 transition-colors"
                         >
-                          <td className="py-3.5 px-2.5 text-slate-400">{tx.no}</td>
-                          <td className="py-3.5 px-2.5 font-mono text-blue-400 font-semibold">
+                          <td className="py-3.5 px-2.5 text-muted-foreground">{tx.no}</td>
+                          <td className="py-3.5 px-2.5 font-mono text-primary font-semibold">
                             {tx.shortId}
                           </td>
-                          <td className="py-3.5 px-2.5 text-slate-300 font-mono text-[11px]">
+                          <td className="py-3.5 px-2.5 text-muted-foreground font-mono text-[11px]">
                             {tx.dateTime}
                           </td>
-                          <td className="py-3.5 px-2.5 text-white font-medium">
+                          <td className="py-3.5 px-2.5 text-foreground font-medium">
                             {tx.customerName}
                           </td>
-                          <td className="py-3.5 px-2.5 text-slate-300 max-w-[180px] truncate">
+                          <td className="py-3.5 px-2.5 text-muted-foreground max-w-[180px] truncate">
                             {tx.serviceNames}
                           </td>
-                          <td className="py-3.5 px-2.5 text-slate-300">
+                          <td className="py-3.5 px-2.5 text-muted-foreground">
                             {tx.capsterName}
                           </td>
-                          <td className="py-3.5 px-2.5 font-semibold text-white">
+                          <td className="py-3.5 px-2.5 font-semibold text-foreground">
                             {formatRupiah(tx.amount)}
                           </td>
-                          <td className="py-3.5 px-2.5 text-slate-300">
+                          <td className="py-3.5 px-2.5 text-muted-foreground">
                             {tx.paymentMethod}
                           </td>
                           <td className="py-3.5 px-2.5">
@@ -1107,7 +1107,7 @@ function OwnerAuditFinancePage() {
                           <td className="py-3.5 px-2.5 text-right">
                             <Link
                               to={`/${barbershopSlug}/owner/audit-finance/${tx.id}` as any}
-                              className="text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center gap-1 hover:underline"
+                              className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 hover:underline"
                             >
                               <span>Lihat</span>
                               <ArrowRight className="h-3 w-3" />
@@ -1125,10 +1125,10 @@ function OwnerAuditFinancePage() {
                     <Link
                       key={tx.id}
                       to={`/${barbershopSlug}/owner/audit-finance/${tx.id}` as any}
-                      className="block bg-[#0A1424] border border-slate-800 rounded-xl p-3.5 hover:border-slate-700 transition-colors"
+                      className="block bg-card border border-border rounded-xl p-3.5 hover:bg-muted/40 transition-colors"
                     >
-                      <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-800/60">
-                        <span className="font-mono text-blue-400 font-bold">
+                      <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
+                        <span className="font-mono text-primary font-bold">
                           {tx.shortId}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -1138,17 +1138,17 @@ function OwnerAuditFinancePage() {
                       </div>
                       <div className="pt-2.5 flex items-start justify-between gap-2">
                         <div>
-                          <div className="text-sm font-bold text-white">
+                          <div className="text-sm font-bold text-foreground">
                             {formatRupiah(tx.amount)}
                           </div>
-                          <div className="text-xs text-slate-300 mt-0.5">
+                          <div className="text-xs text-muted-foreground mt-0.5">
                             {tx.customerName} • {tx.serviceNames}
                           </div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">
-                            Capster: <span className="text-slate-200">{tx.capsterName}</span> ({tx.paymentMethod})
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            Capster: <span className="text-foreground">{tx.capsterName}</span> ({tx.paymentMethod})
                           </div>
                         </div>
-                        <span className="text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                        <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
                           {tx.dateTime}
                         </span>
                       </div>
@@ -1157,18 +1157,18 @@ function OwnerAuditFinancePage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                <div className="mt-6 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
                   <div>
                     Menampilkan{" "}
-                    <span className="text-white font-medium">
+                    <span className="text-foreground font-medium">
                       {(page - 1) * 8 + 1}
                     </span>{" "}
                     -{" "}
-                    <span className="text-white font-medium">
+                    <span className="text-foreground font-medium">
                       {Math.min(page * 8, data?.totalTransactionsCount || 0)}
                     </span>{" "}
                     dari{" "}
-                    <span className="text-white font-medium">
+                    <span className="text-foreground font-medium">
                       {data?.totalTransactionsCount || 0}
                     </span>{" "}
                     transaksi
@@ -1179,7 +1179,7 @@ function OwnerAuditFinancePage() {
                       type="button"
                       disabled={page <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#0A1424] border border-slate-800 text-slate-300 disabled:opacity-40"
+                      className="px-2.5 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted disabled:opacity-40"
                     >
                       &lt;
                     </button>
@@ -1192,7 +1192,7 @@ function OwnerAuditFinancePage() {
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                             page === i + 1
                               ? "bg-primary text-primary-foreground font-bold"
-                              : "bg-[#0A1424] border border-slate-800 text-slate-400 hover:text-white"
+                              : "border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
                           }`}
                         >
                           {i + 1}
@@ -1205,7 +1205,7 @@ function OwnerAuditFinancePage() {
                       onClick={() =>
                         setPage((p) => Math.min(data?.totalPages || 1, p + 1))
                       }
-                      className="px-2.5 py-1.5 rounded-lg bg-[#0A1424] border border-slate-800 text-slate-300 disabled:opacity-40"
+                      className="px-2.5 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted disabled:opacity-40"
                     >
                       &gt;
                     </button>
@@ -1218,14 +1218,14 @@ function OwnerAuditFinancePage() {
           {/* Section: 2 Columns: Cash on Hand & Komisi Capster */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Column 1: Cash on Hand (Uang Tunai) */}
-            <div className="lg:col-span-6 bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="lg:col-span-6 bg-card border border-border rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-emerald-400" />
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Cash on Hand (Uang Tunai)</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Kesesuaian kas fisik di laci dengan transaksi tunai sistem.
                   </p>
                 </div>
@@ -1248,29 +1248,29 @@ function OwnerAuditFinancePage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                 {/* Uang Tunai Sistem */}
-                <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                  <div className="text-[11px] text-slate-400">Uang Tunai (Sistem)</div>
-                  <div className="text-sm font-bold text-white mt-1">
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <div className="text-[11px] text-muted-foreground">Uang Tunai (Sistem)</div>
+                  <div className="text-sm font-bold text-foreground mt-1">
                     {formatRupiah(data?.cashOnHand.systemCash || 0)}
                   </div>
                 </div>
 
                 {/* Uang Tunai Fisik */}
-                <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                  <div className="text-[11px] text-slate-400">Uang Tunai (Fisik)</div>
-                  <div className="text-sm font-bold text-white mt-1">
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <div className="text-[11px] text-muted-foreground">Uang Tunai (Fisik)</div>
+                  <div className="text-sm font-bold text-foreground mt-1">
                     {formatRupiah(data?.cashOnHand.physicalCash || 0)}
                   </div>
                 </div>
 
                 {/* Selisih */}
-                <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80">
-                  <div className="text-[11px] text-slate-400">Selisih</div>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <div className="text-[11px] text-muted-foreground">Selisih</div>
                   <div
                     className={`text-sm font-bold mt-1 ${
                       data?.cashOnHand.difference === 0
-                        ? "text-slate-300"
-                        : "text-rose-400"
+                        ? "text-muted-foreground"
+                        : "text-rose-600 dark:text-rose-400"
                     }`}
                   >
                     {formatRupiah(data?.cashOnHand.difference || 0)}
@@ -1278,13 +1278,13 @@ function OwnerAuditFinancePage() {
                 </div>
 
                 {/* Status */}
-                <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800/80 flex flex-col justify-center items-center">
-                  <div className="text-[11px] text-slate-400 mb-1">Status</div>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border flex flex-col justify-center items-center">
+                  <div className="text-[11px] text-muted-foreground mb-1">Status</div>
                   <span
                     className={`px-3 py-0.5 rounded-full text-xs font-bold ${
                       data?.cashOnHand.status === "Sesuai"
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                        : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
                     }`}
                   >
                     {data?.cashOnHand.status || "Sesuai"}
@@ -1294,20 +1294,20 @@ function OwnerAuditFinancePage() {
             </div>
 
             {/* Column 2: Komisi Capster (Strictly Separated Per Capster) */}
-            <div className="lg:col-span-6 bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="lg:col-span-6 bg-card border border-border rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Scissors className="h-4 w-4 text-blue-400" />
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Scissors className="h-4 w-4 text-primary" />
                     <span>Komisi Capster</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Bagi hasil berdasarkan transaksi capster masing-masing.
                   </p>
                 </div>
                 <Link
                   to={`/${barbershopSlug}/owner/gaji` as any}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center gap-1"
+                  className="text-xs text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1"
                 >
                   <span>Lihat Semua</span>
                   <ArrowRight className="h-3 w-3" />
@@ -1317,7 +1317,7 @@ function OwnerAuditFinancePage() {
               <div className="overflow-x-auto -mx-4 px-4">
                 <table className="w-full text-left text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="text-slate-400 border-b border-slate-800 font-medium">
+                    <tr className="text-muted-foreground border-b border-border font-medium">
                       <th className="py-2.5">No</th>
                       <th className="py-2.5">Nama Capster</th>
                       <th className="py-2.5">Transaksi</th>
@@ -1326,17 +1326,17 @@ function OwnerAuditFinancePage() {
                       <th className="py-2.5 text-right">Total Komisi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/50">
+                  <tbody className="divide-y divide-border">
                     {data?.capsterCommissions.slice(0, 4).map((c, i) => (
-                      <tr key={c.capsterId} className="hover:bg-slate-800/30">
-                        <td className="py-2.5 text-slate-500">{i + 1}</td>
-                        <td className="py-2.5 font-semibold text-white">{c.name}</td>
-                        <td className="py-2.5 text-slate-300">{c.transactionCount}</td>
-                        <td className="py-2.5 text-slate-300">
+                      <tr key={c.capsterId} className="hover:bg-muted/50 transition-colors">
+                        <td className="py-2.5 text-muted-foreground">{i + 1}</td>
+                        <td className="py-2.5 font-semibold text-foreground">{c.name}</td>
+                        <td className="py-2.5 text-muted-foreground">{c.transactionCount}</td>
+                        <td className="py-2.5 text-muted-foreground">
                           {formatRupiah(c.serviceRevenue)}
                         </td>
-                        <td className="py-2.5 text-slate-400">{c.commissionPercentage}%</td>
-                        <td className="py-2.5 text-right font-bold text-emerald-400">
+                        <td className="py-2.5 text-muted-foreground">{c.commissionPercentage}%</td>
+                        <td className="py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
                           {formatRupiah(c.totalCommission)}
                         </td>
                       </tr>
@@ -1348,13 +1348,13 @@ function OwnerAuditFinancePage() {
           </div>
 
           {/* Section: Riwayat Pemeriksaan Keuangan */}
-          <div className="bg-[#0F1D33] border border-slate-800/80 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="bg-card border border-border rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-foreground">
                   Riwayat Pemeriksaan Keuangan
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Audit berkala fisik kas dan rekonsiliasi sistem.
                 </p>
               </div>
@@ -1363,7 +1363,7 @@ function OwnerAuditFinancePage() {
             <div className="overflow-x-auto -mx-4 md:-mx-6 px-4 md:px-6">
               <table className="w-full text-left text-xs whitespace-nowrap">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-800 font-medium">
+                  <tr className="text-muted-foreground border-b border-border font-medium">
                     <th className="py-3 px-3">No</th>
                     <th className="py-3 px-3">Tanggal</th>
                     <th className="py-3 px-3">Periode</th>
@@ -1375,30 +1375,30 @@ function OwnerAuditFinancePage() {
                     <th className="py-3 px-3">Keterangan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-border">
                   {data?.auditRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-6 text-center text-slate-500">
+                      <td colSpan={9} className="py-6 text-center text-muted-foreground">
                         Belum ada riwayat pemeriksaan keuangan.
                       </td>
                     </tr>
                   ) : (
                     data?.auditRecords.map((rec, idx) => (
-                      <tr key={rec.id} className="hover:bg-slate-800/30">
-                        <td className="py-3 px-3 text-slate-500">{idx + 1}</td>
-                        <td className="py-3 px-3 text-slate-300 font-mono">
+                      <tr key={rec.id} className="hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-3 text-muted-foreground">{idx + 1}</td>
+                        <td className="py-3 px-3 text-muted-foreground font-mono">
                           {rec.tanggal}
                         </td>
-                        <td className="py-3 px-3 text-white">{rec.periode}</td>
-                        <td className="py-3 px-3 text-slate-300">
+                        <td className="py-3 px-3 text-foreground">{rec.periode}</td>
+                        <td className="py-3 px-3 text-muted-foreground">
                           {formatRupiah(rec.kasSistem)}
                         </td>
-                        <td className="py-3 px-3 text-slate-300 font-semibold">
+                        <td className="py-3 px-3 text-muted-foreground font-semibold">
                           {formatRupiah(rec.kasFisik)}
                         </td>
                         <td
                           className={`py-3 px-3 font-semibold ${
-                            rec.selisih === 0 ? "text-slate-400" : "text-rose-400"
+                            rec.selisih === 0 ? "text-muted-foreground" : "text-rose-600 dark:text-rose-400"
                           }`}
                         >
                           {formatRupiah(rec.selisih)}
@@ -1407,15 +1407,15 @@ function OwnerAuditFinancePage() {
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                               rec.status === "Sesuai"
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
                             }`}
                           >
                             {rec.status}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-slate-300">{rec.pemeriksa}</td>
-                        <td className="py-3 px-3 text-slate-400 max-w-[220px] truncate">
+                        <td className="py-3 px-3 text-muted-foreground">{rec.pemeriksa}</td>
+                        <td className="py-3 px-3 text-muted-foreground max-w-[220px] truncate">
                           {rec.keterangan}
                         </td>
                       </tr>
@@ -1437,41 +1437,41 @@ function OwnerAuditFinancePage() {
             className="fixed inset-0 bg-black/70 backdrop-blur-xs"
             onClick={() => setIsCashModalOpen(false)}
           />
-          <div className="relative w-full max-w-md bg-[#0F1D33] border border-slate-800 rounded-2xl p-6 shadow-2xl z-10 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-emerald-400" />
+          <div className="relative w-full max-w-md bg-card border border-border rounded-2xl p-6 shadow-2xl z-10 space-y-4 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 <span>Input Uang Fisik Kasir</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsCashModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white"
+                className="p-1 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveCashAudit} className="space-y-4 text-xs">
-              <div className="p-3 bg-[#0A1424] rounded-xl border border-slate-800 space-y-1.5">
-                <div className="flex justify-between text-slate-400">
+              <div className="p-3 bg-muted/30 rounded-xl border border-border space-y-1.5">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Kas Tunai Sistem:</span>
-                  <span className="font-bold text-white">
+                  <span className="font-bold text-foreground">
                     {formatRupiah(data?.cashOnHand.systemCash || 0)}
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Periode:</span>
-                  <span className="text-slate-300">{data?.periodLabel}</span>
+                  <span className="text-muted-foreground">{data?.periodLabel}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
+                <label className="block text-muted-foreground font-medium mb-1">
                   Nominal Uang Fisik Dihitung (Rp)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">
                     Rp
                   </span>
                   <input
@@ -1481,13 +1481,13 @@ function OwnerAuditFinancePage() {
                     value={inputPhysicalCash}
                     onChange={(e) => setInputPhysicalCash(formatNumberWithDots(e.target.value))}
                     placeholder="Contoh: 500.000"
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#0A1424] border border-slate-700 rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-blue-500 tracking-wide font-mono"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-background border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-none focus:border-primary tracking-wide font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
+                <label className="block text-muted-foreground font-medium mb-1">
                   Catatan Pemeriksaan
                 </label>
                 <textarea
@@ -1495,7 +1495,7 @@ function OwnerAuditFinancePage() {
                   value={cashNotes}
                   onChange={(e) => setCashNotes(e.target.value)}
                   placeholder="Tambahkan catatan jika ada selisih kas..."
-                  className="w-full px-3.5 py-2.5 bg-[#0A1424] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-background border border-input rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -1510,7 +1510,7 @@ function OwnerAuditFinancePage() {
                 <button
                   type="button"
                   onClick={() => setIsCashModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-800 rounded-xl text-xs font-medium text-slate-300"
+                  className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-xl text-xs font-medium text-foreground transition-colors"
                 >
                   Batal
                 </button>
