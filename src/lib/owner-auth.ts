@@ -36,10 +36,41 @@ export type OwnerLoginInput = {
   barbershopSlug?: string | undefined;
 };
 
-function getBaseUrl(): string {
-  if (process.env["APP_URL"]) {
-    return process.env["APP_URL"].replace(/\/$/, "");
+export function getBaseUrl(clientOrigin?: string): string {
+  // 1. Jika production env APP_URL atau VITE_APP_URL sudah disetel dan bukan localhost
+  const appUrl = (
+    (typeof process !== "undefined" && process.env?.["APP_URL"]) ||
+    (typeof process !== "undefined" && process.env?.["VITE_APP_URL"]) ||
+    ""
+  ).trim();
+  if (appUrl && !appUrl.includes("localhost") && !appUrl.includes("127.0.0.1")) {
+    return appUrl.replace(/\/$/, "");
   }
+
+  // 2. Jika di-deploy di Vercel Production
+  const vercelUrl = (
+    (typeof process !== "undefined" && process.env?.["VERCEL_PROJECT_PRODUCTION_URL"]) ||
+    (typeof process !== "undefined" && process.env?.["VERCEL_URL"]) ||
+    ""
+  ).trim();
+  if (vercelUrl) {
+    return `https://${vercelUrl.replace(/\/$/, "")}`;
+  }
+
+  // 3. Jika clientOrigin dikirim dari browser dan merupakan domain production (bukan localhost)
+  if (clientOrigin && !clientOrigin.includes("localhost") && !clientOrigin.includes("127.0.0.1")) {
+    return clientOrigin.replace(/\/$/, "");
+  }
+
+  // 4. Fallback ke APP_URL (e.g. http://localhost:8080 saat testing lokal)
+  if (appUrl) {
+    return appUrl.replace(/\/$/, "");
+  }
+
+  if (clientOrigin) {
+    return clientOrigin.replace(/\/$/, "");
+  }
+
   return "http://localhost:8080";
 }
 
@@ -48,239 +79,239 @@ function getBaseUrl(): string {
 // ============================================================================
 async function handleRegisterOwner(data: OwnerRegisterInput) {
   // 1. Validasi Kelengkapan Data
-    const namaLengkap = (data.nama_lengkap || "").trim();
-    const namaBarbershop = (data.nama_barbershop || "").trim();
-    const rawEmail = (data.email || "").trim();
-    const rawPhone = (data.no_hp || "").trim();
-    const rawPassword = data.password || "";
-    const alamat = (data.alamat || "").trim() || "Alamat belum diatur";
-    const lat = Number(data.latitude);
-    const lng = Number(data.longitude);
+  const namaLengkap = (data.nama_lengkap || "").trim();
+  const namaBarbershop = (data.nama_barbershop || "").trim();
+  const rawEmail = (data.email || "").trim();
+  const rawPhone = (data.no_hp || "").trim();
+  const rawPassword = data.password || "";
+  const alamat = (data.alamat || "").trim() || "Alamat belum diatur";
+  const lat = Number(data.latitude);
+  const lng = Number(data.longitude);
 
-    if (!namaLengkap) {
-      throw new Error("Nama lengkap pemilik wajib diisi.");
-    }
+  if (!namaLengkap) {
+    throw new Error("Nama lengkap pemilik wajib diisi.");
+  }
 
-    if (!namaBarbershop) {
-      throw new Error("Nama barbershop wajib diisi.");
-    }
+  if (!namaBarbershop) {
+    throw new Error("Nama barbershop wajib diisi.");
+  }
 
-    if (!rawEmail) {
-      throw new Error("Email wajib diisi.");
-    }
+  if (!rawEmail) {
+    throw new Error("Email wajib diisi.");
+  }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(rawEmail)) {
-      throw new Error("Format email tidak valid.");
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(rawEmail)) {
+    throw new Error("Format email tidak valid.");
+  }
 
-    if (!rawPhone) {
-      throw new Error("Nomor telepon wajib diisi.");
-    }
+  if (!rawPhone) {
+    throw new Error("Nomor telepon wajib diisi.");
+  }
 
-    const normalizedPhone = normalizePhoneNumber(rawPhone);
+  const normalizedPhone = normalizePhoneNumber(rawPhone);
+  if (
+    !/^[0-9]+$/.test(normalizedPhone) ||
+    normalizedPhone.length < 8 ||
+    normalizedPhone.length > 15
+  ) {
+    throw new Error("Nomor telepon tidak valid. Minimal 8 digit dan maksimal 15 digit angka.");
+  }
+
+  if (!rawPassword) {
+    throw new Error("Password wajib diisi.");
+  }
+
+  if (rawPassword.length < 6) {
+    throw new Error("Password minimal 6 karakter.");
+  }
+
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    throw new Error("Koordinat lokasi barbershop tidak valid. Harap pilih titik pada peta.");
+  }
+
+  const normalizedEmail = normalizeEmail(rawEmail);
+
+  // 2. Validasi Duplikasi
+  const [existingEmail] = await db
+    .select({ id_user: users.id_user })
+    .from(users)
+    .where(eq(users.email, normalizedEmail))
+    .limit(1);
+
+  if (existingEmail) {
+    throw new Error("Email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.");
+  }
+
+  const [existingPhone] = await db
+    .select({ id_user: users.id_user })
+    .from(users)
+    .where(eq(users.no_hp, normalizedPhone))
+    .limit(1);
+
+  if (existingPhone) {
+    throw new Error("Nomor telepon sudah terdaftar.");
+  }
+
+  // 3. Daftarkan User ke Supabase Auth
+  const redirectUrl = `${getBaseUrl()}/owner/verify-email`;
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password: rawPassword,
+    options: {
+      data: {
+        role: "owner",
+        nama_lengkap: namaLengkap,
+        no_hp: normalizedPhone,
+        nama_barbershop: namaBarbershop,
+      },
+      emailRedirectTo: redirectUrl,
+    },
+  });
+
+  if (authError) {
+    console.error("[SUPABASE SIGNUP ERROR]", authError.status, authError.message);
+    let msg = authError.message;
     if (
-      !/^[0-9]+$/.test(normalizedPhone) ||
-      normalizedPhone.length < 8 ||
-      normalizedPhone.length > 15
+      msg.includes("already registered") ||
+      msg.includes("already exists") ||
+      msg.includes("User already registered")
     ) {
-      throw new Error("Nomor telepon tidak valid. Minimal 8 digit dan maksimal 15 digit angka.");
+      msg = "Email sudah terdaftar di sistem autentikasi. Silakan masuk ke akun Anda.";
+    } else if (
+      msg.toLowerCase().includes("invalid api key") ||
+      msg.toLowerCase().includes("jwt") ||
+      msg.toLowerCase().includes("api key")
+    ) {
+      msg = "Supabase environment variables belum dikonfigurasi.";
     }
+    throw new Error(msg);
+  }
 
-    if (!rawPassword) {
-      throw new Error("Password wajib diisi.");
-    }
+  if (!authData.user?.id) {
+    throw new Error("Gagal memperoleh User ID dari Supabase Auth.");
+  }
 
-    if (rawPassword.length < 6) {
-      throw new Error("Password minimal 6 karakter.");
-    }
+  const authUserId = authData.user.id;
 
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      throw new Error("Koordinat lokasi barbershop tidak valid. Harap pilih titik pada peta.");
-    }
+  // 4. Eksekusi Atomic DB Transaction (Sync ke public.users, owner, business, barbershop)
+  let createdSlug = "";
+  const executeRegistrationTransaction = async () => {
+    await db.transaction(async (tx) => {
+      // Step A: Buat Barbershop (Status awal inactive sampai terverifikasi)
+      const finalSlug = await generateUniqueBarbershopSlug(tx, namaBarbershop);
+      createdSlug = finalSlug;
+      const [shop] = await tx
+        .insert(barbershop)
+        .values({
+          nama_barbershop: namaBarbershop,
+          slug: finalSlug,
+          alamat,
+          no_hp: normalizedPhone,
+          jam_buka: "08:00",
+          jam_tutup: "21:00",
+          latitude: lat.toFixed(7),
+          longitude: lng.toFixed(7),
+          status: "inactive",
+        })
+        .returning();
 
-    const normalizedEmail = normalizeEmail(rawEmail);
+      if (!shop) {
+        throw new Error("Gagal membuat data barbershop.");
+      }
 
-    // 2. Validasi Duplikasi
-    const [existingEmail] = await db
-      .select({ id_user: users.id_user })
-      .from(users)
-      .where(eq(users.email, normalizedEmail))
-      .limit(1);
-
-    if (existingEmail) {
-      throw new Error("Email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.");
-    }
-
-    const [existingPhone] = await db
-      .select({ id_user: users.id_user })
-      .from(users)
-      .where(eq(users.no_hp, normalizedPhone))
-      .limit(1);
-
-    if (existingPhone) {
-      throw new Error("Nomor telepon sudah terdaftar.");
-    }
-
-    // 3. Daftarkan User ke Supabase Auth
-    const redirectUrl = `${getBaseUrl()}/owner/verify-email`;
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password: rawPassword,
-      options: {
-        data: {
-          role: "owner",
+      // Step B: Buat Akun Owner di tabel public.users (Sinkron ID 1-to-1 dengan Supabase Auth)
+      const [u] = await tx
+        .insert(users)
+        .values({
+          id_user: authUserId,
+          email: normalizedEmail,
+          password: null, // Password dikelola secara aman oleh Supabase Auth
           nama_lengkap: namaLengkap,
           no_hp: normalizedPhone,
-          nama_barbershop: namaBarbershop,
-        },
-        emailRedirectTo: redirectUrl,
-      },
-    });
+          role: "owner",
+          status: "inactive",
+          email_verified: false,
+          verification_status: "pending",
+          id_barbershop: shop.id_barbershop,
+        })
+        .returning();
 
-    if (authError) {
-      console.error("[SUPABASE SIGNUP ERROR]", authError.status, authError.message);
-      let msg = authError.message;
-      if (
-        msg.includes("already registered") ||
-        msg.includes("already exists") ||
-        msg.includes("User already registered")
-      ) {
-        msg = "Email sudah terdaftar di sistem autentikasi. Silakan masuk ke akun Anda.";
-      } else if (
-        msg.toLowerCase().includes("invalid api key") ||
-        msg.toLowerCase().includes("jwt") ||
-        msg.toLowerCase().includes("api key")
-      ) {
-        msg = "Supabase environment variables belum dikonfigurasi.";
+      if (!u) {
+        throw new Error("Gagal membuat akun owner di database.");
       }
-      throw new Error(msg);
-    }
 
-    if (!authData.user?.id) {
-      throw new Error("Gagal memperoleh User ID dari Supabase Auth.");
-    }
+      // Step C: Sinkronisasi ke model SaaS (owner & business)
+      const [saasOwner] = await tx
+        .insert(owner)
+        .values({
+          name: namaLengkap,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          password_hash: "supabase_auth",
+          status: "inactive",
+        })
+        .returning();
 
-    const authUserId = authData.user.id;
+      if (saasOwner) {
+        await tx.insert(business).values({
+          owner_id: saasOwner.owner_id,
+          business_name: namaBarbershop,
+          status: "inactive",
+        });
+      }
 
-    // 4. Eksekusi Atomic DB Transaction (Sync ke public.users, owner, business, barbershop)
-    let createdSlug = "";
-    const executeRegistrationTransaction = async () => {
-      await db.transaction(async (tx) => {
-        // Step A: Buat Barbershop (Status awal inactive sampai terverifikasi)
-        const finalSlug = await generateUniqueBarbershopSlug(tx, namaBarbershop);
-        createdSlug = finalSlug;
-        const [shop] = await tx
-          .insert(barbershop)
-          .values({
-            nama_barbershop: namaBarbershop,
-            slug: finalSlug,
-            alamat,
-            no_hp: normalizedPhone,
-            jam_buka: "08:00",
-            jam_tutup: "21:00",
-            latitude: lat.toFixed(7),
-            longitude: lng.toFixed(7),
-            status: "inactive",
-          })
-          .returning();
+      // Step D: Zero State - Toko baru dimulai bersih tanpa layanan bawaan
+    });
+  };
 
-        if (!shop) {
-          throw new Error("Gagal membuat data barbershop.");
-        }
+  const isTransientConnectionError = (err: unknown): boolean => {
+    if (!err) return false;
+    const str = String(err).toLowerCase();
+    return (
+      str.includes("econnreset") ||
+      str.includes("connection closed") ||
+      str.includes("connection terminated") ||
+      str.includes("etimedout") ||
+      str.includes("econnrefused") ||
+      str.includes("57p01") ||
+      str.includes("closed connection")
+    );
+  };
 
-        // Step B: Buat Akun Owner di tabel public.users (Sinkron ID 1-to-1 dengan Supabase Auth)
-        const [u] = await tx
-          .insert(users)
-          .values({
-            id_user: authUserId,
-            email: normalizedEmail,
-            password: null, // Password dikelola secara aman oleh Supabase Auth
-            nama_lengkap: namaLengkap,
-            no_hp: normalizedPhone,
-            role: "owner",
-            status: "inactive",
-            email_verified: false,
-            verification_status: "pending",
-            id_barbershop: shop.id_barbershop,
-          })
-          .returning();
-
-        if (!u) {
-          throw new Error("Gagal membuat akun owner di database.");
-        }
-
-        // Step C: Sinkronisasi ke model SaaS (owner & business)
-        const [saasOwner] = await tx
-          .insert(owner)
-          .values({
-            name: namaLengkap,
-            email: normalizedEmail,
-            phone: normalizedPhone,
-            password_hash: "supabase_auth",
-            status: "inactive",
-          })
-          .returning();
-
-        if (saasOwner) {
-          await tx.insert(business).values({
-            owner_id: saasOwner.owner_id,
-            business_name: namaBarbershop,
-            status: "inactive",
-          });
-        }
-
-        // Step D: Zero State - Toko baru dimulai bersih tanpa layanan bawaan
-      });
-    };
-
-    const isTransientConnectionError = (err: unknown): boolean => {
-      if (!err) return false;
-      const str = String(err).toLowerCase();
-      return (
-        str.includes("econnreset") ||
-        str.includes("connection closed") ||
-        str.includes("connection terminated") ||
-        str.includes("etimedout") ||
-        str.includes("econnrefused") ||
-        str.includes("57p01") ||
-        str.includes("closed connection")
+  try {
+    await executeRegistrationTransaction();
+  } catch (firstErr: unknown) {
+    if (isTransientConnectionError(firstErr)) {
+      console.warn(
+        "[DATABASE REGISTRATION] Terdeteksi transient connection reset, mencoba ulang 1x dengan transaksi baru...",
       );
-    };
-
-    try {
-      await executeRegistrationTransaction();
-    } catch (firstErr: unknown) {
-      if (isTransientConnectionError(firstErr)) {
-        console.warn(
-          "[DATABASE REGISTRATION] Terdeteksi transient connection reset, mencoba ulang 1x dengan transaksi baru...",
-        );
-        try {
-          await executeRegistrationTransaction();
-        } catch (retryErr: unknown) {
-          console.error("[DATABASE REGISTRATION ERROR AFTER RETRY]", retryErr);
-          const dbErrMsg =
-            retryErr instanceof Error ? retryErr.message : "Gagal menyimpan data akun ke database.";
-          throw new Error(`Pendaftaran gagal disimpan: ${dbErrMsg}`);
-        }
-      } else {
-        console.error("[DATABASE REGISTRATION ERROR]", firstErr);
+      try {
+        await executeRegistrationTransaction();
+      } catch (retryErr: unknown) {
+        console.error("[DATABASE REGISTRATION ERROR AFTER RETRY]", retryErr);
         const dbErrMsg =
-          firstErr instanceof Error ? firstErr.message : "Gagal menyimpan data akun ke database.";
+          retryErr instanceof Error ? retryErr.message : "Gagal menyimpan data akun ke database.";
         throw new Error(`Pendaftaran gagal disimpan: ${dbErrMsg}`);
       }
+    } else {
+      console.error("[DATABASE REGISTRATION ERROR]", firstErr);
+      const dbErrMsg =
+        firstErr instanceof Error ? firstErr.message : "Gagal menyimpan data akun ke database.";
+      throw new Error(`Pendaftaran gagal disimpan: ${dbErrMsg}`);
     }
+  }
 
-    return {
-      success: true,
-      email: normalizedEmail,
-      ownerName: namaLengkap,
-      businessName: namaBarbershop,
-      slug: createdSlug,
-      emailSent: true,
-      message:
-        "Registrasi berhasil. Link konfirmasi email telah dikirimkan ke alamat Gmail Anda oleh Supabase Auth.",
-    };
+  return {
+    success: true,
+    email: normalizedEmail,
+    ownerName: namaLengkap,
+    businessName: namaBarbershop,
+    slug: createdSlug,
+    emailSent: true,
+    message:
+      "Registrasi berhasil. Link konfirmasi email telah dikirimkan ke alamat Gmail Anda oleh Supabase Auth.",
+  };
 }
 
 export const registerOwner = createServerFn({
@@ -319,13 +350,17 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
   if (cacheKey) {
     const cached = recentVerifications.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 60000) {
-      console.log("[SERVER VERIFY-EMAIL] Mengembalikan hasil verifikasi dari cache aman (deduplikasi aktif).");
+      console.log(
+        "[SERVER VERIFY-EMAIL] Mengembalikan hasil verifikasi dari cache aman (deduplikasi aktif).",
+      );
       return cached.result;
     }
 
     const inFlight = inFlightVerifications.get(cacheKey);
     if (inFlight) {
-      console.log("[SERVER VERIFY-EMAIL] Proses verifikasi sedang berjalan, menunggu in-flight promise...");
+      console.log(
+        "[SERVER VERIFY-EMAIL] Proses verifikasi sedang berjalan, menunggu in-flight promise...",
+      );
       return await inFlight;
     }
   }
@@ -358,7 +393,9 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
       const primaryType: "signup" | "email" = requestedType === "signup" ? "signup" : "email";
       const fallbackType: "signup" | "email" = primaryType === "email" ? "signup" : "email";
 
-      console.log(`[SUPABASE VERIFY OTP] Percobaan 1: Memverifikasi dengan type '${primaryType}'...`);
+      console.log(
+        `[SUPABASE VERIFY OTP] Percobaan 1: Memverifikasi dengan type '${primaryType}'...`,
+      );
       const res1 = await supabase.auth.verifyOtp({
         token_hash: rawTokenHash,
         type: primaryType,
@@ -366,7 +403,9 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
 
       if (res1.data?.user && !res1.error) {
         otpData = res1.data;
-        console.log(`[SUPABASE VERIFY OTP SUCCESS] Berhasil diverifikasi menggunakan type '${primaryType}'.`);
+        console.log(
+          `[SUPABASE VERIFY OTP SUCCESS] Berhasil diverifikasi menggunakan type '${primaryType}'.`,
+        );
       } else {
         console.warn(
           `[SUPABASE VERIFY OTP] Percobaan 1 dengan type '${primaryType}' gagal (${res1.error?.status}: ${res1.error?.message}). Mencoba otomatis dengan fallback type '${fallbackType}'...`,
@@ -379,10 +418,14 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
 
         if (res2.data?.user && !res2.error) {
           otpData = res2.data;
-          console.log(`[SUPABASE VERIFY OTP SUCCESS] Berhasil diverifikasi menggunakan fallback type '${fallbackType}'.`);
+          console.log(
+            `[SUPABASE VERIFY OTP SUCCESS] Berhasil diverifikasi menggunakan fallback type '${fallbackType}'.`,
+          );
         } else {
           otpError = res2.error || res1.error;
-          console.error(`[SUPABASE VERIFY OTP FAILED] Fallback dengan type '${fallbackType}' juga gagal (${res2.error?.status}: ${res2.error?.message}).`);
+          console.error(
+            `[SUPABASE VERIFY OTP FAILED] Fallback dengan type '${fallbackType}' juga gagal (${res2.error?.status}: ${res2.error?.message}).`,
+          );
         }
       }
 
@@ -462,131 +505,131 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
 
     // 2. Ambil data akun Owner dari tabel public.users
 
-  const [record] = await db
-    .select({
-      id_user: users.id_user,
-      email: users.email,
-      nama_lengkap: users.nama_lengkap,
-      role: users.role,
-      status: users.status,
-      id_barbershop: users.id_barbershop,
-      email_verified: users.email_verified,
-    })
-    .from(users)
-    .where(
-      userEmail
-        ? or(eq(users.id_user, authenticatedUserId), eq(users.email, userEmail))
-        : eq(users.id_user, authenticatedUserId),
-    )
-    .limit(1);
+    const [record] = await db
+      .select({
+        id_user: users.id_user,
+        email: users.email,
+        nama_lengkap: users.nama_lengkap,
+        role: users.role,
+        status: users.status,
+        id_barbershop: users.id_barbershop,
+        email_verified: users.email_verified,
+      })
+      .from(users)
+      .where(
+        userEmail
+          ? or(eq(users.id_user, authenticatedUserId), eq(users.email, userEmail))
+          : eq(users.id_user, authenticatedUserId),
+      )
+      .limit(1);
 
-  if (!record) {
-    throw new Error("Data akun Owner tidak ditemukan di database BARBERIN.");
-  }
-
-  if (record.role !== "owner") {
-    throw new Error("Akun ini bukan merupakan akun Owner BARBERIN.");
-  }
-
-  if (!record.id_barbershop) {
-    throw new Error("Data barbershop terkait akun tidak ditemukan.");
-  }
-
-  const [shop] = await db
-    .select({
-      id_barbershop: barbershop.id_barbershop,
-      nama_barbershop: barbershop.nama_barbershop,
-      slug: barbershop.slug,
-      alamat: barbershop.alamat,
-      status: barbershop.status,
-    })
-    .from(barbershop)
-    .where(eq(barbershop.id_barbershop, record.id_barbershop))
-    .limit(1);
-
-  if (!shop) {
-    throw new Error("Data barbershop tidak ditemukan.");
-  }
-
-  const now = new Date();
-
-  // 3. Update status menjadi Active / Verified secara atomic
-  await db.transaction(async (tx) => {
-    // A. Jika ada token legacy, tandai used_at
-    if (legacyRecordId) {
-      await tx
-        .update(ownerVerificationTokens)
-        .set({ used_at: now })
-        .where(eq(ownerVerificationTokens.id, legacyRecordId));
+    if (!record) {
+      throw new Error("Data akun Owner tidak ditemukan di database BARBERIN.");
     }
 
-    // B. Update status user menjadi active dan email_verified
-    await tx
-      .update(users)
-      .set({
-        status: "active",
-        email_verified: true,
-        verification_status: "verified",
-        email_verified_at: now,
-        updated_at: now,
+    if (record.role !== "owner") {
+      throw new Error("Akun ini bukan merupakan akun Owner BARBERIN.");
+    }
+
+    if (!record.id_barbershop) {
+      throw new Error("Data barbershop terkait akun tidak ditemukan.");
+    }
+
+    const [shop] = await db
+      .select({
+        id_barbershop: barbershop.id_barbershop,
+        nama_barbershop: barbershop.nama_barbershop,
+        slug: barbershop.slug,
+        alamat: barbershop.alamat,
+        status: barbershop.status,
       })
-      .where(eq(users.id_user, record.id_user));
+      .from(barbershop)
+      .where(eq(barbershop.id_barbershop, record.id_barbershop))
+      .limit(1);
 
-    // C. Update status barbershop menjadi active
-    await tx
-      .update(barbershop)
-      .set({
-        status: "active",
-        updated_at: now,
-      })
-      .where(eq(barbershop.id_barbershop, shop.id_barbershop));
+    if (!shop) {
+      throw new Error("Data barbershop tidak ditemukan.");
+    }
 
-    // D. Update status di tabel SaaS (owner & business)
-    await tx
-      .update(owner)
-      .set({ status: "active", updated_at: now })
-      .where(eq(owner.email, record.email));
+    const now = new Date();
 
-    const [saasOwner] = await tx
+    // 3. Update status menjadi Active / Verified secara atomic
+    await db.transaction(async (tx) => {
+      // A. Jika ada token legacy, tandai used_at
+      if (legacyRecordId) {
+        await tx
+          .update(ownerVerificationTokens)
+          .set({ used_at: now })
+          .where(eq(ownerVerificationTokens.id, legacyRecordId));
+      }
+
+      // B. Update status user menjadi active dan email_verified
+      await tx
+        .update(users)
+        .set({
+          status: "active",
+          email_verified: true,
+          verification_status: "verified",
+          email_verified_at: now,
+          updated_at: now,
+        })
+        .where(eq(users.id_user, record.id_user));
+
+      // C. Update status barbershop menjadi active
+      await tx
+        .update(barbershop)
+        .set({
+          status: "active",
+          updated_at: now,
+        })
+        .where(eq(barbershop.id_barbershop, shop.id_barbershop));
+
+      // D. Update status di tabel SaaS (owner & business)
+      await tx
+        .update(owner)
+        .set({ status: "active", updated_at: now })
+        .where(eq(owner.email, record.email));
+
+      const [saasOwner] = await tx
+        .select({ owner_id: owner.owner_id })
+        .from(owner)
+        .where(eq(owner.email, record.email))
+        .limit(1);
+
+      if (saasOwner) {
+        await tx
+          .update(business)
+          .set({ status: "active", updated_at: now })
+          .where(eq(business.owner_id, saasOwner.owner_id));
+      }
+    });
+
+    // 4. Ambil data SaaS owner_id & business_id
+    const [saasOwnerFinal] = await db
       .select({ owner_id: owner.owner_id })
       .from(owner)
       .where(eq(owner.email, record.email))
       .limit(1);
 
-    if (saasOwner) {
-      await tx
-        .update(business)
-        .set({ status: "active", updated_at: now })
-        .where(eq(business.owner_id, saasOwner.owner_id));
+    let businessId: number | null = null;
+    if (saasOwnerFinal) {
+      const [biz] = await db
+        .select({ business_id: business.business_id })
+        .from(business)
+        .where(eq(business.owner_id, saasOwnerFinal.owner_id))
+        .limit(1);
+      if (biz) businessId = Number(biz.business_id);
     }
-  });
 
-  // 4. Ambil data SaaS owner_id & business_id
-  const [saasOwnerFinal] = await db
-    .select({ owner_id: owner.owner_id })
-    .from(owner)
-    .where(eq(owner.email, record.email))
-    .limit(1);
-
-  let businessId: number | null = null;
-  if (saasOwnerFinal) {
-    const [biz] = await db
-      .select({ business_id: business.business_id })
-      .from(business)
-      .where(eq(business.owner_id, saasOwnerFinal.owner_id))
-      .limit(1);
-    if (biz) businessId = Number(biz.business_id);
-  }
-
-  // 5. Buat signed session cookie BARBERIN Owner
-  setOwnerSessionCookie({
-    userId: record.id_user,
-    email: record.email,
-    role: "owner",
-    barbershopId: shop.id_barbershop,
-    barbershopName: shop.nama_barbershop,
-    namaLengkap: record.nama_lengkap,
-  });
+    // 5. Buat signed session cookie BARBERIN Owner
+    setOwnerSessionCookie({
+      userId: record.id_user,
+      email: record.email,
+      role: "owner",
+      barbershopId: shop.id_barbershop,
+      barbershopName: shop.nama_barbershop,
+      namaLengkap: record.nama_lengkap,
+    });
 
     const result = {
       success: true,
@@ -803,9 +846,7 @@ async function handleLoginOwnerBpmn(data: OwnerLoginInput) {
   }
 
   if (shop.status === "suspended" || shop.status === "inactive") {
-    throw new Error(
-      "Akun toko Anda sedang dinonaktifkan. Silakan hubungi administrator BARBERIN.",
-    );
+    throw new Error("Akun toko Anda sedang dinonaktifkan. Silakan hubungi administrator BARBERIN.");
   }
 
   // 8. Buat Signed Session Cookie BARBERIN Existing
@@ -937,3 +978,82 @@ export const logoutOwnerAction = createServerFn({
   clearOwnerSessionCookie();
   return { success: true };
 });
+
+// ============================================================================
+// 7. REQUEST RESET PASSWORD OWNER (SUPABASE AUTH RECOVERY)
+// ============================================================================
+export type RequestPasswordResetInput = {
+  email: string;
+  clientOrigin?: string;
+};
+
+export async function handleRequestPasswordReset(data: RequestPasswordResetInput) {
+  const rawEmail = (data.email || "").trim().toLowerCase();
+  if (!rawEmail) {
+    throw new Error("Email wajib diisi.");
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(rawEmail)) {
+    throw new Error("Format email tidak valid.");
+  }
+
+  const normalizedEmail = normalizeEmail(rawEmail);
+
+  // Keamanan: Periksa apakah user terdaftar dengan role owner (Section 11)
+  // Cegah user non-owner atau yang dinonaktifkan menerima reset password via portal owner
+  const [foundOwner] = await db
+    .select({
+      id_user: users.id_user,
+      email: users.email,
+      role: users.role,
+      status: users.status,
+    })
+    .from(users)
+    .where(and(eq(users.email, normalizedEmail), eq(users.role, "owner")))
+    .limit(1);
+
+  // Jika akun owner ditemukan dan tidak di-suspend, panggil recovery Supabase Auth
+  if (foundOwner && foundOwner.status !== "suspended") {
+    const baseUrl = getBaseUrl(data.clientOrigin);
+    const resetRedirectUrl = `${baseUrl}/owner/reset-password`;
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: resetRedirectUrl,
+    });
+
+    if (resetError) {
+      console.error("[SUPABASE RESET PASSWORD ERROR]", resetError.status, resetError.message);
+      if (
+        resetError.message.toLowerCase().includes("invalid api key") ||
+        resetError.message.toLowerCase().includes("jwt") ||
+        resetError.message.toLowerCase().includes("api key")
+      ) {
+        throw new Error("Supabase environment variables belum dikonfigurasi.");
+      }
+      if (
+        resetError.status === 429 ||
+        resetError.message.toLowerCase().includes("rate limit") ||
+        resetError.message.toLowerCase().includes("too many requests")
+      ) {
+        throw new Error(
+          "Terlalu banyak permintaan. Silakan tunggu beberapa saat sebelum mencoba kembali.",
+        );
+      }
+      // Jangan membocorkan error internal Supabase ke publik
+    }
+  }
+
+  // Keamanan Account Enumeration (Section 10):
+  // Selalu kembalikan pesan netral yang identik terlepas apakah email terdaftar atau tidak
+  return {
+    success: true,
+    message: "Jika email tersebut terdaftar, kami telah mengirimkan link untuk reset password.",
+  };
+}
+
+export const requestPasswordReset = createServerFn({
+  method: "POST",
+})
+  .validator((data: RequestPasswordResetInput) => data)
+  .handler(async ({ data }) => handleRequestPasswordReset(data));

@@ -14,8 +14,10 @@ import { Route as BarbershopSlugRouteImport } from './routes/$barbershopSlug'
 import { Route as DbTestRouteImport } from './routes/db-test'
 import { Route as ServicesTestRouteImport } from './routes/services-test'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
+import { Route as OwnerForgotPasswordRouteImport } from './routes/owner.forgot-password'
 import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
+import { Route as OwnerResetPasswordRouteImport } from './routes/owner.reset-password'
 import { Route as OwnerVerifyEmailRouteImport } from './routes/owner.verify-email'
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SuperadminLoginRouteImport } from './routes/superadmin.login'
@@ -44,10 +46,12 @@ import { Route as BarbershopSlugOwnerAuditActivitiesRouteImport } from './routes
 import { Route as BarbershopSlugOwnerAuditFinanceRouteImport } from './routes/$barbershopSlug.owner.audit-finance'
 import { Route as BarbershopSlugOwnerCapstersRouteImport } from './routes/$barbershopSlug.owner.capsters'
 import { Route as BarbershopSlugOwnerDashboardRouteImport } from './routes/$barbershopSlug.owner.dashboard'
+import { Route as BarbershopSlugOwnerForgotPasswordRouteImport } from './routes/$barbershopSlug.owner.forgot-password'
 import { Route as BarbershopSlugOwnerGajiRouteImport } from './routes/$barbershopSlug.owner.gaji'
 import { Route as BarbershopSlugOwnerHelpRouteImport } from './routes/$barbershopSlug.owner.help'
 import { Route as BarbershopSlugOwnerKomisiRouteImport } from './routes/$barbershopSlug.owner.komisi'
 import { Route as BarbershopSlugOwnerLoginRouteImport } from './routes/$barbershopSlug.owner.login'
+import { Route as BarbershopSlugOwnerResetPasswordRouteImport } from './routes/$barbershopSlug.owner.reset-password'
 import { Route as BarbershopSlugOwnerServicesRouteImport } from './routes/$barbershopSlug.owner.services'
 import { Route as BarbershopSlugOwnerSettingsRouteImport } from './routes/$barbershopSlug.owner.settings'
 import { Route as BarbershopSlugCapsterTransactionsTransactionIdRouteImport } from './routes/$barbershopSlug.capster.transactions.$transactionId'
@@ -88,6 +92,11 @@ const BSlugRoute = BSlugRouteImport.update({
   path: '/b/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerForgotPasswordRoute = OwnerForgotPasswordRouteImport.update({
+  id: '/owner/forgot-password',
+  path: '/owner/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerLoginRoute = OwnerLoginRouteImport.update({
   id: '/owner/login',
   path: '/owner/login',
@@ -96,6 +105,11 @@ const OwnerLoginRoute = OwnerLoginRouteImport.update({
 const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
   id: '/owner/register',
   path: '/owner/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerResetPasswordRoute = OwnerResetPasswordRouteImport.update({
+  id: '/owner/reset-password',
+  path: '/owner/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerVerifyEmailRoute = OwnerVerifyEmailRouteImport.update({
@@ -262,6 +276,12 @@ const BarbershopSlugOwnerDashboardRoute =
     path: '/owner/dashboard',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
+const BarbershopSlugOwnerForgotPasswordRoute =
+  BarbershopSlugOwnerForgotPasswordRouteImport.update({
+    id: '/owner/forgot-password',
+    path: '/owner/forgot-password',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
 const BarbershopSlugOwnerGajiRoute = BarbershopSlugOwnerGajiRouteImport.update({
   id: '/owner/gaji',
   path: '/owner/gaji',
@@ -282,6 +302,12 @@ const BarbershopSlugOwnerLoginRoute =
   BarbershopSlugOwnerLoginRouteImport.update({
     id: '/owner/login',
     path: '/owner/login',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
+const BarbershopSlugOwnerResetPasswordRoute =
+  BarbershopSlugOwnerResetPasswordRouteImport.update({
+    id: '/owner/reset-password',
+    path: '/owner/reset-password',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
 const BarbershopSlugOwnerServicesRoute =
@@ -375,8 +401,10 @@ export interface FileRoutesByFullPath {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/forgot-password': typeof OwnerForgotPasswordRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
+  '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -405,10 +433,12 @@ export interface FileRoutesByFullPath {
   '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
   '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
   '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/forgot-password': typeof BarbershopSlugOwnerForgotPasswordRoute
   '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
   '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
@@ -430,8 +460,10 @@ export interface FileRoutesByTo {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/forgot-password': typeof OwnerForgotPasswordRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
+  '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -460,10 +492,12 @@ export interface FileRoutesByTo {
   '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
   '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
   '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/forgot-password': typeof BarbershopSlugOwnerForgotPasswordRoute
   '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
   '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
@@ -486,8 +520,10 @@ export interface FileRoutesById {
   '/db-test': typeof DbTestRoute
   '/services-test': typeof ServicesTestRoute
   '/b/$slug': typeof BSlugRoute
+  '/owner/forgot-password': typeof OwnerForgotPasswordRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
+  '/owner/reset-password': typeof OwnerResetPasswordRoute
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -516,10 +552,12 @@ export interface FileRoutesById {
   '/$barbershopSlug/owner/audit-finance': typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
   '/$barbershopSlug/owner/capsters': typeof BarbershopSlugOwnerCapstersRoute
   '/$barbershopSlug/owner/dashboard': typeof BarbershopSlugOwnerDashboardRoute
+  '/$barbershopSlug/owner/forgot-password': typeof BarbershopSlugOwnerForgotPasswordRoute
   '/$barbershopSlug/owner/gaji': typeof BarbershopSlugOwnerGajiRoute
   '/$barbershopSlug/owner/help': typeof BarbershopSlugOwnerHelpRoute
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
+  '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
   '/$barbershopSlug/capster/transactions/$transactionId': typeof BarbershopSlugCapsterTransactionsTransactionIdRouteWithChildren
@@ -543,8 +581,10 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/forgot-password'
     | '/owner/login'
     | '/owner/register'
+    | '/owner/reset-password'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
@@ -573,10 +613,12 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/audit-finance'
     | '/$barbershopSlug/owner/capsters'
     | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/forgot-password'
     | '/$barbershopSlug/owner/gaji'
     | '/$barbershopSlug/owner/help'
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
     | '/$barbershopSlug/capster/transactions/$transactionId'
@@ -598,8 +640,10 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/forgot-password'
     | '/owner/login'
     | '/owner/register'
+    | '/owner/reset-password'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
@@ -628,10 +672,12 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/audit-finance'
     | '/$barbershopSlug/owner/capsters'
     | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/forgot-password'
     | '/$barbershopSlug/owner/gaji'
     | '/$barbershopSlug/owner/help'
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
     | '/$barbershopSlug/capster/transactions/$transactionId'
@@ -653,8 +699,10 @@ export interface FileRouteTypes {
     | '/db-test'
     | '/services-test'
     | '/b/$slug'
+    | '/owner/forgot-password'
     | '/owner/login'
     | '/owner/register'
+    | '/owner/reset-password'
     | '/owner/verify-email'
     | '/superadmin/dashboard'
     | '/superadmin/login'
@@ -683,10 +731,12 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/audit-finance'
     | '/$barbershopSlug/owner/capsters'
     | '/$barbershopSlug/owner/dashboard'
+    | '/$barbershopSlug/owner/forgot-password'
     | '/$barbershopSlug/owner/gaji'
     | '/$barbershopSlug/owner/help'
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
+    | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
     | '/$barbershopSlug/capster/transactions/$transactionId'
@@ -709,8 +759,10 @@ export interface RootRouteChildren {
   DbTestRoute: typeof DbTestRoute
   ServicesTestRoute: typeof ServicesTestRoute
   BSlugRoute: typeof BSlugRoute
+  OwnerForgotPasswordRoute: typeof OwnerForgotPasswordRoute
   OwnerLoginRoute: typeof OwnerLoginRoute
   OwnerRegisterRoute: typeof OwnerRegisterRoute
+  OwnerResetPasswordRoute: typeof OwnerResetPasswordRoute
   OwnerVerifyEmailRoute: typeof OwnerVerifyEmailRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   SuperadminLoginRoute: typeof SuperadminLoginRoute
@@ -754,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner/forgot-password': {
+      id: '/owner/forgot-password'
+      path: '/owner/forgot-password'
+      fullPath: '/owner/forgot-password'
+      preLoaderRoute: typeof OwnerForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner/login': {
       id: '/owner/login'
       path: '/owner/login'
@@ -766,6 +825,13 @@ declare module '@tanstack/react-router' {
       path: '/owner/register'
       fullPath: '/owner/register'
       preLoaderRoute: typeof OwnerRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/reset-password': {
+      id: '/owner/reset-password'
+      path: '/owner/reset-password'
+      fullPath: '/owner/reset-password'
+      preLoaderRoute: typeof OwnerResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner/verify-email': {
@@ -964,6 +1030,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BarbershopSlugOwnerDashboardRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
+    '/$barbershopSlug/owner/forgot-password': {
+      id: '/$barbershopSlug/owner/forgot-password'
+      path: '/owner/forgot-password'
+      fullPath: '/$barbershopSlug/owner/forgot-password'
+      preLoaderRoute: typeof BarbershopSlugOwnerForgotPasswordRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
     '/$barbershopSlug/owner/gaji': {
       id: '/$barbershopSlug/owner/gaji'
       path: '/owner/gaji'
@@ -990,6 +1063,13 @@ declare module '@tanstack/react-router' {
       path: '/owner/login'
       fullPath: '/$barbershopSlug/owner/login'
       preLoaderRoute: typeof BarbershopSlugOwnerLoginRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/reset-password': {
+      id: '/$barbershopSlug/owner/reset-password'
+      path: '/owner/reset-password'
+      fullPath: '/$barbershopSlug/owner/reset-password'
+      preLoaderRoute: typeof BarbershopSlugOwnerResetPasswordRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
     '/$barbershopSlug/owner/services': {
@@ -1211,10 +1291,12 @@ interface BarbershopSlugRouteChildren {
   BarbershopSlugOwnerAuditFinanceRoute: typeof BarbershopSlugOwnerAuditFinanceRouteWithChildren
   BarbershopSlugOwnerCapstersRoute: typeof BarbershopSlugOwnerCapstersRoute
   BarbershopSlugOwnerDashboardRoute: typeof BarbershopSlugOwnerDashboardRoute
+  BarbershopSlugOwnerForgotPasswordRoute: typeof BarbershopSlugOwnerForgotPasswordRoute
   BarbershopSlugOwnerGajiRoute: typeof BarbershopSlugOwnerGajiRoute
   BarbershopSlugOwnerHelpRoute: typeof BarbershopSlugOwnerHelpRoute
   BarbershopSlugOwnerKomisiRoute: typeof BarbershopSlugOwnerKomisiRoute
   BarbershopSlugOwnerLoginRoute: typeof BarbershopSlugOwnerLoginRoute
+  BarbershopSlugOwnerResetPasswordRoute: typeof BarbershopSlugOwnerResetPasswordRoute
   BarbershopSlugOwnerServicesRoute: typeof BarbershopSlugOwnerServicesRoute
   BarbershopSlugOwnerSettingsRoute: typeof BarbershopSlugOwnerSettingsRoute
   BarbershopSlugCustomerReceiptTransactionIdRoute: typeof BarbershopSlugCustomerReceiptTransactionIdRoute
@@ -1251,10 +1333,13 @@ const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
     BarbershopSlugOwnerAuditFinanceRouteWithChildren,
   BarbershopSlugOwnerCapstersRoute: BarbershopSlugOwnerCapstersRoute,
   BarbershopSlugOwnerDashboardRoute: BarbershopSlugOwnerDashboardRoute,
+  BarbershopSlugOwnerForgotPasswordRoute:
+    BarbershopSlugOwnerForgotPasswordRoute,
   BarbershopSlugOwnerGajiRoute: BarbershopSlugOwnerGajiRoute,
   BarbershopSlugOwnerHelpRoute: BarbershopSlugOwnerHelpRoute,
   BarbershopSlugOwnerKomisiRoute: BarbershopSlugOwnerKomisiRoute,
   BarbershopSlugOwnerLoginRoute: BarbershopSlugOwnerLoginRoute,
+  BarbershopSlugOwnerResetPasswordRoute: BarbershopSlugOwnerResetPasswordRoute,
   BarbershopSlugOwnerServicesRoute: BarbershopSlugOwnerServicesRoute,
   BarbershopSlugOwnerSettingsRoute: BarbershopSlugOwnerSettingsRoute,
   BarbershopSlugCustomerReceiptTransactionIdRoute:
@@ -1271,8 +1356,10 @@ const rootRouteChildren: RootRouteChildren = {
   DbTestRoute: DbTestRoute,
   ServicesTestRoute: ServicesTestRoute,
   BSlugRoute: BSlugRoute,
+  OwnerForgotPasswordRoute: OwnerForgotPasswordRoute,
   OwnerLoginRoute: OwnerLoginRoute,
   OwnerRegisterRoute: OwnerRegisterRoute,
+  OwnerResetPasswordRoute: OwnerResetPasswordRoute,
   OwnerVerifyEmailRoute: OwnerVerifyEmailRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   SuperadminLoginRoute: SuperadminLoginRoute,

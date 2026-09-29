@@ -1,14 +1,6 @@
 import { createFileRoute, useNavigate, Link, redirect, isRedirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Lock,
-  Mail,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  ArrowRight,
-  Send,
-} from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, AlertCircle, ArrowRight, Send } from "lucide-react";
 import { toast } from "sonner";
 import { BarberinLogo } from "@/components/barberin/ui";
 import { loginOwnerBpmn, resendVerificationEmail } from "@/lib/owner-auth";
@@ -285,11 +277,24 @@ function OwnerLoginPage() {
           </button>
 
           {/* Registration Navigation Link */}
-          <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
-            Belum memiliki akun Barbershop?{" "}
-            <Link to="/owner/register" className="text-blue-400 hover:text-blue-300 font-semibold">
-              Daftar di sini
-            </Link>
+          <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
+            <div>
+              Belum memiliki akun Barbershop?{" "}
+              <Link
+                to="/owner/register"
+                className="text-blue-400 hover:text-blue-300 font-semibold"
+              >
+                Daftar di sini
+              </Link>
+            </div>
+            <div>
+              <Link
+                to="/owner/forgot-password"
+                className="text-slate-400 hover:text-blue-400 font-medium transition-colors"
+              >
+                Lupa Password?
+              </Link>
+            </div>
           </div>
         </form>
       </div>
