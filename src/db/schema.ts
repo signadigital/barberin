@@ -1326,6 +1326,8 @@ export const barbershopBrandings = pgTable(
     warna_secondary: varchar("warna_secondary", { length: 20 }).default("#1E293B"),
     warna_background: varchar("warna_background", { length: 20 }).default("#070D18"),
     theme: varchar("theme", { length: 50 }).default("default"),
+    display_mode: varchar("display_mode", { length: 20 }).notNull().default("dark"),
+    color_preset: varchar("color_preset", { length: 50 }).notNull().default("purple"),
     hide_barberin_brand: boolean("hide_barberin_brand").default(false),
     meta_title: varchar("meta_title", { length: 150 }),
     meta_description: text("meta_description"),

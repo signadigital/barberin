@@ -1,3 +1,4 @@
+import dns from "node:dns/promises";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -9,14 +10,27 @@ import {
   domainVerificationLogs,
   users,
 } from "@/db/schema";
-import { requireOwnerTenant, getOwnerSession } from "@/lib/auth-session";
+import {
+  requireOwnerTenant,
+  getOwnerSession,
+  requireSuperadmin,
+} from "@/lib/auth-session";
 
 // ============================================================================
 // TYPES & ENUMS (BPMN / ERD SESUAI SPESIFIKASI)
 // ============================================================================
 
 export type BrandingTheme = "default" | "secondary" | "tertiary" | "natural";
+export type DisplayMode = "light" | "dark";
 export type BrandingStatus = "active" | "inactive" | "draft";
+
+export type CustomDomainStatus =
+  | "pending"
+  | "verifying"
+  | "verified"
+  | "active"
+  | "inactive"
+  | "failed";
 
 export interface ColorPreset {
   name: string;
@@ -90,10 +104,9 @@ export interface SaveBrandingInput {
   tagline?: string;
   logo_url?: string;
   favicon_url?: string;
-  warna_primary?: string;
-  warna_secondary?: string;
-  warna_background?: string;
   theme?: BrandingTheme;
+  display_mode?: DisplayMode;
+  color_preset?: string;
   hide_barberin_brand?: boolean;
   meta_title?: string;
   meta_description?: string;
@@ -167,7 +180,7 @@ export function validateDomainFormat(rawDomain: string): { isValid: boolean; err
 }
 
 // ============================================================================
-// 1. OWNER BRANDING SERVER FUNCTIONS
+// 1. OWNER BRANDING SERVER FUNCTIONS (STRICT TENANT ISOLATION)
 // ============================================================================
 
 export const getOwnerBranding = createServerFn({
@@ -176,7 +189,7 @@ export const getOwnerBranding = createServerFn({
   const tenant = requireOwnerTenant();
   const shopId = tenant.barbershopId;
 
-  // 1. Ambil data barbershop
+  // 1. Ambil data barbershop milik tenant ini
   const shop = await db.query.barbershop.findFirst({
     where: eq(barbershop.id_barbershop, shopId),
   });
@@ -185,8 +198,8 @@ export const getOwnerBranding = createServerFn({
     throw new Error("Barbershop tidak ditemukan.");
   }
 
-  // 2. Ambil data branding jika ada
-  let branding = await db.query.barbershopBrandings.findFirst({
+  // 2. Ambil data branding dari tabel barbershop_brandings
+  const branding = await db.query.barbershopBrandings.findFirst({
     where: eq(barbershopBrandings.id_barbershop, shopId),
   });
 
@@ -204,16 +217,20 @@ export const getOwnerBranding = createServerFn({
       warna_secondary: "#1E293B",
       warna_background: "#070D18",
       theme: "default" as BrandingTheme,
+      display_mode: "dark" as DisplayMode,
+      color_preset: "blue",
       hide_barberin_brand: false,
       meta_title: `${shop.nama_barbershop} — Layanan Barbershop Terbaik`,
       meta_description: `Nikmati layanan cukur dan styling rambut profesional di ${shop.nama_barbershop}.`,
-      status: "draft" as BrandingStatus,
+      status: "active" as BrandingStatus,
       updated_at: new Date(),
     };
   }
 
   return {
     ...branding,
+    display_mode: (branding.display_mode as DisplayMode) || "dark",
+    color_preset: branding.color_preset || "purple",
     nama_barbershop_asli: shop.nama_barbershop,
   };
 });
@@ -223,11 +240,16 @@ export const saveOwnerBranding = createServerFn({
 })
   .validator((data: SaveBrandingInput) => data)
   .handler(async ({ data }) => {
+    // SECURITY: Ambil id_barbershop murni dari authenticated owner session
     const tenant = requireOwnerTenant();
     const session = getOwnerSession();
     const shopId = tenant.barbershopId;
 
-    // STEP 5 BPMN: Validasi Konfigurasi
+    if (!session || !session.userId) {
+      throw new Error("Sesi Owner tidak valid.");
+    }
+
+    // STEP 5 BPMN: Validasi Konfigurasi Input
     if (!data.nama_brand || !data.nama_brand.trim()) {
       throw new Error("Nama brand wajib diisi.");
     }
@@ -241,15 +263,22 @@ export const saveOwnerBranding = createServerFn({
       throw new Error("Meta title maksimal 150 karakter.");
     }
 
-    // Validasi format warna HEX
-    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    const primary = data.warna_primary || "#2563EB";
-    const secondary = data.warna_secondary || "#1E293B";
-    const bg = data.warna_background || "#070D18";
-
-    if (!hexRegex.test(primary) || !hexRegex.test(secondary) || !hexRegex.test(bg)) {
-      throw new Error("Format warna tidak valid. Gunakan kode warna HEX (misal: #2563EB).");
+    // Validasi Preset Warna (Strict Backend Validation: Owner tidak boleh input arbitrary HEX)
+    const presetKey = (data.color_preset || "blue").toLowerCase().trim();
+    const foundPreset = COLOR_PRESETS.find((p) => p.key === presetKey);
+    if (!foundPreset) {
+      throw new Error(
+        `Preset warna "${data.color_preset}" tidak valid. Pilihan yang tersedia: ${COLOR_PRESETS.map((p) => p.name).join(", ")}.`
+      );
     }
+
+    // Validasi Display Mode (light | dark)
+    const displayMode: DisplayMode = data.display_mode === "light" ? "light" : "dark";
+
+    // Validasi Theme
+    const validThemes: BrandingTheme[] = ["default", "secondary", "tertiary", "natural"];
+    const theme: BrandingTheme =
+      data.theme && validThemes.includes(data.theme) ? data.theme : "default";
 
     // Validasi URL / Base64 gambar
     if (data.logo_url && data.logo_url.startsWith("data:")) {
@@ -263,20 +292,17 @@ export const saveOwnerBranding = createServerFn({
       }
     }
 
-    // STEP 8 & 10 BPMN: Simpan data pada tabel barbershop_brandings
-    const existing = await db.query.barbershopBrandings.findFirst({
-      where: eq(barbershopBrandings.id_barbershop, shopId),
-    });
-
     const payload = {
       nama_brand: data.nama_brand.trim(),
       tagline: data.tagline?.trim() || null,
       logo_url: data.logo_url || null,
       favicon_url: data.favicon_url || null,
-      warna_primary: primary,
-      warna_secondary: secondary,
-      warna_background: bg,
-      theme: data.theme || "default",
+      warna_primary: foundPreset.primary,
+      warna_secondary: foundPreset.secondary,
+      warna_background: foundPreset.background,
+      theme,
+      display_mode: displayMode,
+      color_preset: foundPreset.key,
       hide_barberin_brand: Boolean(data.hide_barberin_brand),
       meta_title: data.meta_title?.trim() || null,
       meta_description: data.meta_description?.trim() || null,
@@ -284,33 +310,42 @@ export const saveOwnerBranding = createServerFn({
       updated_at: new Date(),
     };
 
-    let brandingId = existing?.id_branding;
-
-    if (existing) {
-      await db
-        .update(barbershopBrandings)
-        .set(payload)
-        .where(eq(barbershopBrandings.id_branding, existing.id_branding));
-    } else {
-      const [inserted] = await db
-        .insert(barbershopBrandings)
-        .values({
-          id_barbershop: shopId,
-          ...payload,
-        })
-        .returning({ id_branding: barbershopBrandings.id_branding });
-      brandingId = inserted?.id_branding;
-    }
-
-    // STEP 11 BPMN: Insert data ke tabel branding_histories
-    if (brandingId) {
-      await db.insert(brandingHistories).values({
-        id_branding: brandingId,
-        changed_by: session?.id_user || null,
-        data_before: existing ? JSON.stringify(existing) : null,
-        data_after: JSON.stringify(payload),
+    // TRANSACTION-SAFE MUTATION (Atomicity: Update branding + Insert history)
+    await db.transaction(async (tx) => {
+      // 1. Ambil existing data di dalam transaksi
+      const existing = await tx.query.barbershopBrandings.findFirst({
+        where: eq(barbershopBrandings.id_barbershop, shopId),
       });
-    }
+
+      let brandingId = existing?.id_branding;
+
+      if (existing) {
+        await tx
+          .update(barbershopBrandings)
+          .set(payload)
+          .where(eq(barbershopBrandings.id_branding, existing.id_branding));
+      } else {
+        const [inserted] = await tx
+          .insert(barbershopBrandings)
+          .values({
+            id_barbershop: shopId,
+            ...payload,
+          })
+          .returning({ id_branding: barbershopBrandings.id_branding });
+        brandingId = inserted?.id_branding;
+      }
+
+      // 2. Insert ke branding_histories dengan changed_by dari authenticated session
+      if (brandingId) {
+        await tx.insert(brandingHistories).values({
+          id_branding: brandingId,
+          changed_by: session.userId,
+          data_before: existing ? JSON.stringify(existing) : null,
+          data_after: JSON.stringify(payload),
+          created_at: new Date(),
+        });
+      }
+    });
 
     return {
       success: true,
@@ -333,7 +368,7 @@ export const getOwnerBrandingHistories = createServerFn({
   const histories = await db.query.brandingHistories.findMany({
     where: eq(brandingHistories.id_branding, branding.id_branding),
     orderBy: [desc(brandingHistories.created_at)],
-    limit: 10,
+    limit: 15,
     with: {
       user: {
         columns: {
@@ -348,7 +383,7 @@ export const getOwnerBrandingHistories = createServerFn({
 });
 
 // ============================================================================
-// 2. SUPERADMIN CUSTOM DOMAIN SERVER FUNCTIONS
+// 2. SUPERADMIN CUSTOM DOMAIN SERVER FUNCTIONS (STRICT ROLE AUTHORIZATION)
 // ============================================================================
 
 export const getSuperadminDomains = createServerFn({
@@ -356,6 +391,9 @@ export const getSuperadminDomains = createServerFn({
 })
   .validator((filter?: { barbershopId?: string; search?: string }) => filter)
   .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin yang boleh mengakses daftar custom domain
+    requireSuperadmin();
+
     // 1. Ambil daftar barbershop untuk dropdown filter
     const allShops = await db
       .select({
@@ -366,8 +404,8 @@ export const getSuperadminDomains = createServerFn({
       .from(barbershop)
       .orderBy(barbershop.nama_barbershop);
 
-    // 2. Ambil domain
-    let query = db
+    // 2. Ambil domain dengan join ke barbershop
+    const domains = await db
       .select({
         id_domain: customDomains.id_domain,
         id_barbershop: customDomains.id_barbershop,
@@ -390,9 +428,7 @@ export const getSuperadminDomains = createServerFn({
       .leftJoin(barbershop, eq(customDomains.id_barbershop, barbershop.id_barbershop))
       .orderBy(desc(customDomains.created_at));
 
-    const domains = await query;
-
-    // Filter di memori jika ada filter parameter
+    // Filter di memori
     let filtered = domains;
     if (data?.barbershopId && data.barbershopId !== "all") {
       filtered = filtered.filter((d) => d.id_barbershop === data.barbershopId);
@@ -423,6 +459,9 @@ export const addOrEditCustomDomain = createServerFn({
     is_primary?: boolean;
   }) => data)
   .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
     // STEP 3 & 4 BPMN: Validasi Format Domain
     const formatCheck = validateDomainFormat(data.domain);
     if (!formatCheck.isValid) {
@@ -431,7 +470,15 @@ export const addOrEditCustomDomain = createServerFn({
 
     const cleanDomain = data.domain.trim().toLowerCase();
 
-    // STEP 5 & 6 BPMN: Cek Ketersediaan Domain
+    // Validasi keberadaan tenant barbershop
+    const targetShop = await db.query.barbershop.findFirst({
+      where: eq(barbershop.id_barbershop, data.id_barbershop),
+    });
+    if (!targetShop) {
+      throw new Error("Barbershop tenant yang dipilih tidak valid.");
+    }
+
+    // STEP 5 & 6 BPMN: Cek Ketersediaan Domain (Harus unik secara global)
     const existing = await db.query.customDomains.findFirst({
       where: eq(customDomains.domain, cleanDomain),
     });
@@ -448,7 +495,7 @@ export const addOrEditCustomDomain = createServerFn({
     const verificationToken = `barberin-verif-${Math.random().toString(36).substring(2, 10)}`;
 
     if (data.id_domain) {
-      // Edit
+      // Edit Domain
       await db
         .update(customDomains)
         .set({
@@ -456,7 +503,6 @@ export const addOrEditCustomDomain = createServerFn({
           domain_type: data.domain_type || "primary",
           dns_name: dnsName,
           dns_value: dnsValue,
-          is_primary: Boolean(data.is_primary),
           updated_at: new Date(),
         })
         .where(eq(customDomains.id_domain, data.id_domain));
@@ -464,7 +510,8 @@ export const addOrEditCustomDomain = createServerFn({
       return { success: true, message: `Domain ${cleanDomain} berhasil diperbarui.` };
     }
 
-    // STEP 12 BPMN: Simpan Data Domain (Status: pending)
+    // STEP 12 BPMN: Simpan Data Domain Baru (Status: pending)
+    // Domain baru TIDAK boleh langsung primary atau active sebelum verifikasi DNS
     const [inserted] = await db
       .insert(customDomains)
       .values({
@@ -476,7 +523,7 @@ export const addOrEditCustomDomain = createServerFn({
         verification_token: verificationToken,
         status: "pending",
         ssl_status: "pending",
-        is_primary: Boolean(data.is_primary),
+        is_primary: false, // Baru aktif setelah lolos DNS verifikasi dan diaktifkan
       })
       .returning({ id_domain: customDomains.id_domain });
 
@@ -484,21 +531,28 @@ export const addOrEditCustomDomain = createServerFn({
       await db.insert(domainVerificationLogs).values({
         id_domain: inserted.id_domain,
         status: "pending",
-        response_message: "Domain didaftarkan. Menunggu konfigurasi DNS dari pemilik domain.",
+        response_message: "Domain didaftarkan. Menunggu konfigurasi CNAME dari registrar domain.",
       });
     }
 
     return {
       success: true,
-      message: `Domain ${cleanDomain} berhasil didaftarkan. Silakan konfigurasikan DNS CNAME/A record.`,
+      message: `Domain ${cleanDomain} berhasil didaftarkan. Silakan konfigurasikan CNAME record sesuai instruksi.`,
     };
   });
 
+/**
+ * Verifikasi DNS Domain dengan REAL DNS LOOKUP (node:dns)
+ * Memeriksa apakah CNAME mengarah ke cname.barberin.id atau TXT record cocok dengan verification_token.
+ */
 export const verifyCustomDomain = createServerFn({
   method: "POST",
 })
   .validator((data: { id_domain: string }) => data)
   .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
     const domainRecord = await db.query.customDomains.findFirst({
       where: eq(customDomains.id_domain, data.id_domain),
     });
@@ -507,38 +561,72 @@ export const verifyCustomDomain = createServerFn({
       throw new Error("Domain tidak ditemukan.");
     }
 
-    // STEP 8 & 9 BPMN: Cek DNS Domain & Validasi
-    // Di lingkungan platform, verifikasi memeriksa apakah CNAME mengarah ke cname.barberin.id
-    // Simulasi realistis: jika domain valid, status menjadi 'active'
-    const isDnsPropagated = true; // Simulasi DNS check berhasil
+    const domainToCheck = domainRecord.domain.trim().toLowerCase();
+    const expectedCname = domainRecord.dns_value.trim().toLowerCase().replace(/\.$/, "");
+    const token = domainRecord.verification_token || "";
 
-    if (isDnsPropagated) {
-      // Status active
+    let matched = false;
+    let detailMessage = "";
+
+    // 1. Coba CNAME lookup
+    try {
+      const cnames = await dns.resolveCname(domainToCheck);
+      const cleanFoundCnames = cnames.map((c) => c.trim().toLowerCase().replace(/\.$/, ""));
+      const isCnameMatch = cleanFoundCnames.some((c) => c === expectedCname);
+
+      if (isCnameMatch) {
+        matched = true;
+        detailMessage = `CNAME cocok: ${cleanFoundCnames.join(", ")} mengarah ke ${expectedCname}.`;
+      } else {
+        detailMessage = `CNAME ditemukan: [${cleanFoundCnames.join(", ")}], tidak mengarah ke ${expectedCname}.`;
+      }
+    } catch (cnameErr: any) {
+      detailMessage = `CNAME tidak terdeteksi (${cnameErr.code || cnameErr.message}).`;
+    }
+
+    // 2. Jika CNAME belum cocok, cek apakah ada TXT record verifikasi
+    if (!matched && token) {
+      try {
+        const txtRecords = await dns.resolveTxt(domainToCheck);
+        const flatTxt = txtRecords.flat().map((t) => t.trim());
+        const isTxtMatch = flatTxt.some((t) => t === token || t.includes(token));
+
+        if (isTxtMatch) {
+          matched = true;
+          detailMessage += ` TXT verification token cocok (${token}).`;
+        } else if (flatTxt.length > 0) {
+          detailMessage += ` TXT ditemukan: [${flatTxt.join(", ")}], token tidak cocok.`;
+        }
+      } catch (txtErr: any) {
+        detailMessage += ` TXT tidak terdeteksi (${txtErr.code || txtErr.message}).`;
+      }
+    }
+
+    // Update status berdasarkan hasil lookup DNS yang sebenarnya
+    if (matched) {
+      // Status verified (bukan active! Domain harus di-activate secara sadar oleh admin)
       await db
         .update(customDomains)
         .set({
-          status: "active",
-          ssl_status: "active",
+          status: "verified",
           verified_at: new Date(),
-          activated_at: new Date(),
           updated_at: new Date(),
         })
         .where(eq(customDomains.id_domain, data.id_domain));
 
-      // STEP 14 BPMN: Insert log ke domain_verification_logs
       await db.insert(domainVerificationLogs).values({
         id_domain: data.id_domain,
-        status: "active",
-        response_message: `DNS record ${domainRecord.dns_name} -> ${domainRecord.dns_value} berhasil diverifikasi. SSL aktif.`,
+        status: "verified",
+        response_message: `DNS Valid: ${detailMessage}`,
       });
 
       return {
         success: true,
-        status: "active",
-        message: `Domain ${domainRecord.domain} berhasil diverifikasi dan kini aktif!`,
+        status: "verified",
+        message: `DNS domain ${domainToCheck} berhasil diverifikasi! Klik "Aktifkan Domain" untuk mengaktifkan routing.`,
       };
     } else {
-      // Step 10 BPMN: Tampilkan pesan kesalahan
+      // DNS tidak cocok atau masih propagasi
       await db
         .update(customDomains)
         .set({
@@ -550,23 +638,140 @@ export const verifyCustomDomain = createServerFn({
       await db.insert(domainVerificationLogs).values({
         id_domain: data.id_domain,
         status: "failed",
-        response_message: "DNS belum sesuai atau masih dalam proses propagasi (estimasi 1-24 jam).",
+        response_message: `DNS Belum Sesuai: ${detailMessage}`,
       });
 
-      throw new Error("DNS belum sesuai, masih dalam masa propagasi. Silakan periksa konfigurasi CNAME di registrar Anda.");
+      throw new Error(`Verifikasi DNS gagal: ${detailMessage} Periksa pengaturan DNS di registrar Anda.`);
     }
   });
 
-export const getDomainVerificationLogs = createServerFn({
-  method: "GET",
+/**
+ * Aktivasi domain yang sudah verified
+ */
+export const activateCustomDomain = createServerFn({
+  method: "POST",
 })
-  .validator((id_domain: string) => id_domain)
-  .handler(async ({ data: id_domain }) => {
-    return await db.query.domainVerificationLogs.findMany({
-      where: eq(domainVerificationLogs.id_domain, id_domain),
-      orderBy: [desc(domainVerificationLogs.created_at)],
-      limit: 15,
+  .validator((data: { id_domain: string }) => data)
+  .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
+    const domainRecord = await db.query.customDomains.findFirst({
+      where: eq(customDomains.id_domain, data.id_domain),
     });
+
+    if (!domainRecord) {
+      throw new Error("Domain tidak ditemukan.");
+    }
+
+    if (domainRecord.status !== "verified" && domainRecord.status !== "active") {
+      throw new Error(
+        `Domain belum lolos verifikasi DNS (status saat ini: ${domainRecord.status}). Lakukan verifikasi DNS terlebih dahulu.`
+      );
+    }
+
+    await db
+      .update(customDomains)
+      .set({
+        status: "active",
+        activated_at: new Date(),
+        updated_at: new Date(),
+      })
+      .where(eq(customDomains.id_domain, data.id_domain));
+
+    await db.insert(domainVerificationLogs).values({
+      id_domain: data.id_domain,
+      status: "active",
+      response_message: `Domain diaktifkan oleh Superadmin. Routing tenant aktif.`,
+    });
+
+    return {
+      success: true,
+      message: `Domain ${domainRecord.domain} kini berstatus aktif.`,
+    };
+  });
+
+/**
+ * Deaktivasi domain aktif menjadi inactive
+ */
+export const deactivateCustomDomain = createServerFn({
+  method: "POST",
+})
+  .validator((data: { id_domain: string }) => data)
+  .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
+    const domainRecord = await db.query.customDomains.findFirst({
+      where: eq(customDomains.id_domain, data.id_domain),
+    });
+
+    if (!domainRecord) {
+      throw new Error("Domain tidak ditemukan.");
+    }
+
+    await db
+      .update(customDomains)
+      .set({
+        status: "inactive",
+        is_primary: false, // Inactive domain tidak boleh primary
+        updated_at: new Date(),
+      })
+      .where(eq(customDomains.id_domain, data.id_domain));
+
+    await db.insert(domainVerificationLogs).values({
+      id_domain: data.id_domain,
+      status: "inactive",
+      response_message: `Domain dinonaktifkan oleh Superadmin.`,
+    });
+
+    return {
+      success: true,
+      message: `Domain ${domainRecord.domain} dinonaktifkan.`,
+    };
+  });
+
+/**
+ * Menjadikan domain sebagai Primary Domain (Domain Utama).
+ * Syarat wajib: domain harus berstatus 'active'.
+ */
+export const setPrimaryCustomDomain = createServerFn({
+  method: "POST",
+})
+  .validator((data: { id_domain: string; id_barbershop: string }) => data)
+  .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
+    const targetDomain = await db.query.customDomains.findFirst({
+      where: eq(customDomains.id_domain, data.id_domain),
+    });
+
+    if (!targetDomain) {
+      throw new Error("Domain tidak ditemukan.");
+    }
+
+    // Aturan Requirement 18: Hanya domain active yang dapat menjadi primary
+    if (targetDomain.status !== "active") {
+      throw new Error(
+        `Domain ${targetDomain.domain} berstatus "${targetDomain.status}". Hanya domain berstatus "active" yang dapat dijadikan domain utama.`
+      );
+    }
+
+    // Transaction-safe: Reset semua domain lain milik barbershop ini menjadi is_primary = false
+    await db.transaction(async (tx) => {
+      await tx
+        .update(customDomains)
+        .set({ is_primary: false })
+        .where(eq(customDomains.id_barbershop, data.id_barbershop));
+
+      await tx
+        .update(customDomains)
+        .set({ is_primary: true, updated_at: new Date() })
+        .where(eq(customDomains.id_domain, data.id_domain));
+    });
+
+    return { success: true, message: `Domain ${targetDomain.domain} ditetapkan sebagai domain utama tenant.` };
   });
 
 export const deleteCustomDomain = createServerFn({
@@ -574,26 +779,24 @@ export const deleteCustomDomain = createServerFn({
 })
   .validator((id_domain: string) => id_domain)
   .handler(async ({ data: id_domain }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
+
     await db.delete(customDomains).where(eq(customDomains.id_domain, id_domain));
     return { success: true, message: "Custom domain berhasil dihapus." };
   });
 
-export const setPrimaryCustomDomain = createServerFn({
-  method: "POST",
+export const getDomainVerificationLogs = createServerFn({
+  method: "GET",
 })
-  .validator((data: { id_domain: string; id_barbershop: string }) => data)
-  .handler(async ({ data }) => {
-    // Reset all to false for this barbershop
-    await db
-      .update(customDomains)
-      .set({ is_primary: false })
-      .where(eq(customDomains.id_barbershop, data.id_barbershop));
+  .validator((id_domain: string) => id_domain)
+  .handler(async ({ data: id_domain }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
 
-    // Set target to true
-    await db
-      .update(customDomains)
-      .set({ is_primary: true })
-      .where(eq(customDomains.id_domain, data.id_domain));
-
-    return { success: true, message: "Domain utama berhasil diperbarui." };
+    return await db.query.domainVerificationLogs.findMany({
+      where: eq(domainVerificationLogs.id_domain, id_domain),
+      orderBy: [desc(domainVerificationLogs.created_at)],
+      limit: 20,
+    });
   });

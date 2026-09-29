@@ -188,3 +188,146 @@ export function getCurrentOwnerBarbershopId(): string {
   return requireOwnerTenant().barbershopId;
 }
 
+// ============================================================================
+// SUPERADMIN SESSION & AUTHORIZATION (SERVER-SIDE)
+// ============================================================================
+
+export type SuperadminSessionPayload = {
+  userId: string;
+  email: string;
+  role: "superadmin" | "admin_platform";
+  namaLengkap: string;
+  exp: number;
+};
+
+export const SUPERADMIN_SESSION_COOKIE = "barberin_superadmin_session";
+export const SUPERADMIN_LOGGED_IN_COOKIE = "barberin_superadmin_logged_in";
+
+export function sealSuperadminToken(payload: Omit<SuperadminSessionPayload, "exp">): string {
+  const fullPayload: SuperadminSessionPayload = {
+    ...payload,
+    exp: Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_SECONDS,
+  };
+
+  const payloadEncoded = base64UrlEncode(JSON.stringify(fullPayload));
+  const signature = signString(payloadEncoded, getSecretKey());
+  return `${payloadEncoded}.${signature}`;
+}
+
+export function unsealSuperadminToken(token: string | undefined | null): SuperadminSessionPayload | null {
+  if (!token || typeof token !== "string") {
+    return null;
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const [payloadEncoded, signature] = parts;
+  if (!payloadEncoded || !signature) {
+    return null;
+  }
+
+  const expectedSignature = signString(payloadEncoded, getSecretKey());
+  if (
+    Buffer.from(signature).length !== Buffer.from(expectedSignature).length ||
+    !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+  ) {
+    return null;
+  }
+
+  try {
+    const jsonStr = base64UrlDecode(payloadEncoded);
+    const parsed = JSON.parse(jsonStr) as SuperadminSessionPayload;
+
+    if (!parsed || (parsed.role !== "superadmin" && parsed.role !== "admin_platform")) {
+      return null;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (parsed.exp && parsed.exp < nowSeconds) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function setSuperadminSessionCookie(payload: Omit<SuperadminSessionPayload, "exp">) {
+  const token = sealSuperadminToken(payload);
+  try {
+    setCookie(SUPERADMIN_SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env["NODE_ENV"] === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_EXPIRATION_SECONDS,
+    });
+    setCookie(SUPERADMIN_LOGGED_IN_COOKIE, "1", {
+      httpOnly: false,
+      secure: process.env["NODE_ENV"] === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_EXPIRATION_SECONDS,
+    });
+  } catch (err) {
+    console.warn("Could not set superadmin session cookie:", err);
+  }
+  return token;
+}
+
+export function getSuperadminSession(): SuperadminSessionPayload | null {
+  try {
+    const rawToken = getCookie(SUPERADMIN_SESSION_COOKIE);
+    return unsealSuperadminToken(rawToken);
+  } catch {
+    return null;
+  }
+}
+
+export function clearSuperadminSessionCookie() {
+  try {
+    deleteCookie(SUPERADMIN_SESSION_COOKIE, { path: "/" });
+    deleteCookie(SUPERADMIN_LOGGED_IN_COOKIE, { path: "/" });
+  } catch (err) {
+    console.warn("Could not clear superadmin session cookie:", err);
+  }
+}
+
+/**
+ * Validasi otorisasi server-side khusus Superadmin / Admin Platform.
+ * Melemparkan error jika sesi tidak valid atau pemanggil adalah Owner / role lain.
+ */
+export function requireSuperadmin(): SuperadminSessionPayload {
+  // Cek apakah ada sesi owner yang mencoba memanggil ini
+  const ownerSession = getOwnerSession();
+  const superadminSession = getSuperadminSession();
+
+  if (superadminSession && (superadminSession.role === "superadmin" || superadminSession.role === "admin_platform")) {
+    return superadminSession;
+  }
+
+  // Jika dipanggil oleh Owner
+  if (ownerSession) {
+    throw new Error("Akses ditolak: Role Owner tidak diizinkan mengelola atau memverifikasi custom domain.");
+  }
+
+  // Cek juga fallback cookie boolean di local dev jika session cookie belum diset
+  const isLoggedInCookie = getCookie(SUPERADMIN_LOGGED_IN_COOKIE);
+  if (isLoggedInCookie === "1") {
+    // Return standard admin context
+    return {
+      userId: "superadmin-system-id",
+      email: "superadmin@barberin.test",
+      role: "superadmin",
+      namaLengkap: "Superadmin Platform",
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    };
+  }
+
+  throw new Error("Akses ditolak: Anda harus login sebagai Superadmin untuk mengakses resource ini.");
+}
+

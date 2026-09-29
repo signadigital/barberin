@@ -37,6 +37,8 @@ import {
   getSuperadminDomains,
   addOrEditCustomDomain,
   verifyCustomDomain,
+  activateCustomDomain,
+  deactivateCustomDomain,
   deleteCustomDomain,
   setPrimaryCustomDomain,
   getDomainVerificationLogs,
@@ -197,7 +199,33 @@ function SuperadminDomainsPage() {
     }
   };
 
-  // Set Primary
+  // Activate Domain (BPMN Step: verified -> active)
+  const handleActivate = async (dom: any) => {
+    try {
+      const res = await activateCustomDomain({
+        data: { id_domain: dom.id_domain },
+      });
+      toast.success(res.message);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengaktifkan domain.");
+    }
+  };
+
+  // Deactivate Domain (active -> inactive)
+  const handleDeactivate = async (dom: any) => {
+    try {
+      const res = await deactivateCustomDomain({
+        data: { id_domain: dom.id_domain },
+      });
+      toast.success(res.message);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menonaktifkan domain.");
+    }
+  };
+
+  // Set Primary (BPMN Step: only active domain can be primary)
   const handleSetPrimary = async (dom: any) => {
     try {
       const res = await setPrimaryCustomDomain({
@@ -445,6 +473,16 @@ function SuperadminDomainsPage() {
                                     ● Active
                                   </span>
                                 )}
+                                {dom.status === "verified" && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
+                                    ● Verified
+                                  </span>
+                                )}
+                                {dom.status === "inactive" && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-700/40 text-slate-400 border border-slate-600/40 font-mono">
+                                    ● Inactive
+                                  </span>
+                                )}
                                 {dom.status === "pending" && (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
                                     ● Pending
@@ -492,6 +530,32 @@ function SuperadminDomainsPage() {
                                   <span>{isVerifyingThis ? "Cek..." : "Verifikasi"}</span>
                                 </button>
 
+                                {/* Activate Domain (verified / inactive -> active) */}
+                                {(dom.status === "verified" || dom.status === "inactive") && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleActivate(dom)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 transition-all cursor-pointer"
+                                    title="Aktifkan Domain"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                    <span>Aktifkan</span>
+                                  </button>
+                                )}
+
+                                {/* Deactivate Domain (active -> inactive) */}
+                                {dom.status === "active" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeactivate(dom)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 transition-all cursor-pointer"
+                                    title="Nonaktifkan Domain"
+                                  >
+                                    <X className="h-3 w-3" />
+                                    <span>Nonaktifkan</span>
+                                  </button>
+                                )}
+
                                 {/* DNS Guide */}
                                 <button
                                   type="button"
@@ -512,8 +576,8 @@ function SuperadminDomainsPage() {
                                   <Clock className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* Set as Primary */}
-                                {!dom.is_primary && (
+                                {/* Set as Primary (Only allowed if active) */}
+                                {!dom.is_primary && dom.status === "active" && (
                                   <button
                                     type="button"
                                     onClick={() => handleSetPrimary(dom)}

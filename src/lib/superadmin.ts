@@ -9,6 +9,7 @@ import {
   users,
 } from "@/db/schema";
 import { generateUniqueBarbershopSlug } from "./slug";
+import { setSuperadminSessionCookie } from "./auth-session";
 
 // ============================================================================
 // TYPES
@@ -115,6 +116,14 @@ export const loginSuperadmin = createServerFn({
         details: "Superadmin berhasil masuk ke platform.",
       })
       .catch((err) => console.error("Gagal mencatat audit login:", err));
+
+    // Set signed server-side superadmin session cookie
+    setSuperadminSessionCookie({
+      userId: superadminUser.id_user,
+      email: superadminUser.email,
+      role: superadminUser.role as any,
+      namaLengkap: superadminUser.nama_lengkap || "Superadmin Platform",
+    });
 
     return {
       id_user: superadminUser.id_user,

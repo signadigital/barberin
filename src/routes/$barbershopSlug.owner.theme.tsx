@@ -96,20 +96,24 @@ function OwnerWhiteLabelingPage() {
         setLogoUrl(data.logo_url || null);
         setFaviconUrl(data.favicon_url || null);
         setSelectedTheme((data.theme as BrandingTheme) || "default");
+        setDisplayMode((data.display_mode as "light" | "dark") || "dark");
         setHideBarberinBrand(Boolean(data.hide_barberin_brand));
         setMetaTitle(data.meta_title || "");
         setMetaDescription(data.meta_description || "");
         setBrandingStatus((data.status as BrandingStatus) || "draft");
 
-        // Match color preset if hex aligns
-        const matchedColor = COLOR_PRESETS.find(
-          (c) => c.primary.toLowerCase() === data.warna_primary?.toLowerCase()
-        );
-        if (matchedColor) {
-          setSelectedColorKey(matchedColor.key);
-        } else if (data.warna_primary) {
-          // Default to matching or purple
-          setSelectedColorKey("purple");
+        // Set color preset
+        if (data.color_preset) {
+          setSelectedColorKey(data.color_preset);
+        } else {
+          const matchedColor = COLOR_PRESETS.find(
+            (c) => c.primary.toLowerCase() === data.warna_primary?.toLowerCase()
+          );
+          if (matchedColor) {
+            setSelectedColorKey(matchedColor.key);
+          } else {
+            setSelectedColorKey("purple");
+          }
         }
       }
     } catch (err: any) {
@@ -190,10 +194,9 @@ function OwnerWhiteLabelingPage() {
           tagline: tagline.trim() || undefined,
           logo_url: logoUrl || undefined,
           favicon_url: faviconUrl || undefined,
-          warna_primary: currentColorPreset.primary,
-          warna_secondary: currentColorPreset.secondary,
-          warna_background: currentColorPreset.background,
           theme: selectedTheme,
+          display_mode: displayMode,
+          color_preset: selectedColorKey,
           hide_barberin_brand: hideBarberinBrand,
           meta_title: metaTitle.trim() || undefined,
           meta_description: metaDescription.trim() || undefined,
