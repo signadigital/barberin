@@ -155,8 +155,8 @@ function OwnerWhiteLabelingPage() {
       if (logoInputRef.current) logoInputRef.current.value = "";
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file logo terlalu besar. Maksimal 5 MB.");
+    if (file.size > 500 * 1024) {
+      toast.error("Ukuran file logo terlalu besar. Maksimal 500 KB.");
       if (logoInputRef.current) logoInputRef.current.value = "";
       return;
     }
@@ -199,8 +199,8 @@ function OwnerWhiteLabelingPage() {
       if (faviconInputRef.current) faviconInputRef.current.value = "";
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Ukuran file favicon maksimal 2 MB.");
+    if (file.size > 500 * 1024) {
+      toast.error("Ukuran file favicon maksimal 500 KB.");
       if (faviconInputRef.current) faviconInputRef.current.value = "";
       return;
     }
@@ -572,7 +572,7 @@ function OwnerWhiteLabelingPage() {
                       )}
 
                       <div className="text-[10px] text-muted-foreground">
-                        Format: JPG, PNG, atau WEBP. Maksimal ukuran file 5 MB.
+                        Format: JPG, PNG, atau WEBP. Maksimal ukuran file 500 KB.
                       </div>
                     </div>
 
@@ -684,7 +684,7 @@ function OwnerWhiteLabelingPage() {
                       )}
 
                       <div className="text-[10px] text-muted-foreground">
-                        Format: PNG, JPG, WEBP, atau ICO. Maksimal 2 MB.
+                        Format: PNG, JPG, WEBP, atau ICO. Maksimal 500 KB.
                       </div>
                     </div>
                   </div>

@@ -62,13 +62,12 @@ assert(
   "Canvas menghasilkan image/png murni dengan transparent channel."
 );
 
-// TEST 4: Validasi File Sebelum Crop
+// TEST 4: Validasi File Sebelum Crop (Batas Ukuran Maksimal 500 KB)
 assert(
   themeContent.includes("[\"image/jpeg\", \"image/png\", \"image/webp\"].includes(file.type)") &&
-    themeContent.includes("file.size > 5 * 1024 * 1024") &&
-    themeContent.includes("file.size > 2 * 1024 * 1024"),
-  "TEST 4: Validasi format MIME dan ukuran maksimum file (Logo: 5MB, Favicon: 2MB)",
-  "File divalidasi sebelum modal cropper dibuka."
+    themeContent.includes("file.size > 500 * 1024"),
+  "TEST 4: Validasi format MIME dan ukuran maksimum file (Logo & Favicon: 500 KB)",
+  "File divalidasi sebelum modal cropper dibuka dengan batas 500 KB."
 );
 
 // TEST 5: Crop Ulang (Re-crop) dan Ubah Image
