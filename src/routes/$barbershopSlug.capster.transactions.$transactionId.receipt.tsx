@@ -26,7 +26,6 @@ export const Route = createFileRoute("/$barbershopSlug/capster/transactions/$tra
 });
 
 async function downloadThermalPdf(trx: CapsterTransaction) {
-  const { barbershopSlug } = (Route as any).useParams();
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: [300, 500] });
   let y = 35;

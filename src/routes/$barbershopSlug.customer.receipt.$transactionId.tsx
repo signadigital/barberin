@@ -14,10 +14,11 @@ import {
   SkeletonCard,
   StatusBadge,
 } from "@/components/barberin/ui";
-import { TenantLogo, TenantBrandName } from "@/components/tenant/TenantLogo";
+import { TenantLogo, TenantBrandName, useTenantShop } from "@/components/tenant/TenantLogo";
 import { formatRupiah, formatTanggal, formatWaktu, formatTransactionId, formatCustomerId } from "@/lib/format";
 import { paymentMethodName, useBarberin, type ReceiptData, type PaymentMethodId } from "@/lib/barberin-store";
 import { getTransactionDetail } from "@/lib/bookings";
+import { downloadCustomerReceiptPdf } from "@/lib/customer-receipt-pdf";
 
 export const Route = createFileRoute("/$barbershopSlug/customer/receipt/$transactionId")({
   head: () => ({
@@ -31,66 +32,10 @@ export const Route = createFileRoute("/$barbershopSlug/customer/receipt/$transac
   component: ReceiptPage,
 });
 
-async function generatePdf(receipt: ReceiptData) {
-  const { barbershopSlug } = (Route as any).useParams();
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "pt", format: [320, 520] });
-  let y = 40;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("BARBERIN", 24, y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  y += 14;
-  doc.text("Modern Barbershop Management System", 24, y);
-  y += 8;
-  doc.line(24, y, 296, y);
-
-  const row = (label: string, value: string) => {
-    y += 16;
-    doc.setFont("helvetica", "normal");
-    doc.text(label, 24, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(value, 296, y, { align: "right" });
-  };
-
-  doc.setFontSize(10);
-  row("ID Transaksi", formatTransactionId(receipt.transactionId, receipt.createdAt));
-  row("ID Pelanggan", formatCustomerId(receipt.customerId, receipt.createdAt));
-  row("Nama", receipt.customerName);
-  if (receipt.capster) {
-    row("Capster", `${receipt.capster.name} — ${receipt.capster.role}`);
-  }
-  row("Tanggal", formatTanggal(receipt.createdAt));
-  row("Waktu", formatWaktu(receipt.createdAt));
-
-  y += 12;
-  doc.line(24, y, 296, y);
-  y += 16;
-  doc.setFont("helvetica", "bold");
-  doc.text("LAYANAN", 24, y);
-  doc.setFont("helvetica", "normal");
-  receipt.items.forEach((item) => {
-    row(`${item.service.name} (${item.quantity}x)`, formatRupiah(item.service.price * item.quantity));
-  });
-
-  y += 12;
-  doc.line(24, y, 296, y);
-  row("Total", formatRupiah(receipt.total));
-  row("Metode Pembayaran", paymentMethodName(receipt.paymentMethod));
-  row("Status", receipt.status);
-
-  y += 30;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Terima kasih telah menggunakan layanan kami.", 24, y);
-
-  doc.save(`BARBERIN-${receipt.transactionId}.pdf`);
-}
-
 function ReceiptPage() {
   const navigate = useNavigate();
   const { transactionId, barbershopSlug } = Route.useParams();
+  const { shop, branding } = useTenantShop();
   const { receiptData: storeReceipt } = useBarberin();
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(
     storeReceipt && storeReceipt.transactionId === transactionId ? storeReceipt : null
@@ -177,9 +122,14 @@ function ReceiptPage() {
   const downloadPdf = async () => {
     setPdfState("loading");
     try {
-      await generatePdf(receiptData);
+      await downloadCustomerReceiptPdf({
+        receipt: receiptData,
+        branding,
+        shop,
+      });
       setPdfState("done");
-    } catch {
+    } catch (err) {
+      console.error("[CustomerReceiptPDF] Failed:", err);
       setPdfState("error");
     }
   };
@@ -280,14 +230,23 @@ function ReceiptPage() {
           </p>
         ) : null}
         {pdfState === "done" ? (
-          <p role="status" className="text-center text-[13px] text-success">
-            Struk berhasil dibuat.
+          <p role="status" className="text-center text-[13px] text-success font-medium">
+            Struk berhasil diunduh.
           </p>
         ) : null}
         {pdfState === "error" ? (
-          <p role="alert" className="text-center text-[13px] text-danger">
-            Gagal membuat PDF. Silakan coba lagi.
-          </p>
+          <div className="text-center space-y-1">
+            <p role="alert" className="text-[13px] text-danger font-medium">
+              Gagal membuat PDF. Silakan coba lagi.
+            </p>
+            <button
+              type="button"
+              onClick={downloadPdf}
+              className="text-xs text-primary underline hover:opacity-80 cursor-pointer font-medium"
+            >
+              Coba lagi
+            </button>
+          </div>
         ) : null}
         {shareMessage ? (
           <p role="status" className="text-center text-[13px] text-info">
