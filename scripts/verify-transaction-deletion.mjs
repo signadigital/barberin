@@ -61,72 +61,115 @@ assert(
 );
 console.log("✓ PASS: Server function deleteOwnerTransactions & audit logging verified");
 
-// 2. Audit src/routes/$barbershopSlug.owner.audit-finance.tsx
+// 2. Audit src/routes/$barbershopSlug.owner.audit-finance.tsx (MUST BE READ-ONLY)
 const auditFinancePage = readFileSync(
   "src/routes/$barbershopSlug.owner.audit-finance.tsx",
   "utf8"
 );
 
 assert(
-  auditFinancePage.includes("deleteOwnerTransactions"),
-  "Page must import and call deleteOwnerTransactions"
+  !auditFinancePage.includes("deleteOwnerTransactions"),
+  "Audit Finance MUST NOT import or call deleteOwnerTransactions"
 );
 assert(
-  auditFinancePage.includes("<Checkbox"),
-  "Page must render Checkbox components in table header and rows"
+  !auditFinancePage.includes("<Checkbox"),
+  "Audit Finance MUST NOT render delete selection Checkbox components"
 );
 assert(
-  auditFinancePage.includes('"indeterminate"'),
-  "Checkbox must support indeterminate state for partial selection"
+  !auditFinancePage.includes("Hapus yang Dipilih"),
+  "Audit Finance MUST NOT have bulk delete toolbar button"
 );
 assert(
-  auditFinancePage.includes("handleToggleSelectAllPage"),
-  "Page must support selecting all transactions on the current page"
+  !auditFinancePage.includes("AlertDialog"),
+  "Audit Finance MUST NOT have delete confirmation AlertDialog"
 );
 assert(
-  auditFinancePage.includes("Pilih seluruh"),
-  "Page must support prompt to select all filtered transactions"
+  auditFinancePage.includes("Detail Transaksi") && auditFinancePage.includes("Lihat"),
+  "Audit Finance MUST continue to show Detail Transaksi and Lihat action"
 );
-assert(
-  auditFinancePage.includes("AlertDialog"),
-  "Page must use AlertDialog for deletion confirmation (never window.confirm)"
-);
-assert(
-  !auditFinancePage.includes("window.confirm("),
-  "Page must NOT use window.confirm()"
-);
-assert(
-  auditFinancePage.includes('variant: "destructive"'),
-  "Delete button must have destructive styling"
-);
-assert(
-  auditFinancePage.includes("Menghapus..."),
-  "Double-submit protection must show 'Menghapus...' and disable button"
-);
-assert(
-  auditFinancePage.includes("fetchFinanceData()") && auditFinancePage.includes("router.invalidate()"),
-  "Page must refresh data and invalidate router after successful deletion"
-);
-assert(
-  auditFinancePage.includes("Transaksi berhasil dihapus permanen"),
-  "Must show permanent deletion success toast"
-);
-console.log("✓ PASS: Frontend table, selection toolbar, checkboxes, and dialogs verified");
+console.log("✓ PASS: Audit Finance is strictly READ-ONLY (no delete features)");
 
-// 3. Audit src/routes/$barbershopSlug.owner.audit-finance.$id.tsx
-const auditDetailPage = readFileSync(
+// 3. Audit src/routes/$barbershopSlug.owner.audit-finance.$id.tsx (MUST BE READ-ONLY)
+const auditFinanceDetailPage = readFileSync(
   "src/routes/$barbershopSlug.owner.audit-finance.$id.tsx",
   "utf8"
 );
 assert(
-  auditDetailPage.includes("deleteOwnerTransactions"),
-  "Detail page must also support permanent deletion"
+  !auditFinanceDetailPage.includes("deleteOwnerTransactions"),
+  "Audit Finance Detail MUST NOT import or call deleteOwnerTransactions"
 );
 assert(
-  auditDetailPage.includes("AlertDialog"),
-  "Detail page must use AlertDialog for confirmation"
+  !auditFinanceDetailPage.includes("AlertDialog"),
+  "Audit Finance Detail MUST NOT have delete AlertDialog"
 );
-console.log("✓ PASS: Detail page deletion capability verified");
+console.log("✓ PASS: Audit Finance Detail is strictly READ-ONLY");
+
+// 4. Audit src/routes/$barbershopSlug.owner.audit-activities.tsx (MUST HAVE DELETION)
+const auditActivitiesPage = readFileSync(
+  "src/routes/$barbershopSlug.owner.audit-activities.tsx",
+  "utf8"
+);
+
+assert(
+  auditActivitiesPage.includes("deleteOwnerTransactions"),
+  "Audit Activities must import and call deleteOwnerTransactions"
+);
+assert(
+  auditActivitiesPage.includes("<Checkbox"),
+  "Audit Activities must render Checkbox components in table header and rows"
+);
+assert(
+  auditActivitiesPage.includes('"indeterminate"'),
+  "Checkbox must support indeterminate state for partial selection"
+);
+assert(
+  auditActivitiesPage.includes("handleToggleSelectAllPage"),
+  "Audit Activities must support selecting all transactions on the current page"
+);
+assert(
+  auditActivitiesPage.includes("Pilih seluruh"),
+  "Audit Activities must support prompt to select all filtered transactions"
+);
+assert(
+  auditActivitiesPage.includes("AlertDialog"),
+  "Audit Activities must use AlertDialog for deletion confirmation (never window.confirm)"
+);
+assert(
+  !auditActivitiesPage.includes("window.confirm("),
+  "Audit Activities must NOT use window.confirm()"
+);
+assert(
+  auditActivitiesPage.includes('variant: "destructive"'),
+  "Delete button must have destructive styling"
+);
+assert(
+  auditActivitiesPage.includes("Menghapus..."),
+  "Double-submit protection must show 'Menghapus...' and disable button"
+);
+assert(
+  auditActivitiesPage.includes("fetchActivities()") && auditActivitiesPage.includes("router.invalidate()"),
+  "Audit Activities must refresh data and invalidate router after successful deletion"
+);
+assert(
+  auditActivitiesPage.includes("Transaksi berhasil dihapus permanen"),
+  "Audit Activities must show permanent deletion success toast"
+);
+console.log("✓ PASS: Audit Activities table, selection toolbar, checkboxes, and dialogs verified");
+
+// 5. Audit src/routes/$barbershopSlug.owner.audit-activities.$id.tsx
+const auditActivityDetailPage = readFileSync(
+  "src/routes/$barbershopSlug.owner.audit-activities.$id.tsx",
+  "utf8"
+);
+assert(
+  auditActivityDetailPage.includes("deleteOwnerTransactions"),
+  "Activity Detail page must support permanent deletion for transaction activities"
+);
+assert(
+  auditActivityDetailPage.includes("AlertDialog"),
+  "Activity Detail page must use AlertDialog for confirmation"
+);
+console.log("✓ PASS: Activity Detail page transaction deletion capability verified");
 
 // =============================================================================
 // PART 2: DATABASE & MULTI-TENANT ISOLATION TESTS

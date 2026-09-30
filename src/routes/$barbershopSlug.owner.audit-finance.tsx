@@ -25,7 +25,6 @@ import {
   AlertCircle,
   Scissors,
   Loader2,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,24 +39,12 @@ import { formatRupiah, formatNumberWithDots, parseNumberFromDots } from "@/lib/f
 import {
   getOwnerAuditFinance,
   saveOwnerCashAudit,
-  deleteOwnerTransactions,
   type OwnerAuditFinanceResult,
   type OwnerPeriodFilter,
   type OwnerFinanceTransactionItem,
 } from "@/lib/owner";
 import { OwnerDateRangePicker, type DateRangeResult } from "@/components/owner/date-range-picker";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/audit-finance")({
   head: () => ({
@@ -79,12 +66,6 @@ function OwnerAuditFinancePage() {
   const [data, setData] = useState<OwnerAuditFinanceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Selection & Deletion States
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [singleDeleteTarget, setSingleDeleteTarget] = useState<OwnerFinanceTransactionItem | null>(null);
-  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filters
   const [period, setPeriod] = useState<OwnerPeriodFilter>("today");
@@ -130,88 +111,6 @@ function OwnerAuditFinancePage() {
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState<number>(1);
-
-  // Clear selections when filters or search change
-  useEffect(() => {
-    setSelectedIds([]);
-  }, [period, startDate, endDate, paymentMethod, status, search]);
-
-  const pageTxIds = useMemo(
-    () => data?.transactions.map((t) => t.id) || [],
-    [data?.transactions]
-  );
-  const allFilteredIds = useMemo(
-    () => data?.allFilteredTransactionIds || [],
-    [data?.allFilteredTransactionIds]
-  );
-
-  const isAllPageSelected =
-    pageTxIds.length > 0 && pageTxIds.every((id) => selectedIds.includes(id));
-  const isSomePageSelected =
-    pageTxIds.some((id) => selectedIds.includes(id)) && !isAllPageSelected;
-
-  const handleToggleSelectAllPage = () => {
-    if (isAllPageSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !pageTxIds.includes(id)));
-    } else {
-      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageTxIds])));
-    }
-  };
-
-  const handleToggleRow = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleConfirmSingleDelete = async () => {
-    if (!singleDeleteTarget) return;
-    try {
-      setIsDeleting(true);
-      const res = await deleteOwnerTransactions({
-        data: { transactionIds: [singleDeleteTarget.id] },
-      });
-      toast.success(res.message || "Transaksi berhasil dihapus permanen.");
-      setSingleDeleteTarget(null);
-      setSelectedIds((prev) => prev.filter((id) => id !== singleDeleteTarget.id));
-      await fetchFinanceData();
-      await router.invalidate();
-    } catch (err: any) {
-      console.error("Gagal menghapus transaksi:", err);
-      toast.error(
-        err?.message ||
-          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database. Silakan coba lagi."
-      );
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleConfirmBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    try {
-      setIsDeleting(true);
-      const countToDelete = selectedIds.length;
-      const res = await deleteOwnerTransactions({
-        data: { transactionIds: selectedIds },
-      });
-      toast.success(
-        res.message || `${countToDelete} transaksi berhasil dihapus permanen.`
-      );
-      setIsBulkDeleteOpen(false);
-      setSelectedIds([]);
-      await fetchFinanceData();
-      await router.invalidate();
-    } catch (err: any) {
-      console.error("Gagal menghapus transaksi terpilih:", err);
-      toast.error(
-        err?.message ||
-          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database. Silakan coba lagi."
-      );
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   // Modal Input Uang Fisik
   const [isCashModalOpen, setIsCashModalOpen] = useState(false);
@@ -329,14 +228,14 @@ function OwnerAuditFinancePage() {
       const contentWidth = pageWidth - marginX * 2;
 
       // Color palette
-      const slateMuted = [100, 116, 139];
-      const slateText = [51, 65, 85];
-      const borderLight = [226, 232, 240];
-      const bgZebra = [248, 250, 252];
-      const primaryBlue = [37, 99, 235];
-      const emeraldGreen = [16, 185, 129];
-      const roseRed = [225, 29, 72];
-      const amberOrange = [217, 119, 6];
+      const slateMuted = [100, 116, 139] as const;
+      const slateText = [51, 65, 85] as const;
+      const borderLight = [226, 232, 240] as const;
+      const bgZebra = [248, 250, 252] as const;
+      const primaryBlue = [37, 99, 235] as const;
+      const emeraldGreen = [16, 185, 129] as const;
+      const roseRed = [225, 29, 72] as const;
+      const amberOrange = [217, 119, 6] as const;
 
       let currentY = 32;
 
@@ -396,11 +295,11 @@ function OwnerAuditFinancePage() {
       // 2. Statistics Summary Cards
       if (data?.stats) {
         const kpiWidth = (contentWidth - 30) / 4;
-        const kpis = [
+        const kpis: { label: string; value: string; color: readonly [number, number, number] }[] = [
           {
             label: "Total Transaksi",
             value: `${data.stats.totalTransactions} Transaksi`,
-            color: [15, 23, 42],
+            color: [15, 23, 42] as const,
           },
           {
             label: "Transaksi Berhasil",
@@ -451,7 +350,7 @@ function OwnerAuditFinancePage() {
         { header: "Metode", width: 55, align: "center" as const },
         { header: "Status Transaksi", width: 75, align: "center" as const },
         { header: "Status Bayar", width: 65, align: "center" as const },
-      ];
+      ] as const;
 
       const drawTableHeader = (y: number) => {
         doc.setFillColor(30, 41, 59); // Slate-800
@@ -1145,67 +1044,6 @@ function OwnerAuditFinancePage() {
               </div>
             </div>
 
-            {/* Selection Toolbar (when items selected) */}
-            {selectedIds.length > 0 && (
-              <div className="mt-4 p-3 bg-muted/90 border border-primary/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150 shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-bold text-foreground">
-                    {selectedIds.length} transaksi dipilih
-                  </span>
-                  <span className="text-muted-foreground text-xs">•</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIds([])}
-                    className="text-xs text-primary font-medium hover:underline cursor-pointer"
-                  >
-                    Batalkan Pilihan
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsBulkDeleteOpen(true)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus {selectedIds.length} Transaksi</span>
-                </button>
-              </div>
-            )}
-
-            {/* Select All Filtered Prompt Banner */}
-            {isAllPageSelected && allFilteredIds.length > pageTxIds.length && (
-              <div className="mt-3 px-3.5 py-2.5 bg-primary/10 border border-primary/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                <span>
-                  {selectedIds.length === allFilteredIds.length ? (
-                    <>
-                      Seluruh <strong className="text-foreground font-semibold">{allFilteredIds.length}</strong> transaksi hasil filter telah dipilih.
-                    </>
-                  ) : (
-                    <>
-                      Semua <strong className="text-foreground font-semibold">{pageTxIds.length}</strong> transaksi di halaman ini terpilih.
-                    </>
-                  )}
-                </span>
-                {selectedIds.length === allFilteredIds.length ? (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIds(pageTxIds)}
-                    className="text-primary font-bold hover:underline cursor-pointer text-left sm:text-right"
-                  >
-                    Batalkan pilihan seluruh filter (hanya halaman ini)
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIds(allFilteredIds)}
-                    className="text-primary font-bold hover:underline cursor-pointer text-left sm:text-right"
-                  >
-                    Pilih seluruh {allFilteredIds.length} transaksi hasil filter
-                  </button>
-                )}
-              </div>
-            )}
-
             {loading ? (
               <div className="py-16 text-center text-muted-foreground text-xs animate-pulse">
                 Memuat data transaksi audit...
@@ -1221,21 +1059,6 @@ function OwnerAuditFinancePage() {
                   <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border font-medium">
-                        <th className="py-3 px-3 w-10 text-center">
-                          <div className="flex items-center justify-center">
-                            <Checkbox
-                              checked={
-                                isAllPageSelected
-                                  ? true
-                                  : isSomePageSelected
-                                    ? "indeterminate"
-                                    : false
-                              }
-                              onCheckedChange={handleToggleSelectAllPage}
-                              aria-label="Pilih semua transaksi di halaman ini"
-                            />
-                          </div>
-                        </th>
                         <th className="py-3 px-2.5">No</th>
                         <th className="py-3 px-2.5">No. Transaksi</th>
                         <th className="py-3 px-2.5">Tanggal & Waktu</th>
@@ -1253,20 +1076,8 @@ function OwnerAuditFinancePage() {
                       {data?.transactions.map((tx) => (
                         <tr
                           key={tx.id}
-                          className={cn(
-                            "hover:bg-muted/50 transition-colors",
-                            selectedIds.includes(tx.id) && "bg-primary/5 hover:bg-primary/10"
-                          )}
+                          className="hover:bg-muted/50 transition-colors"
                         >
-                          <td className="py-3.5 px-3 text-center">
-                            <div className="flex items-center justify-center">
-                              <Checkbox
-                                checked={selectedIds.includes(tx.id)}
-                                onCheckedChange={() => handleToggleRow(tx.id)}
-                                aria-label={`Pilih transaksi ${tx.shortId}`}
-                              />
-                            </div>
-                          </td>
                           <td className="py-3.5 px-2.5 text-muted-foreground">{tx.no}</td>
                           <td className="py-3.5 px-2.5 font-mono text-primary font-semibold">
                             {tx.shortId}
@@ -1296,25 +1107,14 @@ function OwnerAuditFinancePage() {
                             {paymentStatusBadge(tx.statusPembayaran)}
                           </td>
                           <td className="py-3.5 px-2.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Link
-                                to={`/${barbershopSlug}/owner/audit-finance/${tx.id}` as any}
-                                className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 hover:underline"
-                                title="Lihat detail audit"
-                              >
-                                <span>Lihat</span>
-                                <ArrowRight className="h-3 w-3" />
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => setSingleDeleteTarget(tx)}
-                                className="text-destructive hover:text-destructive/80 font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
-                                title="Hapus transaksi ini secara permanen"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>Hapus</span>
-                              </button>
-                            </div>
+                            <Link
+                              to={`/${barbershopSlug}/owner/audit-finance/${tx.id}` as any}
+                              className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 hover:underline"
+                              title="Lihat detail audit"
+                            >
+                              <span>Lihat</span>
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
                           </td>
                         </tr>
                       ))}
@@ -1327,22 +1127,12 @@ function OwnerAuditFinancePage() {
                   {data?.transactions.map((tx) => (
                     <div
                       key={tx.id}
-                      className={cn(
-                        "bg-card border border-border rounded-xl p-3.5 transition-colors",
-                        selectedIds.includes(tx.id) && "border-primary/50 bg-primary/5"
-                      )}
+                      className="bg-card border border-border rounded-xl p-3.5 transition-colors"
                     >
                       <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
-                        <div className="flex items-center gap-2.5">
-                          <Checkbox
-                            checked={selectedIds.includes(tx.id)}
-                            onCheckedChange={() => handleToggleRow(tx.id)}
-                            aria-label={`Pilih transaksi ${tx.shortId}`}
-                          />
-                          <span className="font-mono text-primary font-bold">
-                            {tx.shortId}
-                          </span>
-                        </div>
+                        <span className="font-mono text-primary font-bold">
+                          {tx.shortId}
+                        </span>
                         <div className="flex items-center gap-1.5">
                           {statusBadge(tx.statusTransaksi)}
                           {paymentStatusBadge(tx.statusPembayaran)}
@@ -1364,7 +1154,7 @@ function OwnerAuditFinancePage() {
                           {tx.dateTime}
                         </span>
                       </div>
-                      <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between text-xs">
+                      <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-end text-xs">
                         <Link
                           to={`/${barbershopSlug}/owner/audit-finance/${tx.id}` as any}
                           className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 hover:underline"
@@ -1372,14 +1162,6 @@ function OwnerAuditFinancePage() {
                           <span>Lihat Detail</span>
                           <ArrowRight className="h-3 w-3" />
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => setSingleDeleteTarget(tx)}
-                          className="text-destructive hover:bg-destructive/10 font-semibold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span>Hapus</span>
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -1748,137 +1530,6 @@ function OwnerAuditFinancePage() {
           </div>
         </div>
       )}
-      {/* Modal Single Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!singleDeleteTarget}
-        onOpenChange={(open) => !isDeleting && !open && setSingleDeleteTarget(null)}
-      >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-2.5 text-destructive pb-1">
-              <div className="p-2 rounded-xl bg-destructive/10">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <AlertDialogTitle className="text-base font-bold text-foreground">
-                Hapus Transaksi Secara Permanen?
-              </AlertDialogTitle>
-            </div>
-            <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
-              <span>
-                Anda akan menghapus transaksi ini secara permanen dari database:
-              </span>
-              <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-1.5 font-mono text-xs">
-                <div className="font-bold text-primary font-mono text-sm">
-                  {singleDeleteTarget?.shortId}
-                </div>
-                <div className="text-muted-foreground font-sans text-xs">
-                  Pelanggan: <strong className="text-foreground">{singleDeleteTarget?.customerName}</strong>
-                </div>
-                <div className="text-muted-foreground font-sans text-xs">
-                  Nominal: <strong className="text-foreground">{singleDeleteTarget ? formatRupiah(singleDeleteTarget.amount) : "Rp0"}</strong> ({singleDeleteTarget?.paymentMethod})
-                </div>
-                <div className="text-muted-foreground font-sans text-xs">
-                  Tanggal: {singleDeleteTarget?.dateTime}
-                </div>
-              </div>
-              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
-                Data transaksi dan data terkait yang menjadi bagian dari transaksi (pembayaran, struk, komisi) akan dihapus secara permanen dari database Supabase.
-              </div>
-              <div className="font-semibold text-foreground text-xs">
-                Tindakan ini tidak dapat dibatalkan.
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2 mt-4">
-            <AlertDialogCancel
-              disabled={isDeleting}
-              className="text-xs rounded-xl"
-            >
-              Batal
-            </AlertDialogCancel>
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={handleConfirmSingleDelete}
-              className={cn(
-                buttonVariants({ variant: "destructive" }),
-                "text-xs font-semibold gap-1.5 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Menghapus...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus Permanen</span>
-                </>
-              )}
-            </button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Modal Bulk Delete Confirmation Dialog */}
-      <AlertDialog
-        open={isBulkDeleteOpen}
-        onOpenChange={(open) => !isDeleting && !open && setIsBulkDeleteOpen(false)}
-      >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-2.5 text-destructive pb-1">
-              <div className="p-2 rounded-xl bg-destructive/10">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <AlertDialogTitle className="text-base font-bold text-foreground">
-                Hapus {selectedIds.length} Transaksi?
-              </AlertDialogTitle>
-            </div>
-            <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
-              <span>
-                Anda akan menghapus <strong className="text-foreground">{selectedIds.length} transaksi</strong> yang dipilih.
-              </span>
-              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
-                {selectedIds.length} transaksi akan dihapus permanen dari database. Data terkait transaksi juga dapat ikut terhapus jika memang merupakan dependent record transaksi (pembayaran, struk, komisi).
-              </div>
-              <div className="font-semibold text-foreground text-xs">
-                Tindakan ini tidak dapat dibatalkan.
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2 mt-4">
-            <AlertDialogCancel
-              disabled={isDeleting}
-              className="text-xs rounded-xl"
-            >
-              Batal
-            </AlertDialogCancel>
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={handleConfirmBulkDelete}
-              className={cn(
-                buttonVariants({ variant: "destructive" }),
-                "text-xs font-semibold gap-1.5 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Menghapus...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus Permanen</span>
-                </>
-              )}
-            </button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
     </OwnerAuthGuard>
   );

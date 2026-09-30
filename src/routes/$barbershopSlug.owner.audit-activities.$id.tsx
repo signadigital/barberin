@@ -12,7 +12,10 @@ import {
   User,
   ShieldCheck,
   Calendar,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   OwnerSidebar,
@@ -21,10 +24,22 @@ import {
   OwnerBottomNav,
 } from "@/components/owner/ui";
 import { formatRupiah } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   getOwnerAuditActivityDetail,
+  deleteOwnerTransactions,
   type OwnerActivityItem,
 } from "@/lib/owner";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/audit-activities/$id")({
   head: () => ({
@@ -43,6 +58,8 @@ function OwnerAuditActivityDetailPage() {
   const [activity, setActivity] = useState<OwnerActivityItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     getOwnerAuditActivityDetail({ data: id })
@@ -53,6 +70,27 @@ function OwnerAuditActivityDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleDeleteTransaction = async () => {
+    if (!activity?.transactionId) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteOwnerTransactions({
+        data: { transactionIds: [activity.transactionId] },
+      });
+      toast.success(res.message || "Transaksi berhasil dihapus permanen.");
+      setIsDeleteDialogOpen(false);
+      navigate({ to: `/${barbershopSlug}/owner/audit-activities` as any });
+    } catch (err: any) {
+      console.error("Gagal menghapus transaksi:", err);
+      toast.error(
+        err?.message ||
+          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getActivityIcon = (type?: string) => {
     switch (type) {
@@ -142,7 +180,20 @@ function OwnerAuditActivityDetailPage() {
                     </div>
                   </div>
 
-                  <div>{statusBadge(activity.status)}</div>
+                  <div className="flex items-center gap-2">
+                    {statusBadge(activity.status)}
+                    {activity.transactionId && (
+                      <button
+                        type="button"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="px-3 py-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 rounded-full text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Hapus transaksi ini secara permanen"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Hapus Transaksi</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Metadata Details */}
@@ -264,6 +315,81 @@ function OwnerAuditActivityDetailPage() {
 
         <OwnerBottomNav activePath="/owner/audit-activities" />
       </div>
+
+      {/* Confirmation Dialog for Permanent Deletion */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => !isDeleting && !open && setIsDeleteDialogOpen(false)}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2.5 text-destructive pb-1">
+              <div className="p-2 rounded-xl bg-destructive/10">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <AlertDialogTitle className="text-base font-bold text-foreground">
+                Hapus transaksi?
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
+              <span>
+                Anda akan menghapus transaksi:
+              </span>
+              <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-1.5 font-mono text-xs">
+                <div className="font-bold text-primary font-mono text-sm">
+                  {activity?.dataTerkait}
+                </div>
+                {activity?.details?.nominal !== undefined && (
+                  <div className="text-muted-foreground font-sans text-xs">
+                    Nominal: <strong className="text-foreground">{formatRupiah(activity.details.nominal)}</strong>
+                  </div>
+                )}
+                <div className="text-muted-foreground font-sans text-xs">
+                  Pengguna: <strong className="text-foreground">{activity?.pengguna}</strong> ({activity?.role})
+                </div>
+                <div className="text-muted-foreground font-sans text-xs">
+                  Waktu: {activity?.dateFormatted} • {activity?.timeFormatted}
+                </div>
+              </div>
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
+                Data transaksi dan data terkait yang memang menjadi bagian dari transaksi akan dihapus secara permanen.
+              </div>
+              <div className="font-semibold text-foreground text-xs">
+                Tindakan ini tidak dapat dibatalkan.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2 mt-4">
+            <AlertDialogCancel
+              disabled={isDeleting}
+              className="text-xs rounded-xl"
+            >
+              Batal
+            </AlertDialogCancel>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={handleDeleteTransaction}
+              className={cn(
+                buttonVariants({ variant: "destructive" }),
+                "text-xs font-semibold gap-1.5 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Menghapus...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Hapus Permanen</span>
+                </>
+              )}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1028,6 +1028,7 @@ export type OwnerActivityItem = {
   aktivitas: string;
   dataTerkait: string;
   relatedId?: string | undefined;
+  transactionId?: string | undefined;
   status: "Berhasil" | "Dibatalkan" | "Diproses";
   activityType: "transaksi" | "pembatalan" | "pembayaran" | "shift" | "login";
   details: {
@@ -1067,6 +1068,7 @@ export type OwnerAuditActivitiesResult = {
     isShiftUp: boolean;
   };
   activities: OwnerActivityItem[];
+  allFilteredTransactionIds?: string[];
   totalCount: number;
   totalPages: number;
   currentPage: number;
@@ -1417,6 +1419,7 @@ export const getOwnerAuditActivities = createServerFn({
           e.pengguna.toLowerCase().includes(kw) ||
           e.aktivitas.toLowerCase().includes(kw) ||
           e.dataTerkait.toLowerCase().includes(kw) ||
+          (e.relatedId && e.relatedId.toLowerCase().includes(kw)) ||
           e.role.toLowerCase().includes(kw),
       );
     }
@@ -1446,6 +1449,12 @@ export const getOwnerAuditActivities = createServerFn({
         month: "short",
       })} ${timeFormatted}`;
 
+      const isTxActivity =
+        e.activityType === "transaksi" ||
+        e.activityType === "pembatalan" ||
+        e.activityType === "pembayaran";
+      const transactionId = isTxActivity ? e.relatedId : undefined;
+
       return {
         no: overallIndex,
         id: idCode,
@@ -1460,11 +1469,26 @@ export const getOwnerAuditActivities = createServerFn({
         aktivitas: e.aktivitas,
         dataTerkait: e.dataTerkait,
         relatedId: e.relatedId,
+        transactionId,
         status: e.status,
         activityType: e.activityType,
         details: e.details,
       };
     });
+
+    const allFilteredTransactionIds = Array.from(
+      new Set(
+        filtered
+          .filter(
+            (e) =>
+              (e.activityType === "transaksi" ||
+                e.activityType === "pembatalan" ||
+                e.activityType === "pembayaran") &&
+              Boolean(e.relatedId),
+          )
+          .map((e) => e.relatedId as string),
+      ),
+    );
 
     // Counts for stats cards
     const totalActivities = rawEvents.length;
@@ -1523,6 +1547,7 @@ export const getOwnerAuditActivities = createServerFn({
         isShiftUp: true,
       },
       activities,
+      allFilteredTransactionIds,
       totalCount,
       totalPages,
       currentPage: page,
