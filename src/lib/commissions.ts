@@ -18,6 +18,7 @@ import {
 import { logAudit } from "./audit.ts";
 import { formatRupiah } from "./format.ts";
 import { getCurrentPlan } from "./subscriptions.ts";
+import { getCapsterSession } from "./auth-session.ts";
 
 export type CommissionCardState =
   | "can_withdraw" // Belum Terbayar (RpX) -> [ Ajukan Penarikan ]
@@ -461,8 +462,9 @@ export async function requestCommissionWithdrawalLogic(data?: {
   barbershopSlug?: string;
   keterangan?: string;
 }) {
-  let targetCapsterId = data?.capsterId?.trim();
-  let targetUserId = data?.userId?.trim();
+  const capsterSession = getCapsterSession();
+  let targetCapsterId = capsterSession ? capsterSession.capsterId : data?.capsterId?.trim();
+  let targetUserId = capsterSession ? capsterSession.userId : data?.userId?.trim();
 
   if (!targetCapsterId && targetUserId) {
     const [c] = await db
@@ -1530,10 +1532,11 @@ export async function payCommissionRequestLogic(data: {
     keterangan: `Pembayaran komisi capster senilai ${formatRupiah(amount)}`,
   });
 
-  // 3. Update PENGAJUAN_KOMISI: status TETAP 'approved', hanya update updated_at
+  // 3. Update PENGAJUAN_KOMISI: status -> 'paid'
   await db
     .update(pengajuanKomisi)
     .set({
+      status: "paid",
       updated_at: now,
     })
     .where(eq(pengajuanKomisi.id_pengajuan, data.pengajuanId));
@@ -1694,8 +1697,9 @@ export async function getCapsterCommissionDetailDataLogic(data?: {
   barbershopSlug?: string;
   statusFilter?: string;
 }): Promise<CapsterCommissionDetailData | null> {
-  let targetCapsterId = data?.capsterId?.trim();
-  let targetUserId = data?.userId?.trim();
+  const capsterSession = getCapsterSession();
+  let targetCapsterId = capsterSession ? capsterSession.capsterId : data?.capsterId?.trim();
+  let targetUserId = capsterSession ? capsterSession.userId : data?.userId?.trim();
 
   if (!targetCapsterId && targetUserId) {
     const [c] = await db
@@ -1969,8 +1973,9 @@ export async function getCapsterWithdrawalDetailLogic(data: {
   userId?: string;
   barbershopSlug?: string;
 }) {
-  let targetCapsterId = data?.capsterId?.trim();
-  let targetUserId = data?.userId?.trim();
+  const capsterSession = getCapsterSession();
+  let targetCapsterId = capsterSession ? capsterSession.capsterId : data?.capsterId?.trim();
+  let targetUserId = capsterSession ? capsterSession.userId : data?.userId?.trim();
 
   if (!targetCapsterId && targetUserId) {
     const [c] = await db

@@ -22,6 +22,7 @@ import { assertMonthlyCutLimit } from "./subscriptions";
 import { calculateQueueEstimations } from "./estimation";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
 import { recordCommissionForTransaction } from "./commissions";
+import { getCapsterSession, getOwnerSession } from "./auth-session";
 
 type CreateManualTransactionInput = {
   customerName: string;
@@ -60,17 +61,25 @@ export const getCapsterTransactions = createServerFn({
     ) => data,
   )
   .handler(async ({ data }) => {
-    let targetShopId = data?.barbershopId;
-    if (data?.barbershopSlug) {
+    const capsterSession = getCapsterSession();
+    const ownerSession = getOwnerSession();
+
+    let targetShopId = capsterSession
+      ? capsterSession.barbershopId
+      : ownerSession
+        ? ownerSession.barbershopId
+        : data?.barbershopId;
+
+    if (!targetShopId && data?.barbershopSlug) {
       const shop = await resolveBarbershopBySlug({ data: data.barbershopSlug });
       if (!shop) return [];
       targetShopId = shop.id_barbershop;
     }
 
-    // Jalankan background expiration sweeper untuk barbershop ini
-    await sweepExpiredRequestsAndPayments(targetShopId);
+    const targetCapsterId = capsterSession
+      ? capsterSession.capsterId
+      : data?.capsterId?.trim();
 
-    const targetCapsterId = data?.capsterId?.trim();
     if (!targetCapsterId) {
       return [];
     }
@@ -325,15 +334,23 @@ export const getDashboardMetrics = createServerFn({
     ) => data,
   )
   .handler(async ({ data }) => {
-    let targetShopId = data?.barbershopId;
-    if (data?.barbershopSlug) {
+    const capsterSession = getCapsterSession();
+    const ownerSession = getOwnerSession();
+
+    let targetShopId = capsterSession
+      ? capsterSession.barbershopId
+      : ownerSession
+        ? ownerSession.barbershopId
+        : data?.barbershopId;
+
+    if (!targetShopId && data?.barbershopSlug) {
       const shop = await resolveBarbershopBySlug({ data: data.barbershopSlug });
       if (shop) targetShopId = shop.id_barbershop;
     }
 
-    await sweepExpiredRequestsAndPayments(targetShopId);
-
-    let targetCapsterId = data?.capsterId?.trim();
+    let targetCapsterId = capsterSession
+      ? capsterSession.capsterId
+      : data?.capsterId?.trim();
 
     if (!targetCapsterId && data?.userId) {
       const [c] = await db
@@ -566,13 +583,19 @@ export const createManualTransaction = createServerFn({
 
     const targetShopId = capsterRecord.id_barbershop;
 
-    // 2. Find or Create User & Pelanggan
+    // 2. Find or Create User & Pelanggan with strict tenant isolation
     let userRow;
     if (customerPhone) {
       const existingUser = await db
         .select()
         .from(users)
-        .where(and(eq(users.no_hp, customerPhone), eq(users.role, "pelanggan")))
+        .where(
+          and(
+            eq(users.no_hp, customerPhone),
+            eq(users.role, "pelanggan"),
+            eq(users.id_barbershop, targetShopId),
+          ),
+        )
         .limit(1);
       userRow = existingUser[0];
     }
@@ -600,7 +623,12 @@ export const createManualTransaction = createServerFn({
     let [pelangganRow] = await db
       .select()
       .from(pelanggan)
-      .where(eq(pelanggan.id_user, userRow.id_user))
+      .where(
+        and(
+          eq(pelanggan.id_user, userRow.id_user),
+          eq(pelanggan.id_barbershop, targetShopId),
+        ),
+      )
       .limit(1);
 
     if (!pelangganRow) {

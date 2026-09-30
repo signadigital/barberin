@@ -14,7 +14,15 @@ import {
   users,
 } from "@/db/schema";
 import { generateUniqueBarbershopSlug } from "./slug";
-import { setSuperadminSessionCookie } from "./auth-session";
+import {
+  requireSuperadmin,
+  setSuperadminSessionCookie,
+  getSuperadminSession,
+  clearSuperadminSessionCookie,
+  setOwnerSessionCookie,
+  clearOwnerSessionCookie,
+} from "./auth-session";
+import { hashPassword, verifyPassword } from "./auth-crypto";
 
 // ============================================================================
 // TYPES
@@ -49,6 +57,9 @@ export type SuperadminStats = {
 export type SuperadminTenantsResult = {
   tenants: SuperadminTenantItem[];
   stats: SuperadminStats;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 };
 
 // ============================================================================
@@ -108,17 +119,32 @@ export const loginSuperadmin = createServerFn({
       throw new Error("Akun Superadmin Anda sedang nonaktif.");
     }
 
-    if (superadminUser.password && superadminUser.password !== password) {
+    // Verifikasi password menggunakan cryptographic comparison (scrypt / legacy plaintext)
+    const verification = verifyPassword(password, superadminUser.password || "");
+    if (!verification.valid) {
       throw new Error("Email atau password salah.");
+    }
+
+    // Upgrade hash legacy jika masih plaintext
+    if (verification.needsRehash) {
+      try {
+        const newHash = hashPassword(password);
+        await db
+          .update(users)
+          .set({ password: newHash, updated_at: new Date() })
+          .where(eq(users.id_user, superadminUser.id_user));
+      } catch (rehashErr) {
+        console.warn("Gagal upgrade hash password superadmin:", rehashErr);
+      }
     }
 
     // Catat log audit aktivitas login
     await db
       .insert(superadminAuditLogs)
       .values({
-        action: "login",
+        action: "LOGIN",
         actor_email: superadminUser.email,
-        details: "Superadmin berhasil masuk ke platform.",
+        details: "Superadmin berhasil masuk ke platform via autentikasi aman.",
       })
       .catch((err) => console.error("Gagal mencatat audit login:", err));
 
@@ -139,7 +165,29 @@ export const loginSuperadmin = createServerFn({
   });
 
 // ============================================================================
-// 2. GET DAFTAR TENANT / BARBERSHOP DENGAN FILTER & STATISTIK
+// 2. LOGOUT SUPERADMIN
+// ============================================================================
+
+export const logoutSuperadmin = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const session = getSuperadminSession();
+  if (session) {
+    await db
+      .insert(superadminAuditLogs)
+      .values({
+        action: "LOGOUT",
+        actor_email: session.email,
+        details: "Superadmin berhasil keluar (logout) dari platform.",
+      })
+      .catch((err) => console.error("Gagal mencatat audit logout:", err));
+  }
+  clearSuperadminSessionCookie();
+  return { success: true };
+});
+
+// ============================================================================
+// 3. GET DAFTAR TENANT / BARBERSHOP DENGAN FILTER, STATISTIK & PAGINASI
 // ============================================================================
 
 export const getSuperadminTenants = createServerFn({
@@ -152,16 +200,23 @@ export const getSuperadminTenants = createServerFn({
             search?: string;
             status?: "all" | "active" | "suspended";
             sort?: "terbaru" | "terlama" | "name_asc" | "name_desc";
+            page?: number;
+            pageSize?: number;
           }
         | undefined,
     ) => data,
   )
   .handler(async ({ data }): Promise<SuperadminTenantsResult> => {
+    // SECURITY: Hanya Superadmin terotentikasi server-side
+    requireSuperadmin();
+
     const search = (data?.search || "").trim().toLowerCase();
     const statusFilter = data?.status || "all";
     const sort = data?.sort || "terbaru";
+    const page = Math.max(1, data?.page || 1);
+    const pageSize = Math.min(100, Math.max(10, data?.pageSize || 25));
 
-    // 1. Ambil seluruh barbershop
+    // 1. Ambil seluruh barbershop dengan query yang terindeks
     const allShops = await db
       .select({
         id_barbershop: barbershop.id_barbershop,
@@ -183,7 +238,7 @@ export const getSuperadminTenants = createServerFn({
               : desc(barbershop.created_at),
       );
 
-    // 2. Ambil seluruh owner
+    // 2. Ambil seluruh owner dan petakan ke Map (O(1) lookup untuk mencegah N+1)
     const allOwners = await db
       .select({
         id_user: users.id_user,
@@ -196,35 +251,48 @@ export const getSuperadminTenants = createServerFn({
       .from(users)
       .where(eq(users.role, "owner"));
 
-    // 3. Ambil total capster & layanan per shop
-    const [allCapsters, allServices] = await Promise.all([
-      db.select({ id_barbershop: capster.id_barbershop }).from(capster),
-      db.select({ id_barbershop: layanan.id_barbershop }).from(layanan),
+    const ownerMap = new Map<string, typeof allOwners[0]>();
+    for (const o of allOwners) {
+      if (o.id_barbershop) {
+        ownerMap.set(o.id_barbershop, o);
+      }
+    }
+
+    // 3. Aggregation SQL untuk hitung jumlah capster & layanan tanpa memuat seluruh baris
+    const [capsterCounts, serviceCounts] = await Promise.all([
+      db
+        .select({
+          id_barbershop: capster.id_barbershop,
+          total: sql<number>`count(${capster.id_capster})::int`,
+        })
+        .from(capster)
+        .groupBy(capster.id_barbershop),
+      db
+        .select({
+          id_barbershop: layanan.id_barbershop,
+          total: sql<number>`count(${layanan.id_layanan})::int`,
+        })
+        .from(layanan)
+        .groupBy(layanan.id_barbershop),
     ]);
 
     const capsterCountMap = new Map<string, number>();
-    for (const c of allCapsters) {
+    for (const c of capsterCounts) {
       if (c.id_barbershop) {
-        capsterCountMap.set(
-          c.id_barbershop,
-          (capsterCountMap.get(c.id_barbershop) || 0) + 1,
-        );
+        capsterCountMap.set(c.id_barbershop, Number(c.total) || 0);
       }
     }
 
     const serviceCountMap = new Map<string, number>();
-    for (const s of allServices) {
+    for (const s of serviceCounts) {
       if (s.id_barbershop) {
-        serviceCountMap.set(
-          s.id_barbershop,
-          (serviceCountMap.get(s.id_barbershop) || 0) + 1,
-        );
+        serviceCountMap.set(s.id_barbershop, Number(s.total) || 0);
       }
     }
 
-    // 4. Petakan setiap barbershop dengan Owner-nya (hanya match ID barbershop)
+    // 4. Petakan setiap barbershop dengan Owner (menggunakan Map O(1))
     let mappedTenants: SuperadminTenantItem[] = allShops.map((shop) => {
-      const ownerUser = allOwners.find((o) => o.id_barbershop === shop.id_barbershop);
+      const ownerUser = ownerMap.get(shop.id_barbershop);
 
       return {
         id_barbershop: shop.id_barbershop,
@@ -259,7 +327,7 @@ export const getSuperadminTenants = createServerFn({
       mappedTenants = mappedTenants.filter((t) => t.status === statusFilter);
     }
 
-    // 7. Terapkan Pencarian
+    // 7. Terapkan Pencarian Server-Side
     if (search) {
       mappedTenants = mappedTenants.filter((t) => {
         const matchShop = t.nama_barbershop.toLowerCase().includes(search);
@@ -270,6 +338,9 @@ export const getSuperadminTenants = createServerFn({
       });
     }
 
+    const filteredTotal = mappedTenants.length;
+    const totalPages = Math.ceil(filteredTotal / pageSize) || 1;
+
     return {
       tenants: mappedTenants,
       stats: {
@@ -278,11 +349,14 @@ export const getSuperadminTenants = createServerFn({
         suspendedTenants,
         totalOwners,
       },
+      page,
+      pageSize,
+      totalPages,
     };
   });
 
 // ============================================================================
-// 3. TAMBAH TOKO & OWNER BARU (DATABASE TRANSACTION)
+// 4. TAMBAH TOKO & OWNER BARU (DATABASE TRANSACTION)
 // ============================================================================
 
 export type CreateTenantInput = {
@@ -293,7 +367,6 @@ export type CreateTenantInput = {
   alamat?: string;
   no_hp_barbershop?: string;
   no_hp_owner?: string;
-  actor_email?: string;
 };
 
 export const createTenantWithTransaction = createServerFn({
@@ -301,6 +374,10 @@ export const createTenantWithTransaction = createServerFn({
 })
   .validator((data: CreateTenantInput) => data)
   .handler(async ({ data }) => {
+    // SECURITY: Wajib Superadmin
+    const admin = requireSuperadmin();
+    const actorEmail = admin.email;
+
     const namaBarbershop = (data.nama_barbershop || "").trim();
     const namaOwner = (data.nama_owner || "").trim();
     const emailOwner = (data.email_owner || "").trim().toLowerCase();
@@ -308,7 +385,6 @@ export const createTenantWithTransaction = createServerFn({
     const alamat = (data.alamat || "").trim();
     const noHpBarbershop = (data.no_hp_barbershop || "").trim();
     const noHpOwner = (data.no_hp_owner || noHpBarbershop).trim();
-    const actorEmail = data.actor_email || "superadmin@barberin.test";
 
     // Validasi Form
     if (!namaBarbershop) {
@@ -339,7 +415,10 @@ export const createTenantWithTransaction = createServerFn({
       throw new Error("Email Owner sudah terdaftar dalam sistem.");
     }
 
-    // JALANKAN DATABASE TRANSACTION
+    // Hash password awal dengan aman
+    const hashedPassword = hashPassword(passwordAwal);
+
+    // JALANKAN DATABASE TRANSACTION PENUH
     try {
       const result = await db.transaction(async (tx) => {
         // STEP 1: Generate slug unik dan Simpan Tenant ke tabel barbershop (status = Active)
@@ -362,12 +441,12 @@ export const createTenantWithTransaction = createServerFn({
           throw new Error("Gagal membuat record toko baru.");
         }
 
-        // STEP 2: Simpan Akun Owner ke tabel users (role = Owner, link id_barbershop)
+        // STEP 2: Simpan Akun Owner ke tabel users (role = Owner, link id_barbershop, password ter-hash)
         const [newOwner] = await tx
           .insert(users)
           .values({
             email: emailOwner,
-            password: passwordAwal,
+            password: hashedPassword,
             nama_lengkap: namaOwner,
             no_hp: noHpOwner,
             role: "owner",
@@ -438,7 +517,7 @@ export const createTenantWithTransaction = createServerFn({
 
         // STEP 4: Catat ke audit log platform
         await tx.insert(superadminAuditLogs).values({
-          action: "create_tenant",
+          action: "CREATE_TENANT",
           actor_email: actorEmail,
           target_tenant_id: newShop.id_barbershop,
           target_tenant_name: newShop.nama_barbershop,
@@ -465,7 +544,7 @@ export const createTenantWithTransaction = createServerFn({
   });
 
 // ============================================================================
-// 4. TOGGLE STATUS TOKO (ACTIVE ↔ SUSPENDED)
+// 5. TOGGLE STATUS TOKO (ACTIVE ↔ SUSPENDED)
 // ============================================================================
 
 export const toggleTenantStatus = createServerFn({
@@ -475,11 +554,13 @@ export const toggleTenantStatus = createServerFn({
     (data: {
       id_barbershop: string;
       targetStatus: "active" | "suspended";
-      actor_email?: string;
     }) => data,
   )
   .handler(async ({ data }) => {
-    const { id_barbershop, targetStatus, actor_email = "superadmin@barberin.test" } = data;
+    // SECURITY: Hanya Superadmin
+    const admin = requireSuperadmin();
+    const actor_email = admin.email;
+    const { id_barbershop, targetStatus } = data;
 
     if (!id_barbershop) {
       throw new Error("ID Toko wajib disertakan.");
@@ -508,10 +589,11 @@ export const toggleTenantStatus = createServerFn({
       .where(eq(barbershop.id_barbershop, id_barbershop));
 
     // Catat log audit aktivitas
+    const auditAction = targetStatus === "active" ? "ACTIVATE_TENANT" : "SUSPEND_TENANT";
     await db
       .insert(superadminAuditLogs)
       .values({
-        action: "update_status",
+        action: auditAction,
         actor_email,
         target_tenant_id: id_barbershop,
         target_tenant_name: existingShop.nama_barbershop,
@@ -531,7 +613,7 @@ export const toggleTenantStatus = createServerFn({
   });
 
 // ============================================================================
-// 5. GET DETAIL TENANT
+// 6. GET DETAIL TENANT
 // ============================================================================
 
 export const getTenantDetail = createServerFn({
@@ -539,6 +621,8 @@ export const getTenantDetail = createServerFn({
 })
   .validator((data: { id_barbershop: string }) => data)
   .handler(async ({ data }) => {
+    // SECURITY: Hanya Superadmin
+    requireSuperadmin();
     const { id_barbershop } = data;
 
     const [shop] = await db
@@ -599,7 +683,7 @@ export const getTenantDetail = createServerFn({
   });
 
 // ============================================================================
-// 6. LOG AUDIT AKTIVITAS SUPERADMIN
+// 7. LOG AUDIT AKTIVITAS SUPERADMIN
 // ============================================================================
 
 export const logSuperadminAction = createServerFn({
@@ -608,17 +692,19 @@ export const logSuperadminAction = createServerFn({
   .validator(
     (data: {
       action: string;
-      actor_email: string;
       target_tenant_id?: string;
       target_tenant_name?: string;
       details?: string;
     }) => data,
   )
   .handler(async ({ data }) => {
+    // SECURITY: Identity berasal strictly dari server session
+    const admin = requireSuperadmin();
+
     try {
       await db.insert(superadminAuditLogs).values({
         action: data.action,
-        actor_email: data.actor_email,
+        actor_email: admin.email,
         target_tenant_id: data.target_tenant_id,
         target_tenant_name: data.target_tenant_name,
         details: data.details,
@@ -629,3 +715,106 @@ export const logSuperadminAction = createServerFn({
       return { success: false };
     }
   });
+
+// ============================================================================
+// 8. SERVER-SIDE IMPERSONATION (SUPERADMIN TO OWNER)
+// ============================================================================
+
+export const startSuperadminImpersonation = createServerFn({
+  method: "POST",
+})
+  .validator((data: { id_barbershop: string }) => data)
+  .handler(async ({ data }) => {
+    const admin = requireSuperadmin();
+    const { id_barbershop } = data;
+
+    // 1. Verifikasi barbershop ada di database
+    const [shop] = await db
+      .select()
+      .from(barbershop)
+      .where(eq(barbershop.id_barbershop, id_barbershop))
+      .limit(1);
+
+    if (!shop) {
+      throw new Error("Barbershop tidak ditemukan.");
+    }
+
+    if (shop.status === "suspended") {
+      throw new Error("Toko ini sedang disuspend. Aktifkan terlebih dahulu sebelum impersonasi.");
+    }
+
+    // 2. Verifikasi owner riil di database — TIDAK BOLEH MEMBUAT FAKE USER ID
+    const [realOwner] = await db
+      .select({
+        id_user: users.id_user,
+        email: users.email,
+        nama_lengkap: users.nama_lengkap,
+        no_hp: users.no_hp,
+        status: users.status,
+      })
+      .from(users)
+      .where(and(eq(users.role, "owner"), eq(users.id_barbershop, id_barbershop)))
+      .limit(1);
+
+    if (!realOwner) {
+      throw new Error(
+        `Owner untuk toko '${shop.nama_barbershop}' tidak ditemukan di database. Impersonasi dibatalkan demi integritas data.`,
+      );
+    }
+
+    // 3. Set secure server-side owner session cookie dengan penanda impersonatedBy
+    setOwnerSessionCookie({
+      userId: realOwner.id_user,
+      email: realOwner.email,
+      role: "owner",
+      barbershopId: shop.id_barbershop,
+      barbershopName: shop.nama_barbershop,
+      namaLengkap: realOwner.nama_lengkap,
+      impersonatedBy: admin.userId,
+    });
+
+    // 4. Catat log audit impersonasi
+    await db
+      .insert(superadminAuditLogs)
+      .values({
+        action: "IMPERSONATE_TENANT",
+        actor_email: admin.email,
+        target_tenant_id: shop.id_barbershop,
+        target_tenant_name: shop.nama_barbershop,
+        details: `Superadmin (${admin.email}) masuk sebagai Owner riil (${realOwner.email} / ${realOwner.nama_lengkap}) untuk toko '${shop.nama_barbershop}'.`,
+      })
+      .catch((e) => console.error("Audit impersonate gagal:", e));
+
+    return {
+      success: true,
+      barbershop: {
+        id_barbershop: shop.id_barbershop,
+        nama_barbershop: shop.nama_barbershop,
+        slug: shop.slug,
+        alamat: shop.alamat,
+        no_hp: shop.no_hp,
+      },
+      owner: realOwner,
+    };
+  });
+
+export const exitSuperadminImpersonation = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const admin = requireSuperadmin();
+
+  // Hapus cookie sesi owner (impersonation)
+  clearOwnerSessionCookie();
+
+  // Catat log audit penghentian impersonasi
+  await db
+    .insert(superadminAuditLogs)
+    .values({
+      action: "EXIT_IMPERSONATION",
+      actor_email: admin.email,
+      details: `Superadmin (${admin.email}) keluar dari mode impersonate dan kembali ke dashboard platform.`,
+    })
+    .catch((e) => console.error("Audit exit impersonate gagal:", e));
+
+  return { success: true };
+});

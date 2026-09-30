@@ -316,81 +316,108 @@ function ServiceExecutionPage() {
       return;
     }
 
-    let mounted = true;
-    const check = async () => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      try {
-        const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
-        if (!mounted || !detail) return;
-        setTxDetail(detail);
+    let pollingActive = true;
+    let isFetching = false;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
-        // Cek jika pesanan dibatalkan
-        const isCancelled =
-          detail.status === "cancelled" || detail.bookingStatus === "cancelled";
-        if (isCancelled) {
-          toast.info("Pesanan telah dibatalkan.");
-          actions.reset();
-          if (typeof window !== "undefined") {
-            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-          }
-          navigate({ to: `/${barbershopSlug}/customer/services` as any });
-          return;
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timerId = setTimeout(resolve, ms);
+      });
+
+    const runPollingLoop = async () => {
+      while (pollingActive) {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+          await delay(2000);
+          continue;
         }
 
-        // Cek status pembayaran berdasarkan database:
-        const isPaid =
-          detail.status === "paid" || detail.status === "completed" || detail.paymentStatus === "success";
-
-        if (isPaid) {
-          actions.setPaymentConfirmationStatus("DIKONFIRMASI");
-          actions.setServiceExecutionStatus("DISELESAIKAN");
-          if (typeof window !== "undefined") {
-            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-          }
-
-          if (!hasNavigatedRef.current) {
-            hasNavigatedRef.current = true;
-            navigate({
-              to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
-            });
-          }
-          return;
+        if (isFetching) {
+          await delay(1000);
+          continue;
         }
 
-        actions.setPaymentConfirmationStatus("MENUNGGU");
+        isFetching = true;
+        try {
+          const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
+          if (!pollingActive || !detail) break;
+          setTxDetail(detail);
 
-        // Status pengerjaan layanan
-        if (detail.bookingStatus === "in_service") {
-          actions.setServiceExecutionStatus("DIKERJAKAN");
-        } else if (detail.bookingStatus === "awaiting_payment") {
-          actions.setServiceExecutionStatus("HAMPIR_SELESAI");
-        } else if (
-          detail.bookingStatus === "confirmed" ||
-          detail.bookingStatus === "waiting" ||
-          detail.bookingStatus === "pending_confirmation"
-        ) {
-          actions.setServiceExecutionStatus("MENUNGGU");
+          // Cek jika pesanan dibatalkan
+          const isCancelled =
+            detail.status === "cancelled" || detail.bookingStatus === "cancelled";
+          if (isCancelled) {
+            pollingActive = false;
+            toast.info("Pesanan telah dibatalkan.");
+            actions.reset();
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+              sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            }
+            navigate({ to: `/${barbershopSlug}/customer/services` as any });
+            break;
+          }
+
+          // Cek status pembayaran berdasarkan database:
+          const isPaid =
+            detail.status === "paid" || detail.status === "completed" || detail.paymentStatus === "success";
+
+          if (isPaid) {
+            pollingActive = false; // HENTIKAN polling saat transaksi final
+            actions.setPaymentConfirmationStatus("DIKONFIRMASI");
+            actions.setServiceExecutionStatus("DISELESAIKAN");
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+              sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            }
+
+            if (!hasNavigatedRef.current) {
+              hasNavigatedRef.current = true;
+              navigate({
+                to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
+              });
+            }
+            break;
+          }
+
+          actions.setPaymentConfirmationStatus("MENUNGGU");
+
+          // Status pengerjaan layanan
+          if (detail.bookingStatus === "in_service") {
+            actions.setServiceExecutionStatus("DIKERJAKAN");
+          } else if (detail.bookingStatus === "awaiting_payment") {
+            actions.setServiceExecutionStatus("HAMPIR_SELESAI");
+          } else if (
+            detail.bookingStatus === "confirmed" ||
+            detail.bookingStatus === "waiting" ||
+            detail.bookingStatus === "pending_confirmation"
+          ) {
+            actions.setServiceExecutionStatus("MENUNGGU");
+          }
+        } catch (err) {
+          console.error("Polling status error:", err);
+        } finally {
+          isFetching = false;
         }
-      } catch (err) {
-        console.error("Polling status error:", err);
+
+        if (!pollingActive) break;
+        // Tunggu interval polling HANYA SETELAH request selesai
+        await delay(5000);
       }
     };
 
-    check();
-    const interval = setInterval(check, 5000);
+    runPollingLoop();
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        check();
+      if (document.visibilityState === "visible" && !isFetching && pollingActive) {
+        if (timerId) clearTimeout(timerId);
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      mounted = false;
-      clearInterval(interval);
+      pollingActive = false;
+      if (timerId) clearTimeout(timerId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [transactionId, navigate, barbershopSlug]);

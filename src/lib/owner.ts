@@ -35,7 +35,14 @@ import {
 import { loginOwnerBpmn } from "@/lib/owner-auth";
 import { getOwnerSession, requireOwnerTenant } from "@/lib/auth-session";
 
-export type OwnerPeriodFilter = "today" | "7d" | "30d" | "month" | "custom";
+export type OwnerPeriodFilter =
+  | "today"
+  | "yesterday"
+  | "7d"
+  | "30d"
+  | "month"
+  | "last_month"
+  | "custom";
 
 export type RevenueChartPoint = {
   date: string;
@@ -181,6 +188,22 @@ function getPeriodDates(
     prevStartDate = new Date(`${yesterdayStr}T00:00:00+07:00`);
     prevEndDate = new Date(`${yesterdayStr}T23:59:59.999+07:00`);
     deltaLabel = "dari hari sebelumnya";
+  } else if (period === "yesterday") {
+    const todayStart = new Date(`${jakartaTodayStr}T00:00:00+07:00`);
+    const yesterday = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayStr = yesterday.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Jakarta",
+    });
+    startDate = new Date(`${yesterdayStr}T00:00:00+07:00`);
+    endDate = new Date(`${yesterdayStr}T23:59:59.999+07:00`);
+
+    const twoDaysAgo = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+    const twoDaysAgoStr = twoDaysAgo.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Jakarta",
+    });
+    prevStartDate = new Date(`${twoDaysAgoStr}T00:00:00+07:00`);
+    prevEndDate = new Date(`${twoDaysAgoStr}T23:59:59.999+07:00`);
+    deltaLabel = "dari hari sebelumnya";
   } else if (period === "7d") {
     endDate = new Date(`${jakartaTodayStr}T23:59:59.999+07:00`);
     startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000 + 1);
@@ -212,6 +235,26 @@ function getPeriodDates(
     const prevLastDayStr = String(prevDaysInMonth).padStart(2, "0");
     prevStartDate = new Date(`${prevYearVal}-${prevMStr}-01T00:00:00+07:00`);
     prevEndDate = new Date(`${prevYearVal}-${prevMStr}-${prevLastDayStr}T23:59:59.999+07:00`);
+    deltaLabel = "dari bulan sebelumnya";
+  } else if (period === "last_month") {
+    const [y, m] = jakartaTodayStr.split("-").map(Number);
+    const yVal = y ?? now.getFullYear();
+    const mVal = m ?? (now.getMonth() + 1);
+    const lastMonthVal = mVal === 1 ? 12 : mVal - 1;
+    const lastMonthYear = mVal === 1 ? yVal - 1 : yVal;
+    const daysInLastMonth = new Date(lastMonthYear, lastMonthVal, 0).getDate();
+    const lastMStr = String(lastMonthVal).padStart(2, "0");
+    const lastDayStr = String(daysInLastMonth).padStart(2, "0");
+    startDate = new Date(`${lastMonthYear}-${lastMStr}-01T00:00:00+07:00`);
+    endDate = new Date(`${lastMonthYear}-${lastMStr}-${lastDayStr}T23:59:59.999+07:00`);
+
+    const prevPrevMonthVal = lastMonthVal === 1 ? 12 : lastMonthVal - 1;
+    const prevPrevYearVal = lastMonthVal === 1 ? lastMonthYear - 1 : lastMonthYear;
+    const daysInPrevPrevMonth = new Date(prevPrevYearVal, prevPrevMonthVal, 0).getDate();
+    const prevPrevMStr = String(prevPrevMonthVal).padStart(2, "0");
+    const prevPrevLastDayStr = String(daysInPrevPrevMonth).padStart(2, "0");
+    prevStartDate = new Date(`${prevPrevYearVal}-${prevPrevMStr}-01T00:00:00+07:00`);
+    prevEndDate = new Date(`${prevPrevYearVal}-${prevPrevMStr}-${prevPrevLastDayStr}T23:59:59.999+07:00`);
     deltaLabel = "dari bulan sebelumnya";
   } else {
     // Custom
@@ -912,15 +955,17 @@ export const getOwnerDashboardMetrics = createServerFn({
 
     const periodLabels: Record<OwnerPeriodFilter, string> = {
       today: "Hari ini",
+      yesterday: "Kemarin",
       "7d": "7 Hari Terakhir",
       "30d": "30 Hari Terakhir",
       month: "Bulan Ini",
+      last_month: "Bulan Lalu",
       custom: "Kustom",
     };
 
     let dateRangeText = "";
-    if (period === "today") {
-      dateRangeText = now.toLocaleDateString("id-ID", {
+    if (period === "today" || period === "yesterday") {
+      dateRangeText = startDate.toLocaleDateString("id-ID", {
         weekday: "long",
         day: "numeric",
         month: "long",
@@ -939,10 +984,11 @@ export const getOwnerDashboardMetrics = createServerFn({
         year: "numeric",
         timeZone: "Asia/Jakarta",
       })}`;
-    } else if (period === "month") {
+    } else if (period === "month" || period === "last_month") {
       dateRangeText = `${startDate.toLocaleDateString("id-ID", {
         day: "numeric",
         month: "short",
+        year: "numeric",
         timeZone: "Asia/Jakarta",
       })} – ${endDate.toLocaleDateString("id-ID", {
         day: "numeric",
@@ -1435,14 +1481,16 @@ export const getOwnerAuditActivities = createServerFn({
 
     const periodLabels: Record<OwnerPeriodFilter, string> = {
       today: "Hari Ini",
+      yesterday: "Kemarin",
       "7d": "7 Hari Terakhir",
       "30d": "30 Hari Terakhir",
       month: "Bulan Ini",
+      last_month: "Bulan Lalu",
       custom: "Kustom",
     };
 
     const dateRangeText =
-      period === "today"
+      period === "today" || period === "yesterday"
         ? startDate.toLocaleDateString("id-ID", {
             weekday: "long",
             day: "numeric",
@@ -2176,9 +2224,11 @@ export const getOwnerAuditFinance = createServerFn({
 
     const periodLabels: Record<OwnerPeriodFilter, string> = {
       today: "Hari Ini",
+      yesterday: "Kemarin",
       "7d": "7 Hari Terakhir",
       "30d": "30 Hari Terakhir",
       month: "Bulan Ini",
+      last_month: "Bulan Lalu",
       custom: "Kustom",
     };
 
@@ -2187,7 +2237,7 @@ export const getOwnerAuditFinance = createServerFn({
       endDate.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 
     const dateRangeText =
-      period === "today" || (period === "custom" && isSingleDay)
+      period === "today" || period === "yesterday" || (period === "custom" && isSingleDay)
         ? startDate.toLocaleDateString("id-ID", {
             weekday: "long",
             day: "numeric",

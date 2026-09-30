@@ -740,11 +740,17 @@ function OwnerAuditFinancePage() {
                     appliedPreset={
                       period === "today"
                         ? "today"
-                        : period === "7d"
-                          ? "7d"
-                          : period === "month"
-                            ? "month"
-                            : "custom"
+                        : period === "yesterday"
+                          ? "yesterday"
+                          : period === "7d"
+                            ? "7d"
+                            : period === "30d"
+                              ? "30d"
+                              : period === "month"
+                                ? "month"
+                                : period === "last_month"
+                                  ? "last_month"
+                                  : "custom"
                     }
                     onApply={(result) => {
                       setPeriod(result.preset === "custom" ? "custom" : (result.preset as OwnerPeriodFilter));
@@ -761,11 +767,14 @@ function OwnerAuditFinancePage() {
           {/* Filter Bar */}
           <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-2xl p-3 shadow-xs">
             {/* Quick Period Buttons */}
-            <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border">
+            <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border overflow-x-auto max-w-full">
               {[
                 { key: "today", label: "Hari ini" },
-                { key: "7d", label: "Minggu ini" },
+                { key: "yesterday", label: "Kemarin" },
+                { key: "7d", label: "7 Hari" },
+                { key: "30d", label: "30 Hari" },
                 { key: "month", label: "Bulan ini" },
+                { key: "last_month", label: "Bulan lalu" },
                 { key: "custom", label: "Custom" },
               ].map((b) => (
                 <button
@@ -782,13 +791,19 @@ function OwnerAuditFinancePage() {
                     if (b.key === "today") {
                       setStartDate(tStr);
                       setEndDate(tStr);
+                    } else if (b.key === "yesterday") {
+                      const yDate = new Date(todayD.getTime() - 86400000);
+                      const yStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(yDate);
+                      setStartDate(yStr);
+                      setEndDate(yStr);
                     } else if (b.key === "7d") {
-                      const day = todayD.getDay();
-                      const diffToMonday = day === 0 ? -6 : 1 - day;
-                      const monday = new Date(todayD.getTime() + diffToMonday * 86400000);
-                      const sunday = new Date(monday.getTime() + 6 * 86400000);
-                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(monday));
-                      setEndDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(sunday));
+                      const d7 = new Date(todayD.getTime() - 6 * 86400000);
+                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(d7));
+                      setEndDate(tStr);
+                    } else if (b.key === "30d") {
+                      const d30 = new Date(todayD.getTime() - 29 * 86400000);
+                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(d30));
+                      setEndDate(tStr);
                     } else if (b.key === "month") {
                       const y = todayD.getFullYear();
                       const m = todayD.getMonth();
@@ -796,10 +811,17 @@ function OwnerAuditFinancePage() {
                       const last = new Date(y, m + 1, 0, 12);
                       setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(first));
                       setEndDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(last));
+                    } else if (b.key === "last_month") {
+                      const y = todayD.getFullYear();
+                      const m = todayD.getMonth();
+                      const first = new Date(y, m - 1, 1, 12);
+                      const last = new Date(y, m, 0, 12);
+                      setStartDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(first));
+                      setEndDate(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(last));
                     }
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                     period === b.key || (b.key === "custom" && period === "custom")
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"

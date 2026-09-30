@@ -75,6 +75,9 @@ async function run() {
     pembayaran: [],
     saldo: [],
     notifikasi: [],
+    subscriptions: [],
+    businesses: [],
+    owners: [],
   };
 
   const testId = `test_comm_${Date.now()}`;
@@ -124,6 +127,52 @@ async function run() {
       RETURNING id_user;
     `;
     cleanup.users.push(ownerB.id_user);
+
+    // Ensure PRO plan subscription for Shop A and Shop B so capster_commission feature gate passes
+    const [proPlan] = await sql`SELECT plan_id FROM plan WHERE plan_name = 'PRO' LIMIT 1`;
+    if (proPlan) {
+      const [saasOwnerA] = await sql`
+        INSERT INTO owner (name, email, phone, password_hash, status)
+        VALUES ('Owner A', ${`ownerA_${testId}@barberin.test`}, '081111', 'hash123', 'active')
+        RETURNING owner_id;
+      `;
+      cleanup.owners.push(saasOwnerA.owner_id);
+
+      const [bizA] = await sql`
+        INSERT INTO business (owner_id, id_barbershop, business_name, status)
+        VALUES (${saasOwnerA.owner_id}, ${shopA.id_barbershop}, 'Barbershop A', 'active')
+        RETURNING business_id;
+      `;
+      cleanup.businesses.push(bizA.business_id);
+
+      const [subA] = await sql`
+        INSERT INTO subscription (business_id, plan_id, status, start_date, end_date)
+        VALUES (${bizA.business_id}, ${proPlan.plan_id}, 'active', NOW(), NOW() + INTERVAL '30 days')
+        RETURNING subscription_id;
+      `;
+      cleanup.subscriptions.push(subA.subscription_id);
+
+      const [saasOwnerB] = await sql`
+        INSERT INTO owner (name, email, phone, password_hash, status)
+        VALUES ('Owner B', ${`ownerB_${testId}@barberin.test`}, '082222', 'hash123', 'active')
+        RETURNING owner_id;
+      `;
+      cleanup.owners.push(saasOwnerB.owner_id);
+
+      const [bizB] = await sql`
+        INSERT INTO business (owner_id, id_barbershop, business_name, status)
+        VALUES (${saasOwnerB.owner_id}, ${shopB.id_barbershop}, 'Barbershop B', 'active')
+        RETURNING business_id;
+      `;
+      cleanup.businesses.push(bizB.business_id);
+
+      const [subB] = await sql`
+        INSERT INTO subscription (business_id, plan_id, status, start_date, end_date)
+        VALUES (${bizB.business_id}, ${proPlan.plan_id}, 'active', NOW(), NOW() + INTERVAL '30 days')
+        RETURNING subscription_id;
+      `;
+      cleanup.subscriptions.push(subB.subscription_id);
+    }
 
     // Capster A1 (20% komisi) & Capster A2 (10% komisi) in Shop A
     const [userCapA1] = await sql`
@@ -498,8 +547,9 @@ async function run() {
     const ownerBRequests = await getOwnerCommissionRequestsLogic({
       barbershopSlug: shopB.slug,
     });
+    const reqList = Array.isArray(ownerBRequests) ? ownerBRequests : (ownerBRequests?.requests || []);
     assert(
-      ownerBRequests.every((r) => r.capsterId !== capA1.id_capster && r.capsterId !== capA2.id_capster),
+      reqList.every((r) => r.capsterId !== capA1.id_capster && r.capsterId !== capA2.id_capster),
       "Owner Shop B TIDAK dapat melihat pengajuan komisi dari Capster Shop A",
     );
 
@@ -547,6 +597,15 @@ async function run() {
         await sql`DELETE FROM users WHERE id_user IN ${sql(cleanup.users)}`;
       }
       if (cleanup.barbershops.length > 0) {
+        if (cleanup.subscriptions.length > 0) {
+          await sql`DELETE FROM subscription WHERE subscription_id IN ${sql(cleanup.subscriptions)}`;
+        }
+        if (cleanup.businesses.length > 0) {
+          await sql`DELETE FROM business WHERE business_id IN ${sql(cleanup.businesses)}`;
+        }
+        if (cleanup.owners.length > 0) {
+          await sql`DELETE FROM owner WHERE owner_id IN ${sql(cleanup.owners)}`;
+        }
         await sql`DELETE FROM saldo_bisnis WHERE id_barbershop IN ${sql(cleanup.barbershops)}`;
         await sql`DELETE FROM barbershop WHERE id_barbershop IN ${sql(cleanup.barbershops)}`;
       }

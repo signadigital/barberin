@@ -8,6 +8,9 @@ export type OwnerSessionPayload = {
   barbershopId: string;
   barbershopName: string;
   namaLengkap: string;
+  impersonatedBy?: string; // superadmin user id when in impersonation mode
+  sessionId?: string;
+  createdAt?: number;
   exp: number; // Unix timestamp in seconds
 };
 
@@ -44,11 +47,12 @@ function signString(data: string, secret: string): string {
 }
 
 /**
- * Membuat signed session token dari payload
+ * Membuat signed session token dari payload Owner
  */
 export function sealSessionToken(payload: Omit<OwnerSessionPayload, "exp">): string {
   const fullPayload: OwnerSessionPayload = {
     ...payload,
+    createdAt: payload.createdAt || Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_SECONDS,
   };
 
@@ -58,7 +62,7 @@ export function sealSessionToken(payload: Omit<OwnerSessionPayload, "exp">): str
 }
 
 /**
- * Memverifikasi dan membaca session token. Mengembalikan payload jika valid, atau null jika invalid/expired.
+ * Memverifikasi dan membaca session token Owner. Mengembalikan payload jika valid, atau null jika invalid/expired.
  */
 export function unsealSessionToken(token: string | undefined | null): OwnerSessionPayload | null {
   if (!token || typeof token !== "string") {
@@ -167,6 +171,7 @@ export function requireOwnerTenant(): {
   barbershopId: string;
   barbershopName: string;
   namaLengkap: string;
+  impersonatedBy?: string;
 } {
   const session = getOwnerSession();
   if (!session || !session.userId || !session.barbershopId) {
@@ -178,6 +183,7 @@ export function requireOwnerTenant(): {
     barbershopId: session.barbershopId,
     barbershopName: session.barbershopName,
     namaLengkap: session.namaLengkap,
+    impersonatedBy: session.impersonatedBy,
   };
 }
 
@@ -197,6 +203,8 @@ export type SuperadminSessionPayload = {
   email: string;
   role: "superadmin" | "admin_platform";
   namaLengkap: string;
+  sessionId?: string;
+  createdAt?: number;
   exp: number;
 };
 
@@ -206,6 +214,7 @@ export const SUPERADMIN_LOGGED_IN_COOKIE = "barberin_superadmin_logged_in";
 export function sealSuperadminToken(payload: Omit<SuperadminSessionPayload, "exp">): string {
   const fullPayload: SuperadminSessionPayload = {
     ...payload,
+    createdAt: payload.createdAt || Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_SECONDS,
   };
 
@@ -300,34 +309,152 @@ export function clearSuperadminSessionCookie() {
 /**
  * Validasi otorisasi server-side khusus Superadmin / Admin Platform.
  * Melemparkan error jika sesi tidak valid atau pemanggil adalah Owner / role lain.
+ * TIDAK MENGGUNAKAN FALLBACK COOKIE ATAU BYPASS APAPUN.
  */
 export function requireSuperadmin(): SuperadminSessionPayload {
-  // Cek apakah ada sesi owner yang mencoba memanggil ini
-  const ownerSession = getOwnerSession();
   const superadminSession = getSuperadminSession();
 
   if (superadminSession && (superadminSession.role === "superadmin" || superadminSession.role === "admin_platform")) {
     return superadminSession;
   }
 
-  // Jika dipanggil oleh Owner
+  // Cek apakah ada sesi owner yang mencoba memanggil ini
+  const ownerSession = getOwnerSession();
   if (ownerSession) {
-    throw new Error("Akses ditolak: Role Owner tidak diizinkan mengelola atau memverifikasi custom domain.");
-  }
-
-  // Cek juga fallback cookie boolean di local dev jika session cookie belum diset
-  const isLoggedInCookie = getCookie(SUPERADMIN_LOGGED_IN_COOKIE);
-  if (isLoggedInCookie === "1") {
-    // Return standard admin context
-    return {
-      userId: "superadmin-system-id",
-      email: "superadmin@barberin.test",
-      role: "superadmin",
-      namaLengkap: "Superadmin Platform",
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    };
+    throw new Error("Akses ditolak: Role Owner tidak diizinkan mengakses resource Superadmin.");
   }
 
   throw new Error("Akses ditolak: Anda harus login sebagai Superadmin untuk mengakses resource ini.");
+}
+
+// ============================================================================
+// CAPSTER SESSION & AUTHORIZATION (SERVER-SIDE)
+// ============================================================================
+
+export type CapsterSessionPayload = {
+  userId: string;
+  email: string;
+  role: "capster";
+  capsterId: string;
+  barbershopId: string;
+  barbershopName?: string;
+  namaLengkap: string;
+  sessionId?: string;
+  createdAt?: number;
+  exp: number;
+};
+
+export const CAPSTER_SESSION_COOKIE = "barberin_capster_session";
+
+export function sealCapsterToken(payload: Omit<CapsterSessionPayload, "exp">): string {
+  const fullPayload: CapsterSessionPayload = {
+    ...payload,
+    createdAt: payload.createdAt || Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_SECONDS,
+  };
+
+  const payloadEncoded = base64UrlEncode(JSON.stringify(fullPayload));
+  const signature = signString(payloadEncoded, getSecretKey());
+  return `${payloadEncoded}.${signature}`;
+}
+
+export function unsealCapsterToken(token: string | undefined | null): CapsterSessionPayload | null {
+  if (!token || typeof token !== "string") {
+    return null;
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const [payloadEncoded, signature] = parts;
+  if (!payloadEncoded || !signature) {
+    return null;
+  }
+
+  const expectedSignature = signString(payloadEncoded, getSecretKey());
+  if (
+    Buffer.from(signature).length !== Buffer.from(expectedSignature).length ||
+    !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+  ) {
+    return null;
+  }
+
+  try {
+    const jsonStr = base64UrlDecode(payloadEncoded);
+    const parsed = JSON.parse(jsonStr) as CapsterSessionPayload;
+
+    if (!parsed || parsed.role !== "capster") {
+      return null;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (parsed.exp && parsed.exp < nowSeconds) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function setCapsterSessionCookie(payload: Omit<CapsterSessionPayload, "exp">) {
+  const token = sealCapsterToken(payload);
+  try {
+    setCookie(CAPSTER_SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env["NODE_ENV"] === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_EXPIRATION_SECONDS,
+    });
+  } catch (err) {
+    console.warn("Could not set capster session cookie:", err);
+  }
+  return token;
+}
+
+export function getCapsterSession(): CapsterSessionPayload | null {
+  try {
+    const rawToken = getCookie(CAPSTER_SESSION_COOKIE);
+    return unsealCapsterToken(rawToken);
+  } catch {
+    return null;
+  }
+}
+
+export function clearCapsterSessionCookie() {
+  try {
+    deleteCookie(CAPSTER_SESSION_COOKIE, { path: "/" });
+  } catch (err) {
+    console.warn("Could not clear capster session cookie:", err);
+  }
+}
+
+/**
+ * Memvalidasi dan mengekstrak konteks Capster dari sesi server aktif.
+ */
+export function requireCapsterTenant(): {
+  userId: string;
+  email: string;
+  capsterId: string;
+  barbershopId: string;
+  barbershopName?: string;
+  namaLengkap: string;
+} {
+  const session = getCapsterSession();
+  if (!session || !session.userId || !session.capsterId || !session.barbershopId) {
+    throw new Error("Sesi Capster tidak valid atau belum login. Akses ditolak.");
+  }
+  return {
+    userId: session.userId,
+    email: session.email,
+    capsterId: session.capsterId,
+    barbershopId: session.barbershopId,
+    barbershopName: session.barbershopName,
+    namaLengkap: session.namaLengkap,
+  };
 }
 

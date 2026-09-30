@@ -19,9 +19,9 @@ import {
   layanan,
   capster,
   transaksi,
+  superadminAuditLogs,
 } from "@/db/schema";
-import { requireOwnerTenant, getOwnerSession } from "@/lib/auth-session";
-import { getSuperadminAuth } from "@/lib/superadmin-store";
+import { requireOwnerTenant, getOwnerSession, requireSuperadmin } from "@/lib/auth-session";
 import { logAudit } from "@/lib/audit";
 
 // ============================================================================
@@ -1181,10 +1181,7 @@ export const superadminGetSubscriptions = createServerFn({
   method: "GET",
 }).handler(async () => {
   // Verifikasi Superadmin
-  const hasAuth = getSuperadminAuth();
-  if (!hasAuth) {
-    throw new Error("Akses ditolak: Hanya Superadmin Platform yang berwenang.");
-  }
+  requireSuperadmin();
 
   const tenants = await db
     .select({
@@ -1234,10 +1231,7 @@ export const superadminGetSubscriptions = createServerFn({
 export const superadminGetCodes = createServerFn({
   method: "GET",
 }).handler(async () => {
-  const hasAuth = getSuperadminAuth();
-  if (!hasAuth) {
-    throw new Error("Akses ditolak.");
-  }
+  requireSuperadmin();
 
   return await db
     .select({
@@ -1272,10 +1266,7 @@ export const superadminGenerateCode = createServerFn({
     }) => data,
   )
   .handler(async ({ data }) => {
-    const hasAuth = getSuperadminAuth();
-    if (!hasAuth) {
-      throw new Error("Akses ditolak.");
-    }
+    const admin = requireSuperadmin();
 
     const [targetPlan] = await db
       .select({ plan_id: plan.plan_id, plan_name: plan.plan_name })
@@ -1301,6 +1292,17 @@ export const superadminGenerateCode = createServerFn({
       })
       .returning();
 
+    // Catat ke audit log superadmin
+    await db
+      .insert(superadminAuditLogs)
+      .values({
+        action: "GENERATE_SUBSCRIPTION_CODE",
+        actor_email: admin.email,
+        target_tenant_id: data.targetBarbershopId || undefined,
+        details: `Generate voucher langganan ${data.planName} (${durationDays} hari): ${created.code}. Catatan: ${data.notes || "-"}`,
+      })
+      .catch((e) => console.error("Audit generate code failed:", e));
+
     return {
       success: true,
       code: created.code,
@@ -1312,9 +1314,17 @@ export const superadminGenerateCode = createServerFn({
 export const superadminTriggerExpiryJob = createServerFn({
   method: "POST",
 }).handler(async () => {
-  const hasAuth = getSuperadminAuth();
-  if (!hasAuth) {
-    throw new Error("Akses ditolak.");
-  }
-  return await runDailySubscriptionExpiryJob();
+  const admin = requireSuperadmin();
+  const result = await runDailySubscriptionExpiryJob();
+
+  await db
+    .insert(superadminAuditLogs)
+    .values({
+      action: "TRIGGER_EXPIRY_JOB",
+      actor_email: admin.email,
+      details: `Trigger manual expiry/retention job: ${result.expiredCount} kedaluwarsa diproses, ${result.retainedCount} retensi diproses.`,
+    })
+    .catch((e) => console.error("Audit trigger expiry job failed:", e));
+
+  return result;
 });

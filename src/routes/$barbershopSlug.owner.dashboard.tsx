@@ -163,9 +163,11 @@ function OwnerDashboardPage() {
 
   const periodOptions: { key: OwnerPeriodFilter; label: string }[] = [
     { key: "today", label: "Hari ini" },
+    { key: "yesterday", label: "Kemarin" },
     { key: "7d", label: "7 Hari Terakhir" },
     { key: "30d", label: "30 Hari Terakhir" },
     { key: "month", label: "Bulan Ini" },
+    { key: "last_month", label: "Bulan Lalu" },
   ];
 
   // Filter transactions and performance based on search keyword if typed

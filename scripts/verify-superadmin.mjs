@@ -41,11 +41,12 @@ async function runVerification() {
   let newOwnerId = null;
 
   // Execute in an explicit database transaction
+  const testSlug = `test-shop-${testTimestamp}`;
   await client.begin(async (sql) => {
     // a. Insert barbershop
     const [shop] = await sql`
-      INSERT INTO barbershop (nama_barbershop, alamat, no_hp, status)
-      VALUES (${testShopName}, 'Jl. Pengujian No. 88', '081299998888', 'active')
+      INSERT INTO barbershop (nama_barbershop, slug, alamat, no_hp, status)
+      VALUES (${testShopName}, ${testSlug}, 'Jl. Pengujian No. 88', '081299998888', 'active')
       RETURNING id_barbershop, nama_barbershop;
     `;
     newShopId = shop.id_barbershop;

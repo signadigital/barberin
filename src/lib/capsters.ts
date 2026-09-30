@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray, ne, count } from "drizzle-orm";
 import { db } from "@/db";
 import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/db/schema";
-import { requireOwnerTenant } from "@/lib/auth-session";
+import { requireOwnerTenant, setCapsterSessionCookie, clearCapsterSessionCookie } from "@/lib/auth-session";
+import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
 import { logAudit } from "./audit";
 import { assertCapsterLimit } from "./subscriptions";
@@ -194,15 +195,29 @@ export const loginCapster = createServerFn({
       throw new Error("Akun capster tidak terdaftar di barbershop ini.");
     }
 
-    const expectedPassword = matched.password || "password";
-    if (inputPassword !== expectedPassword) {
+    // Verifikasi password aman (scrypt / legacy plaintext)
+    const verification = verifyPassword(inputPassword, matched.password || "");
+    if (!verification.valid) {
       throw new Error("Password yang Anda masukkan salah.");
+    }
+
+    // Upgrade hash legacy jika masih plaintext
+    if (verification.needsRehash) {
+      try {
+        const newHash = hashPassword(inputPassword);
+        await db
+          .update(users)
+          .set({ password: newHash, updated_at: new Date() })
+          .where(eq(users.id_user, matched.id_user));
+      } catch (rehashErr) {
+        console.warn("Gagal upgrade hash password capster:", rehashErr);
+      }
     }
 
     // Cek apakah toko capster sedang dinonaktifkan (suspended) jika belum dicek
     if (matched.id_barbershop && !targetShop) {
       const [shop] = await db
-        .select({ status: barbershop.status, slug: barbershop.slug })
+        .select({ status: barbershop.status, slug: barbershop.slug, nama_barbershop: barbershop.nama_barbershop })
         .from(barbershop)
         .where(eq(barbershop.id_barbershop, matched.id_barbershop))
         .limit(1);
@@ -211,9 +226,20 @@ export const loginCapster = createServerFn({
         throw new Error("Akun toko Anda sedang dinonaktifkan, hubungi admin.");
       }
       if (shop) {
-        targetShop = { id_barbershop: matched.id_barbershop, slug: shop.slug, status: shop.status };
+        targetShop = { id_barbershop: matched.id_barbershop, slug: shop.slug, status: shop.status, nama_barbershop: shop.nama_barbershop };
       }
     }
+
+    // Set secure server-side session cookie untuk Capster
+    setCapsterSessionCookie({
+      userId: matched.id_user,
+      email: matched.email,
+      role: "capster",
+      capsterId: matched.id_capster,
+      barbershopId: matched.id_barbershop,
+      barbershopName: targetShop?.nama_barbershop,
+      namaLengkap: matched.nama_lengkap,
+    });
 
     // Catat event audit login capster secara fail-safe
     try {
@@ -247,6 +273,9 @@ export const logoutCapsterAction = createServerFn({
       data,
   )
   .handler(async ({ data }) => {
+    // Clear server-side session cookie
+    clearCapsterSessionCookie();
+
     if (data?.barbershopId) {
       try {
         await logAudit({
@@ -488,7 +517,7 @@ export const createOwnerCapster = createServerFn({
       .values({
         nama_lengkap: nama,
         email,
-        password,
+        password: hashPassword(password),
         no_hp: data.no_hp?.trim() || null,
         role: "capster",
         status,
@@ -620,7 +649,7 @@ export const updateOwnerCapster = createServerFn({
     };
 
     if (data.password && data.password.trim()) {
-      userUpdateData.password = data.password.trim();
+      userUpdateData.password = hashPassword(data.password.trim());
     }
 
     await db

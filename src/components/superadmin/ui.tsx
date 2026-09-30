@@ -33,7 +33,7 @@ import {
 import { BarberinLogo } from "@/components/barberin/ui";
 import { formatWibClock, useLiveClock } from "@/lib/format";
 import { superadminActions, useSuperadmin, getSuperadminAuth } from "@/lib/superadmin-store";
-import type { SuperadminTenantItem } from "@/lib/superadmin";
+import { logoutSuperadmin, type SuperadminTenantItem } from "@/lib/superadmin";
 
 // ============================================================================
 // 0. SUPERADMIN AUTH GUARD
@@ -88,7 +88,12 @@ export function SuperadminSidebar({ activePath }: { activePath: string }) {
   const { user } = useSuperadmin();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutSuperadmin();
+    } catch (e) {
+      console.warn("Logout superadmin server failed:", e);
+    }
     superadminActions.logout();
     navigate({ to: "/superadmin/login" });
   };
@@ -271,7 +276,12 @@ export function SuperadminMobileHeader({
   const { user } = useSuperadmin();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutSuperadmin();
+    } catch (e) {
+      console.warn("Logout superadmin server failed:", e);
+    }
     superadminActions.logout();
     setDrawerOpen(false);
     navigate({ to: "/superadmin/login" });

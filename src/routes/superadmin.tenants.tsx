@@ -41,6 +41,7 @@ import {
   createTenantWithTransaction,
   toggleTenantStatus,
   logSuperadminAction,
+  startSuperadminImpersonation,
   type SuperadminTenantItem,
   type SuperadminStats,
 } from "@/lib/superadmin";
@@ -219,7 +220,7 @@ function SuperadminTenantsPage() {
     }
   };
 
-  // Handle Impersonate Toko
+  // Handle Impersonate Toko (Server-Side Signed Session)
   const handleImpersonate = async (tenant: SuperadminTenantItem) => {
     if (tenant.status === "suspended") {
       toast.error("Tidak Dapat Impersonate", {
@@ -228,34 +229,36 @@ function SuperadminTenantsPage() {
       return;
     }
 
-    // Set impersonate state
-    superadminActions.startImpersonate(
-      {
-        id_barbershop: tenant.id_barbershop,
-        nama_barbershop: tenant.nama_barbershop,
-        slug: tenant.slug,
-        alamat: tenant.alamat,
-        no_hp: tenant.no_hp,
-      },
-      tenant.owner,
-    );
+    try {
+      const res = await startSuperadminImpersonation({
+        data: {
+          id_barbershop: tenant.id_barbershop,
+        },
+      });
 
-    // Catat log audit
-    await logSuperadminAction({
-      data: {
-        action: "impersonate",
-        actor_email: user?.email || "superadmin@barberin.test",
-        target_tenant_id: tenant.id_barbershop,
-        target_tenant_name: tenant.nama_barbershop,
-        details: `Superadmin masuk sebagai Owner toko '${tenant.nama_barbershop}'.`,
-      },
-    }).catch(() => {});
+      // Set client impersonate state dengan data riil dari server
+      superadminActions.startImpersonate(
+        {
+          id_barbershop: tenant.id_barbershop,
+          nama_barbershop: tenant.nama_barbershop,
+          slug: tenant.slug,
+          alamat: tenant.alamat,
+          no_hp: tenant.no_hp,
+        },
+        res.owner,
+      );
 
-    toast.success("Masuk sebagai Toko Ini", {
-      description: `Beralih ke konteks ${tenant.nama_barbershop}.`,
-    });
+      toast.success("Masuk sebagai Toko Ini", {
+        description: `Beralih ke konteks ${tenant.nama_barbershop}.`,
+      });
 
-    navigate({ to: `/${tenant.slug}/owner/dashboard` as any });
+      navigate({ to: `/${tenant.slug}/owner/dashboard` as any });
+    } catch (err: any) {
+      console.error("Gagal impersonate:", err);
+      toast.error("Gagal Impersonasi", {
+        description: err?.message || "Gagal masuk mode impersonasi.",
+      });
+    }
   };
 
   return (

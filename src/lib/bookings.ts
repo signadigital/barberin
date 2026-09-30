@@ -107,13 +107,19 @@ export const createCustomerBookingAndTransaction = createServerFn({
       throw new Error("Capster tidak valid untuk barbershop ini.");
     }
 
-    // 3. Find or Create User & Pelanggan with tenant isolation (id_barbershop)
+    // 3. Find or Create User & Pelanggan with strict tenant isolation (id_barbershop)
     let userRow;
     if (customerPhone) {
       const existingUser = await db
         .select()
         .from(users)
-        .where(and(eq(users.no_hp, customerPhone), eq(users.role, "pelanggan")))
+        .where(
+          and(
+            eq(users.no_hp, customerPhone),
+            eq(users.role, "pelanggan"),
+            eq(users.id_barbershop, shop.id_barbershop),
+          ),
+        )
         .limit(1);
       userRow = existingUser[0];
     }
@@ -141,7 +147,12 @@ export const createCustomerBookingAndTransaction = createServerFn({
     let [pelangganRow] = await db
       .select()
       .from(pelanggan)
-      .where(eq(pelanggan.id_user, userRow.id_user))
+      .where(
+        and(
+          eq(pelanggan.id_user, userRow.id_user),
+          eq(pelanggan.id_barbershop, shop.id_barbershop),
+        ),
+      )
       .limit(1);
 
     if (!pelangganRow) {
@@ -1071,8 +1082,6 @@ export const getTransactionDetail = createServerFn({
       if (!shop) return null;
       targetShopId = shop.id_barbershop;
     }
-
-    await sweepExpiredRequestsAndPayments(targetShopId);
 
     const txRows = await db
       .select({

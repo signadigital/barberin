@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-export type PresetKey = "today" | "7d" | "month" | "custom";
+export type PresetKey =
+  | "today"
+  | "yesterday"
+  | "7d"
+  | "30d"
+  | "month"
+  | "last_month"
+  | "custom";
 
 export interface DateRangeResult {
   startDate: string; // YYYY-MM-DD
@@ -147,23 +154,37 @@ export function OwnerDateRangePicker({
       setDraftEnd(todayD);
       setDraftPreset("today");
       setViewMonth(new Date(todayD.getFullYear(), todayD.getMonth(), 1, 12));
+    } else if (preset === "yesterday") {
+      const yesterday = new Date(todayD.getTime() - 86400000);
+      setDraftStart(yesterday);
+      setDraftEnd(yesterday);
+      setDraftPreset("yesterday");
+      setViewMonth(new Date(yesterday.getFullYear(), yesterday.getMonth(), 1, 12));
     } else if (preset === "7d") {
-      // Minggu ini (Monday to Sunday)
-      const day = todayD.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const monday = new Date(todayD.getTime() + diffToMonday * 86400000);
-      const sunday = new Date(monday.getTime() + 6 * 86400000);
-      setDraftStart(monday);
-      setDraftEnd(sunday);
+      const start7d = new Date(todayD.getTime() - 6 * 86400000);
+      setDraftStart(start7d);
+      setDraftEnd(todayD);
       setDraftPreset("7d");
-      setViewMonth(new Date(monday.getFullYear(), monday.getMonth(), 1, 12));
+      setViewMonth(new Date(start7d.getFullYear(), start7d.getMonth(), 1, 12));
+    } else if (preset === "30d") {
+      const start30d = new Date(todayD.getTime() - 29 * 86400000);
+      setDraftStart(start30d);
+      setDraftEnd(todayD);
+      setDraftPreset("30d");
+      setViewMonth(new Date(start30d.getFullYear(), start30d.getMonth(), 1, 12));
     } else if (preset === "month") {
-      // Bulan ini (1st of month to last of month)
       const first = new Date(todayD.getFullYear(), todayD.getMonth(), 1, 12);
       const last = new Date(todayD.getFullYear(), todayD.getMonth() + 1, 0, 12);
       setDraftStart(first);
       setDraftEnd(last);
       setDraftPreset("month");
+      setViewMonth(new Date(first.getFullYear(), first.getMonth(), 1, 12));
+    } else if (preset === "last_month") {
+      const first = new Date(todayD.getFullYear(), todayD.getMonth() - 1, 1, 12);
+      const last = new Date(todayD.getFullYear(), todayD.getMonth(), 0, 12);
+      setDraftStart(first);
+      setDraftEnd(last);
+      setDraftPreset("last_month");
       setViewMonth(new Date(first.getFullYear(), first.getMonth(), 1, 12));
     } else {
       setDraftPreset("custom");
@@ -383,8 +404,11 @@ export function OwnerDateRangePicker({
             className="w-full appearance-none px-3 py-2 pr-8 bg-background border border-input rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary cursor-pointer"
           >
             <option value="today">Hari ini</option>
-            <option value="7d">Minggu ini</option>
+            <option value="yesterday">Kemarin</option>
+            <option value="7d">7 Hari Terakhir</option>
+            <option value="30d">30 Hari Terakhir</option>
             <option value="month">Bulan ini</option>
+            <option value="last_month">Bulan lalu</option>
             <option value="custom">Custom</option>
           </select>
           <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />

@@ -58,6 +58,7 @@ import {
 } from "@/lib/owner";
 import { ownerActions, useOwner, getOwnerAuth } from "@/lib/owner-store";
 import { useSuperadmin, superadminActions } from "@/lib/superadmin-store";
+import { exitSuperadminImpersonation } from "@/lib/superadmin";
 
 export function useTenantSlug(): string {
   const { user } = useOwner();
@@ -638,7 +639,12 @@ export function ImpersonateBanner() {
 
   if (!impersonation.isImpersonating) return null;
 
-  const handleExit = () => {
+  const handleExit = async () => {
+    try {
+      await exitSuperadminImpersonation();
+    } catch (e) {
+      console.warn("Gagal logout impersonate server-side:", e);
+    }
     superadminActions.stopImpersonate();
     navigate({ to: "/superadmin/tenants" });
   };

@@ -42,10 +42,7 @@ export async function calculateQueueEstimations(
   capsterId: string,
   referenceTime: Date = new Date(),
 ): Promise<QueueItemEstimation[]> {
-  // 1. Bersihkan request yang kadaluwarsa terlebih dahulu
-  await sweepExpiredRequestsAndPayments(barbershopId);
-
-  // 2. Ambil seluruh permintaan layanan aktif untuk capster di barbershop ini (termasuk yang baru masuk / pending_confirmation)
+  // 1. Ambil seluruh permintaan layanan aktif untuk capster di barbershop ini
   const activeStatuses: ("in_service" | "confirmed" | "waiting" | "pending_confirmation")[] = [
     "in_service",
     "confirmed",
@@ -53,7 +50,7 @@ export async function calculateQueueEstimations(
     "pending_confirmation",
   ];
 
-  const activeBookings = await db
+  const rawBookings = await db
     .select({
       id_booking: booking.id_booking,
       id_barbershop: booking.id_barbershop,
@@ -75,11 +72,23 @@ export async function calculateQueueEstimations(
     )
     .orderBy(asc(booking.waktu_permintaan), asc(booking.created_at));
 
+  // Filter booking pending_confirmation yang telah lewat batas 5 menit agar tidak dihitung dalam antrean
+  const activeBookings = rawBookings.filter((b) => {
+    if (b.status === "pending_confirmation") {
+      const reqTime = b.waktu_permintaan || b.created_at;
+      if (reqTime) {
+        const diffMinutes = (referenceTime.getTime() - reqTime.getTime()) / 60000;
+        if (diffMinutes > 5) return false;
+      }
+    }
+    return true;
+  });
+
   if (activeBookings.length === 0) {
     return [];
   }
 
-  // 3. Ambil detail layanan (durasi snapshot) untuk semua booking aktif
+  // 2. Ambil detail layanan (durasi snapshot & referensi layanan master)
   const bookingIds = activeBookings.map((b) => b.id_booking);
   const details = await db
     .select({
@@ -88,24 +97,33 @@ export async function calculateQueueEstimations(
       durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
       qty: detailBooking.qty,
       id_layanan: detailBooking.id_layanan,
+      master_durasi: layanan.durasi_menit,
+      master_nama: layanan.nama_layanan,
     })
     .from(detailBooking)
+    .leftJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
     .where(inArray(detailBooking.id_booking, bookingIds));
 
-  // Map total duration per booking
+  // Map total duration per booking (gunakan field durasi service riil, jangan hardcode)
   const durationMap = new Map<string, { totalDuration: number; names: string[] }>();
   for (const d of details) {
     const existing = durationMap.get(d.id_booking) ?? { totalDuration: 0, names: [] };
-    const dur = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
+    const dur =
+      (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0)
+        ? d.durasi_menit_snapshot
+        : (d.master_durasi && d.master_durasi > 0)
+          ? d.master_durasi
+          : 30;
     const qty = d.qty || 1;
     existing.totalDuration += dur * qty;
-    if (d.nama_layanan_snapshot) {
-      existing.names.push(d.nama_layanan_snapshot);
+    const serviceName = d.nama_layanan_snapshot || d.master_nama;
+    if (serviceName) {
+      existing.names.push(serviceName);
     }
     durationMap.set(d.id_booking, existing);
   }
 
-  // 4. Pisahkan yang sedang in_service (ambil booking in_service yang paling mutakhir/aktif)
+  // 3. Pisahkan yang sedang in_service (ambil booking in_service yang paling mutakhir/aktif)
   const inServiceBookings = activeBookings.filter((b) => b.status === "in_service");
   inServiceBookings.sort((a, b) => {
     const tA = (a.waktu_mulai_layanan ?? a.created_at).getTime();
@@ -130,14 +148,15 @@ export async function calculateQueueEstimations(
 
   if (inServiceBooking) {
     const info = durationMap.get(inServiceBooking.id_booking) ?? { totalDuration: 30, names: ["Layanan"] };
-    // started_at HARUS waktu pelayanan benar-benar dimulai (waktu_mulai_layanan)
-    // Jangan gunakan waktu_permintaan atau waktu_konfirmasi yang menyebabkan elapsed time menjadi durasi penuh
-    const startTime = inServiceBooking.waktu_mulai_layanan ?? inServiceBooking.created_at ?? referenceTime;
+    // started_at HARUS waktu pelayanan benar-benar dimulai (waktu_mulai_layanan atau waktu_konfirmasi)
+    // JANGAN gunakan created_at lama saat booking dibuat 40 menit lalu agar sisa waktu tidak menjadi 0
+    const startTime = inServiceBooking.waktu_mulai_layanan ?? inServiceBooking.waktu_konfirmasi ?? referenceTime;
     const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
-    inServiceRemaining = Math.max(0, info.totalDuration - elapsedMinutes);
+    // Jika masih in_service, pastikan sisa durasi realistis (minimal 5 menit)
+    inServiceRemaining = Math.max(5, info.totalDuration - elapsedMinutes);
 
-    const estStart = startTime; // Waktu aktual pelayanan dimulai
-    const estEnd = new Date(startTime.getTime() + info.totalDuration * 60000);
+    const estStart = startTime;
+    const estEnd = new Date(referenceTime.getTime() + inServiceRemaining * 60000);
 
     results.push({
       bookingId: inServiceBooking.id_booking,
@@ -272,23 +291,32 @@ export async function getBookingEstimation(
           durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
           nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
           qty: detailBooking.qty,
+          master_durasi: layanan.durasi_menit,
+          master_nama: layanan.nama_layanan,
         })
         .from(detailBooking)
+        .leftJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
         .where(eq(detailBooking.id_booking, bookingId));
 
       let totalDuration = 0;
       const names: string[] = [];
       for (const d of details) {
-        const dur = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
+        const dur =
+          (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0)
+            ? d.durasi_menit_snapshot
+            : (d.master_durasi && d.master_durasi > 0)
+              ? d.master_durasi
+              : 30;
         totalDuration += dur * (d.qty || 1);
-        if (d.nama_layanan_snapshot) names.push(d.nama_layanan_snapshot);
+        const sName = d.nama_layanan_snapshot || d.master_nama;
+        if (sName) names.push(sName);
       }
       if (totalDuration === 0) totalDuration = 30;
 
-      const startTime = b.waktu_mulai_layanan ?? referenceTime;
+      const startTime = b.waktu_mulai_layanan ?? b.waktu_konfirmasi ?? referenceTime;
       const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
-      const remaining = Math.max(0, totalDuration - elapsedMinutes);
-      const estEnd = new Date(startTime.getTime() + totalDuration * 60000);
+      const remaining = Math.max(5, totalDuration - elapsedMinutes);
+      const estEnd = new Date(referenceTime.getTime() + remaining * 60000);
 
       return {
         bookingId: b.id_booking,

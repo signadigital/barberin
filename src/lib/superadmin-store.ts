@@ -100,10 +100,8 @@ function emitChange() {
     try {
       if (currentState.user) {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentState.user));
-        document.cookie = `${COOKIE_KEY}=1; path=/; max-age=2592000; SameSite=Lax`;
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY);
-        document.cookie = `${COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
       }
 
       if (currentState.impersonation.isImpersonating) {
@@ -159,13 +157,17 @@ export const superadminActions = {
   ) => {
     const currentAdmin = currentState.user || DEFAULT_SUPERADMIN_USER;
 
+    if (!targetOwner || !targetOwner.id_user) {
+      throw new Error("Owner riil untuk tenant ini tidak ditemukan. Impersonasi dibatalkan.");
+    }
+
     const impersonationContext: ImpersonateContext = {
       isImpersonating: true,
       targetTenant: {
         id_barbershop: targetTenant.id_barbershop,
         nama_barbershop: targetTenant.nama_barbershop,
-        ownerName: targetOwner?.nama_lengkap,
-        ownerEmail: targetOwner?.email,
+        ownerName: targetOwner.nama_lengkap,
+        ownerEmail: targetOwner.email,
       },
       originalSuperadmin: currentAdmin,
     };
@@ -176,17 +178,17 @@ export const superadminActions = {
     };
     emitChange();
 
-    // Alihkan konteks Owner store ke toko target
+    // Alihkan konteks Owner store ke toko target secara aman dengan akun riil
     ownerActions.login({
-      id_user: targetOwner?.id_user || `impersonated-owner-${targetTenant.id_barbershop}`,
+      id_user: targetOwner.id_user,
       id_barbershop: targetTenant.id_barbershop,
       barbershopSlug: targetTenant.slug || targetTenant.id_barbershop,
-      email: targetOwner?.email || `owner-${targetTenant.id_barbershop.slice(0, 6)}@barberin.test`,
-      nama_lengkap: targetOwner?.nama_lengkap || `Owner ${targetTenant.nama_barbershop}`,
+      email: targetOwner.email,
+      nama_lengkap: targetOwner.nama_lengkap,
       role: "owner",
       barbershopName: targetTenant.nama_barbershop,
       alamat: targetTenant.alamat || "Alamat barbershop",
-      no_hp: targetOwner?.no_hp || targetTenant.no_hp || "0812-3456-7890",
+      no_hp: targetOwner.no_hp || targetTenant.no_hp || "0812-3456-7890",
       no_hp_barbershop: targetTenant.no_hp || "0812-3456-7890",
     });
   },
@@ -204,6 +206,7 @@ export const superadminActions = {
         originalSuperadmin: null,
       },
     };
+    ownerActions.logout();
     emitChange();
   },
 };

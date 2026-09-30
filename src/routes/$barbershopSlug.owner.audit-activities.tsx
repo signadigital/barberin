@@ -215,9 +215,11 @@ function OwnerAuditActivitiesPage() {
 
   const periodOptions: { key: OwnerPeriodFilter; label: string }[] = [
     { key: "today", label: "Hari ini" },
+    { key: "yesterday", label: "Kemarin" },
     { key: "7d", label: "7 Hari Terakhir" },
     { key: "30d", label: "30 Hari Terakhir" },
     { key: "month", label: "Bulan ini" },
+    { key: "last_month", label: "Bulan lalu" },
   ];
 
   const roleBadgeStyle = (r: string) => {
@@ -931,9 +933,11 @@ function OwnerAuditActivitiesPage() {
                   className="w-full px-3 py-2 bg-background border border-input rounded-xl text-foreground focus:outline-none focus:border-primary"
                 >
                   <option value="today">Hari ini</option>
+                  <option value="yesterday">Kemarin</option>
                   <option value="7d">7 Hari Terakhir</option>
                   <option value="30d">30 Hari Terakhir</option>
                   <option value="month">Bulan ini</option>
+                  <option value="last_month">Bulan lalu</option>
                 </select>
               </div>
 
