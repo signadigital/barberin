@@ -27,6 +27,7 @@ import {
   EyeOff,
   Sparkles,
   Globe,
+  CreditCard,
 } from "lucide-react";
 
 import { BarberinLogo } from "@/components/barberin/ui";
@@ -99,6 +100,11 @@ export function SuperadminSidebar({ activePath }: { activePath: string }) {
       icon: Store,
     },
     {
+      label: "Subscription & Paket",
+      href: "/superadmin/subscriptions",
+      icon: CreditCard,
+    },
+    {
       label: "Custom Domain (BPMN)",
       href: "/superadmin/domains",
       icon: Globe,
@@ -126,9 +132,7 @@ export function SuperadminSidebar({ activePath }: { activePath: string }) {
         <div className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
           Level Otoritas
         </div>
-        <div className="text-xs font-semibold text-white mt-0.5">
-          Superadmin Platform
-        </div>
+        <div className="text-xs font-semibold text-white mt-0.5">Superadmin Platform</div>
       </div>
 
       {/* Main Navigation */}
@@ -228,9 +232,7 @@ export function SuperadminHeader({
             title="Refresh Data"
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
           >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-400" : ""}`}
-            />
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-400" : ""}`} />
           </button>
         )}
 
@@ -291,9 +293,7 @@ export function SuperadminMobileHeader({
           <div className="flex items-center gap-2">
             <BarberinLogo className="h-7 w-7" />
             <div>
-              <div className="font-extrabold text-sm tracking-wider leading-none">
-                BARBERIN
-              </div>
+              <div className="font-extrabold text-sm tracking-wider leading-none">BARBERIN</div>
               <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider leading-none mt-0.5">
                 Superadmin
               </div>
@@ -332,9 +332,7 @@ export function SuperadminMobileHeader({
               <div className="flex items-center gap-2.5">
                 <BarberinLogo className="h-8 w-8" />
                 <div>
-                  <div className="font-extrabold text-white text-base leading-none">
-                    BARBERIN
-                  </div>
+                  <div className="font-extrabold text-white text-base leading-none">BARBERIN</div>
                   <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mt-0.5">
                     Admin Platform
                   </div>
@@ -350,9 +348,7 @@ export function SuperadminMobileHeader({
             </div>
 
             <div className="px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs mb-4">
-              <div className="text-[10px] uppercase font-bold text-blue-400">
-                Akun Aktif
-              </div>
+              <div className="text-[10px] uppercase font-bold text-blue-400">Akun Aktif</div>
               <div className="font-bold text-white mt-0.5">
                 {user?.nama_lengkap || "Superadmin Platform"}
               </div>
@@ -371,6 +367,18 @@ export function SuperadminMobileHeader({
               >
                 <Store className="h-4 w-4" />
                 <span>Manajemen Toko / Tenants</span>
+              </Link>
+              <Link
+                to="/superadmin/subscriptions"
+                onClick={() => setDrawerOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activePath === "/superadmin/subscriptions"
+                    ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <CreditCard className="h-4 w-4" />
+                <span>Subscription & Paket</span>
               </Link>
               <Link
                 to="/superadmin/domains"
@@ -421,9 +429,11 @@ export function SuperadminStatCard({
 }) {
   const variantStyles = {
     blue: "from-blue-600/20 to-blue-900/10 border-blue-500/30 text-blue-400 bg-blue-500/10",
-    emerald: "from-emerald-600/20 to-emerald-900/10 border-emerald-500/30 text-emerald-400 bg-emerald-500/10",
+    emerald:
+      "from-emerald-600/20 to-emerald-900/10 border-emerald-500/30 text-emerald-400 bg-emerald-500/10",
     amber: "from-amber-600/20 to-amber-900/10 border-amber-500/30 text-amber-400 bg-amber-500/10",
-    purple: "from-purple-600/20 to-purple-900/10 border-purple-500/30 text-purple-400 bg-purple-500/10",
+    purple:
+      "from-purple-600/20 to-purple-900/10 border-purple-500/30 text-purple-400 bg-purple-500/10",
   };
 
   return (
@@ -431,15 +441,9 @@ export function SuperadminStatCard({
       className={`rounded-2xl border p-5 bg-gradient-to-br ${variantStyles[variant]} shadow-sm flex items-center justify-between gap-4`}
     >
       <div>
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          {title}
-        </div>
-        <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-          {value}
-        </div>
-        {subtext && (
-          <div className="text-[11px] text-slate-400 mt-1">{subtext}</div>
-        )}
+        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</div>
+        <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">{value}</div>
+        {subtext && <div className="text-[11px] text-slate-400 mt-1">{subtext}</div>}
       </div>
 
       <div

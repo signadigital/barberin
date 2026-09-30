@@ -28,6 +28,7 @@ import {
   LogIn,
   Search,
   Palette,
+  CreditCard,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -139,10 +140,15 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
 
   const navItems = [
     { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "Langganan", href: getTenantPath(slug, "/owner/pricing"), icon: CreditCard },
     { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
     { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
     { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
-    { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
+    {
+      label: "Audit Aktivitas",
+      href: getTenantPath(slug, "/owner/audit-activities"),
+      icon: Activity,
+    },
     { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
     { label: "Tema", href: getTenantPath(slug, "/owner/theme"), icon: Palette },
   ];
@@ -305,10 +311,7 @@ export function OwnerNotificationBell({
     setReadIds(newSet);
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(
-          "barberin_owner_read_notifs",
-          JSON.stringify(Array.from(newSet)),
-        );
+        localStorage.setItem("barberin_owner_read_notifs", JSON.stringify(Array.from(newSet)));
       } catch {}
     }
   };
@@ -385,9 +388,7 @@ export function OwnerNotificationBell({
             <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-rose-500 animate-ping opacity-40 pointer-events-none" />
           </>
         ) : (
-          <span
-            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-muted-foreground/40 ring-2 ring-card"
-          />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-muted-foreground/40 ring-2 ring-card" />
         )}
       </button>
 
@@ -402,9 +403,7 @@ export function OwnerNotificationBell({
 
           <div
             className={`absolute right-0 top-[calc(100%+8px)] z-50 rounded-2xl shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-150 bg-card border border-border text-card-foreground ${
-              isMobile
-                ? "w-[330px] sm:w-[380px] -right-12 sm:right-0"
-                : "w-[420px]"
+              isMobile ? "w-[330px] sm:w-[380px] -right-12 sm:right-0" : "w-[420px]"
             }`}
           >
             {/* Header */}
@@ -651,9 +650,7 @@ export function ImpersonateBanner() {
           ⚠️
         </span>
         <span className="leading-snug">
-          <span className="uppercase tracking-wider font-extrabold mr-1.5">
-            Mode Impersonate
-          </span>
+          <span className="uppercase tracking-wider font-extrabold mr-1.5">Mode Impersonate</span>
           <span className="opacity-70">|</span>
           <span className="ml-1.5 font-normal">
             Anda sedang melihat:{" "}
@@ -707,65 +704,68 @@ export function OwnerHeader({
           searchPlaceholder ? "justify-between" : "justify-end"
         } px-8 py-3.5 sticky top-0 z-40 transition-colors bg-card/95 backdrop-blur-md border-b border-border text-card-foreground shadow-xs`}
       >
-      {/* Optional Left Search Bar (Wireframe-compliant) */}
-      {searchPlaceholder ? (
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={searchValue || ""}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl transition-all border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 focus:border-primary"
-          />
-        </div>
-      ) : null}
-
-      {/* Right Controls */}
-      <div className="flex items-center gap-4">
-        {/* Live Date & Time WIB */}
-        <div
-          className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium border bg-muted/60 border-border text-foreground shadow-xs"
-          title="Waktu Indonesia Barat (WIB)"
-        >
-          <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-          <span className="font-mono tracking-tight font-semibold">
-            {formatWibClock(liveTime, { withSeconds: true, withDay: true, withDate: true, withYear: true })}
-          </span>
-        </div>
-
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            title="Refresh Data"
-            className="p-2 rounded-xl transition-colors relative text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`}
+        {/* Optional Left Search Bar (Wireframe-compliant) */}
+        {searchPlaceholder ? (
+          <div className="relative max-w-sm w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={searchValue || ""}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl transition-all border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
-          </button>
-        )}
-
-        {/* Notification Bell */}
-        <OwnerNotificationBell variant={variant} />
-
-        {/* Owner Profile */}
-        <div className="flex items-center gap-3 pl-3 border-l border-border">
-          <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-md shadow-primary/20">
-            {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
           </div>
-          <div className="text-left">
-            <div className="text-sm font-semibold leading-tight text-foreground">
-              {user.nama_lengkap || "Owner"}
+        ) : null}
+
+        {/* Right Controls */}
+        <div className="flex items-center gap-4">
+          {/* Live Date & Time WIB */}
+          <div
+            className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium border bg-muted/60 border-border text-foreground shadow-xs"
+            title="Waktu Indonesia Barat (WIB)"
+          >
+            <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="font-mono tracking-tight font-semibold">
+              {formatWibClock(liveTime, {
+                withSeconds: true,
+                withDay: true,
+                withDate: true,
+                withYear: true,
+              })}
+            </span>
+          </div>
+
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              title="Refresh Data"
+              className="p-2 rounded-xl transition-colors relative text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+            </button>
+          )}
+
+          {/* Notification Bell */}
+          <OwnerNotificationBell variant={variant} />
+
+          {/* Owner Profile */}
+          <div className="flex items-center gap-3 pl-3 border-l border-border">
+            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-md shadow-primary/20">
+              {user?.nama_lengkap ? user.nama_lengkap.charAt(0) : "O"}
             </div>
-            <div className="text-xs leading-tight text-muted-foreground">
-              {branding?.nama_brand || user.barbershopName || "Barberin Barbershop"}
+            <div className="text-left">
+              <div className="text-sm font-semibold leading-tight text-foreground">
+                {user.nama_lengkap || "Owner"}
+              </div>
+              <div className="text-xs leading-tight text-muted-foreground">
+                {branding?.nama_brand || user.barbershopName || "Barberin Barbershop"}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
     </>
   );
 }
@@ -793,10 +793,15 @@ export function OwnerMobileHeader({
   const slug = useTenantSlug();
   const navItems = [
     { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "Langganan", href: getTenantPath(slug, "/owner/pricing"), icon: CreditCard },
     { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
     { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
     { label: "Manajemen Akun Capster", href: getTenantPath(slug, "/owner/capsters"), icon: Users },
-    { label: "Audit Aktivitas", href: getTenantPath(slug, "/owner/audit-activities"), icon: Activity },
+    {
+      label: "Audit Aktivitas",
+      href: getTenantPath(slug, "/owner/audit-activities"),
+      icon: Activity,
+    },
     { label: "Audit Keuangan", href: getTenantPath(slug, "/owner/audit-finance"), icon: FileText },
     { label: "Tema", href: getTenantPath(slug, "/owner/theme"), icon: Palette },
   ];
@@ -839,9 +844,7 @@ export function OwnerMobileHeader({
               onClick={onRefresh}
               className="p-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`}
-              />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
             </button>
           )}
 
@@ -879,9 +882,7 @@ export function OwnerMobileHeader({
             </div>
 
             <div className="py-4 border-b border-border">
-              <div className="text-sm font-semibold text-foreground">
-                {user.nama_lengkap}
-              </div>
+              <div className="text-sm font-semibold text-foreground">{user.nama_lengkap}</div>
               <div className="text-xs text-muted-foreground truncate">
                 {branding?.nama_brand || user.barbershopName}
               </div>
@@ -965,13 +966,16 @@ export function OwnerBottomNav({ activePath }: { activePath: string }) {
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border px-3 py-2 flex items-center justify-around shadow-lg">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = activePath === item.href || (Boolean(activePath) && item.href.endsWith(activePath));
+        const isActive =
+          activePath === item.href || (Boolean(activePath) && item.href.endsWith(activePath));
         return (
           <Link
             key={item.href}
             to={item.href}
             className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[11px] font-medium transition-colors ${
-              isActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
+              isActive
+                ? "text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Icon className="h-5 w-5 shrink-0" />
@@ -1008,22 +1012,18 @@ export function OwnerSummaryCard({
   return (
     <div className="bg-card border border-border rounded-2xl p-4 md:p-5 flex flex-col justify-between shadow-sm hover:border-border/80 transition-colors text-card-foreground">
       <div className="flex items-start justify-between gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
+        >
           <Icon className="h-5 w-5" />
         </div>
         {trend && (
           <div
             className={`text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1 ${
-              trendUp
-                ? "text-emerald-400 bg-emerald-500/10"
-                : "text-rose-400 bg-rose-500/10"
+              trendUp ? "text-emerald-400 bg-emerald-500/10" : "text-rose-400 bg-rose-500/10"
             }`}
           >
-            {trendUp ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : (
-              <TrendingDown className="h-3 w-3" />
-            )}
+            {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             <span>{trend}</span>
           </div>
         )}
@@ -1068,19 +1068,14 @@ export function RevenueChartCard({
         </div>
         <div className="text-right">
           <span className="text-xs text-muted-foreground">Total Periode:</span>
-          <div className="text-sm font-bold text-primary">
-            {formatRupiah(total)}
-          </div>
+          <div className="text-sm font-bold text-primary">{formatRupiah(total)}</div>
         </div>
       </div>
 
       <div className="h-56 md:h-64 w-full">
         {mounted && (data || []).length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data || []}
-              margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-            >
+            <AreaChart data={data || []} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
@@ -1112,9 +1107,7 @@ export function RevenueChartCard({
                     const cnt = (payload[0]?.payload as any)?.count || 0;
                     return (
                       <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-xl text-card-foreground">
-                        <div className="text-[11px] text-muted-foreground font-medium">
-                          {label}
-                        </div>
+                        <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
                         <div className="text-sm font-bold text-foreground mt-0.5">
                           {formatRupiah(rev)}
                         </div>
@@ -1180,9 +1173,7 @@ export function PaymentMethodsDonutCard({
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between text-card-foreground">
       <div className="mb-3">
         <h3 className="text-base font-semibold text-foreground">Metode Pembayaran</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Distribusi pembayaran pelanggan
-        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">Distribusi pembayaran pelanggan</p>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto">
@@ -1199,7 +1190,12 @@ export function PaymentMethodsDonutCard({
                   dataKey="value"
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="var(--card)"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
               </PieChart>
@@ -1214,9 +1210,7 @@ export function PaymentMethodsDonutCard({
               <span className="text-lg font-bold text-foreground leading-tight">
                 {totalTransactions}
               </span>
-              <span className="text-[10px] text-muted-foreground leading-tight">
-                Transaksi
-              </span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Transaksi</span>
             </div>
           )}
         </div>
@@ -1224,10 +1218,7 @@ export function PaymentMethodsDonutCard({
         {/* Legend */}
         <div className="space-y-3 w-full sm:w-auto flex-1">
           {methods.map((m) => (
-            <div
-              key={m.method}
-              className="flex items-center justify-between gap-3 text-xs"
-            >
+            <div key={m.method} className="flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <span
                   className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -1324,8 +1315,8 @@ export function RecentTransactionsTable({
                           tx.paymentMethod === "tunai"
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                             : tx.paymentMethod === "qris"
-                            ? "bg-blue-500/15 text-blue-600 dark:text-blue-300"
-                            : "bg-purple-500/15 text-purple-600 dark:text-purple-300"
+                              ? "bg-blue-500/15 text-blue-600 dark:text-blue-300"
+                              : "bg-purple-500/15 text-purple-600 dark:text-purple-300"
                         }`}
                       >
                         {tx.paymentMethodLabel}
@@ -1337,8 +1328,8 @@ export function RecentTransactionsTable({
                           isPaid
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                             : isCancelled
-                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
-                            : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                              ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+                              : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
                         }`}
                       >
                         {tx.status}
@@ -1541,9 +1532,7 @@ export function TransactionDetailModal({
           </div>
           <div>
             <h3 className="text-base font-bold text-foreground">Detail Transaksi</h3>
-            <p className="text-xs text-muted-foreground font-mono">
-              {transaction.shortId}
-            </p>
+            <p className="text-xs text-muted-foreground font-mono">{transaction.shortId}</p>
           </div>
         </div>
 
@@ -1555,8 +1544,8 @@ export function TransactionDetailModal({
                 transaction.status === "Selesai"
                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
                   : transaction.status === "Batal"
-                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
-                  : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+                    : "bg-amber-500/15 text-amber-600 dark:text-amber-300"
               }`}
             >
               {transaction.status}
@@ -1565,16 +1554,12 @@ export function TransactionDetailModal({
 
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Pelanggan</span>
-            <span className="text-foreground font-medium">
-              {transaction.customerName}
-            </span>
+            <span className="text-foreground font-medium">{transaction.customerName}</span>
           </div>
 
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Capster yang Melayani</span>
-            <span className="text-foreground font-medium">
-              {transaction.capsterName}
-            </span>
+            <span className="text-foreground font-medium">{transaction.capsterName}</span>
           </div>
 
           <div className="flex justify-between py-2 border-b border-border">
