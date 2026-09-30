@@ -5,6 +5,7 @@ import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/
 import { requireOwnerTenant } from "@/lib/auth-session";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
 import { logAudit } from "./audit";
+import { assertCapsterLimit } from "./subscriptions";
 
 export type CapsterView = {
   id: string;
@@ -476,6 +477,11 @@ export const createOwnerCapster = createServerFn({
     const password = data.password?.trim() || "password123";
     const status = data.status || "active";
 
+    // Subscription Limit Check (Bagian 32: Free: 1 capster, Pro: 5, Enterprise: Unlimited)
+    if (status === "active") {
+      await assertCapsterLimit(barbershopId);
+    }
+
     // 1. Create User
     const [newUser] = await db
       .insert(users)
@@ -599,6 +605,11 @@ export const updateOwnerCapster = createServerFn({
 
     const status = data.status || "active";
 
+    // Subscription Limit Check jika status diubah menjadi aktif
+    if (status === "active" && target.status !== "active") {
+      await assertCapsterLimit(barbershopId);
+    }
+
     // Update users
     const userUpdateData: any = {
       nama_lengkap: nama,
@@ -684,6 +695,11 @@ export const toggleOwnerCapsterStatus = createServerFn({
     }
 
     const newStatus = target.status === "active" ? "inactive" : "active";
+
+    // Subscription Limit Check jika status diubah menjadi aktif
+    if (newStatus === "active") {
+      await assertCapsterLimit(barbershopId);
+    }
 
     await db
       .update(capster)

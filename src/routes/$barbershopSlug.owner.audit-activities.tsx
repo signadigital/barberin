@@ -39,6 +39,7 @@ import {
   type OwnerActivityItem,
   type OwnerPeriodFilter,
 } from "@/lib/owner";
+import { FeatureLockedCard } from "@/components/subscription/FeatureLockedCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -259,6 +260,14 @@ function OwnerAuditActivitiesPage() {
         <OwnerHeader onRefresh={fetchActivities} isRefreshing={loading} />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-24 lg:pb-12 max-w-[1600px] w-full mx-auto">
+          {error && (error.includes("paket Pro") || error.includes("FEATURE_LOCKED")) ? (
+            <FeatureLockedCard
+              featureName="Log Audit Aktivitas"
+              description="Pencatatan riwayat audit lengkap (aktivitas capster, penghapusan transaksi, histori login/logout, rekonsiliasi kas) tersedia eksklusif pada paket Pro."
+              requiredPlan="PRO"
+            />
+          ) : (
+            <>
           {/* Header Title & Date Range */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -869,6 +878,8 @@ function OwnerAuditActivitiesPage() {
               </>
             )}
           </div>
+          </>
+          )}
         </main>
 
         <OwnerBottomNav activePath="/owner/audit-activities" />

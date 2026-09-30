@@ -18,6 +18,7 @@ import {
 import { getWibTimeString } from "@/lib/format";
 import { logAudit } from "./audit";
 import { sweepExpiredRequestsAndPayments } from "./expiration";
+import { assertMonthlyCutLimit } from "./subscriptions";
 import { calculateQueueEstimations } from "./estimation";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
 import { recordCommissionForTransaction } from "./commissions";
@@ -617,6 +618,9 @@ export const createManualTransaction = createServerFn({
     if (!pelangganRow) {
       throw new Error("Gagal memproses data pelanggan.");
     }
+
+    // Subscription Limit Check (Bagian 31: Free maks 50 cukur/bulan, Pro/Enterprise unlimited)
+    await assertMonthlyCutLimit(targetShopId);
 
     // 3. Find or Create active shift for capster
     let [activeShift] = await db

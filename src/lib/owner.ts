@@ -22,6 +22,7 @@ import {
   users,
 } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
+import { getCurrentPlan } from "./subscriptions";
 import {
   formatRupiah,
   formatTransactionId,
@@ -1088,6 +1089,16 @@ export const getOwnerAuditActivities = createServerFn({
     const tenant = requireOwnerTenant();
     const targetShopId = tenant.barbershopId;
 
+    // Feature Lock Check (Bagian 34: activity_audit hanya untuk Pro & Enterprise)
+    const currentPlan = await getCurrentPlan(targetShopId);
+    if (currentPlan.name === "FREE") {
+      const err = new Error("Fitur Log Audit Aktivitas tersedia pada paket Pro.");
+      (err as any).code = "FEATURE_LOCKED";
+      (err as any).featureKey = "activity_audit";
+      (err as any).requiredPlan = "PRO";
+      throw err;
+    }
+
     const period = data?.period || "today";
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =
       getPeriodDates(period, data?.startDate, data?.endDate);
@@ -1806,6 +1817,16 @@ export const getOwnerAuditFinance = createServerFn({
   .handler(async ({ data }): Promise<OwnerAuditFinanceResult> => {
     const tenant = requireOwnerTenant();
     const targetShopId = tenant.barbershopId;
+
+    // Feature Lock Check (Bagian 34: payment_audit, cash_on_hand, financial_audit hanya untuk Pro & Enterprise)
+    const currentPlan = await getCurrentPlan(targetShopId);
+    if (currentPlan.name === "FREE") {
+      const err = new Error("Fitur Audit Keuangan dan Rekonsiliasi Kas tersedia pada paket Pro.");
+      (err as any).code = "FEATURE_LOCKED";
+      (err as any).featureKey = "financial_audit";
+      (err as any).requiredPlan = "PRO";
+      throw err;
+    }
 
     const period = data?.period || "today";
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =

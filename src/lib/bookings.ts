@@ -19,6 +19,7 @@ import { logAudit } from "./audit";
 import { sweepExpiredRequestsAndPayments } from "./expiration";
 import { calculateQueueEstimations, getBookingEstimation } from "./estimation";
 import { recordCommissionForTransaction } from "./commissions";
+import { assertMonthlyCutLimit } from "./subscriptions";
 
 type CreateBookingInput = {
   customerName: string;
@@ -158,6 +159,9 @@ export const createCustomerBookingAndTransaction = createServerFn({
     if (!pelangganRow) {
       throw new Error("Gagal memproses data pelanggan.");
     }
+
+    // Subscription Limit Check (Bagian 31: Free maks 50 cukur/bulan, Pro/Enterprise unlimited)
+    await assertMonthlyCutLimit(shop.id_barbershop);
 
     // 4. Find or create active shift for selected capster
     let [activeShift] = await db

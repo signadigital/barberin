@@ -5,6 +5,7 @@ import { layanan, barbershop, detailBooking, booking } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
 import { logAudit } from "./audit";
+import { assertServiceLimit } from "./subscriptions";
 
 export type OwnerServiceItem = {
   id: string;
@@ -184,6 +185,9 @@ export const createOwnerService = createServerFn({
     if (isNaN(durasi) || !Number.isInteger(durasi) || durasi <= 0) {
       throw new Error("Waktu pelayanan wajib diisi dengan bilangan bulat positif lebih dari 0 menit.");
     }
+
+    // Subscription Limit Check (Bagian 33: Free maks 4 layanan, Pro/Enterprise unlimited)
+    await assertServiceLimit(barbershopId);
 
     const [created] = await db
       .insert(layanan)

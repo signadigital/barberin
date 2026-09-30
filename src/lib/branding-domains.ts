@@ -16,6 +16,7 @@ import {
   requireSuperadmin,
 } from "@/lib/auth-session";
 import { invalidateTenantCache } from "@/lib/tenant-resolver";
+import { getCurrentPlan } from "./subscriptions";
 
 // ============================================================================
 // TYPES & ENUMS (BPMN / ERD SESUAI SPESIFIKASI)
@@ -248,6 +249,17 @@ export const saveOwnerBranding = createServerFn({
 
     if (!session || !session.userId) {
       throw new Error("Sesi Owner tidak valid.");
+    }
+
+    // Subscription Entitlement Check (Bagian 35 & 36: White-label hanya untuk Enterprise)
+    const currentPlan = await getCurrentPlan(shopId);
+    if (currentPlan.name !== "ENTERPRISE") {
+      const err = new Error(
+        "Kustomisasi branding dan label putih (white-label) hanya tersedia untuk paket Enterprise (Rp199.000 / bulan). Silakan upgrade paket Anda.",
+      );
+      (err as any).code = "FEATURE_LOCKED";
+      (err as any).requiredPlan = "ENTERPRISE";
+      throw err;
     }
 
     // STEP 5 BPMN: Validasi Konfigurasi Input

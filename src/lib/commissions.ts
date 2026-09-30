@@ -17,6 +17,7 @@ import {
 } from "../db/schema.ts";
 import { logAudit } from "./audit.ts";
 import { formatRupiah } from "./format.ts";
+import { getCurrentPlan } from "./subscriptions.ts";
 
 export type CommissionCardState =
   | "can_withdraw" // Belum Terbayar (RpX) -> [ Ajukan Penarikan ]
@@ -687,6 +688,16 @@ export async function getOwnerCommissionRequestsLogic(data?: {
       counts: { all: 0, pending: 0, approved: 0, rejected: 0, paid: 0 },
       requests: [],
     };
+  }
+
+  // Feature Lock Check (Bagian 34: capster_commission hanya untuk Pro & Enterprise)
+  const currentPlan = await getCurrentPlan(targetShopId);
+  if (currentPlan.name === "FREE") {
+    const err = new Error("Fitur komisi capster tersedia pada paket Pro.");
+    (err as any).code = "FEATURE_LOCKED";
+    (err as any).featureKey = "capster_commission";
+    (err as any).requiredPlan = "PRO";
+    throw err;
   }
 
   const { startDate, endDate, label: dateRangeText } = parseCommissionDateRange(

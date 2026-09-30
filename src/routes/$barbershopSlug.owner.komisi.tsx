@@ -30,6 +30,7 @@ import {
 import { updateCapsterCommissionPercentage } from "@/lib/capsters";
 import { formatRupiah } from "@/lib/format";
 import { getOwnerSalaryData } from "@/lib/salary";
+import { FeatureLockedCard } from "@/components/subscription/FeatureLockedCard";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/komisi")({
   head: () => ({
@@ -58,7 +59,10 @@ function OwnerKomisiPage() {
           commissionActions.syncWithLiveSalaryData(liveSummary);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
+        if (err?.code === "FEATURE_LOCKED" || err?.message?.includes("paket Pro")) {
+          setIsLocked(true);
+        }
         console.warn("Gagal sinkron komisi dengan database:", err);
       });
     return () => {
@@ -72,6 +76,7 @@ function OwnerKomisiPage() {
   const [inputPercentage, setInputPercentage] = useState<string>("15");
 
   // Requests state
+  const [isLocked, setIsLocked] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectingRequest, setRejectingRequest] = useState<any | null>(null);
@@ -87,7 +92,12 @@ function OwnerKomisiPage() {
       .then((res: any) => {
         if (res?.requests) setRequests(res.requests);
       })
-      .catch((e) => console.error("Gagal memuat pengajuan komisi:", e));
+      .catch((e: any) => {
+        if (e?.code === "FEATURE_LOCKED" || e?.message?.includes("paket Pro")) {
+          setIsLocked(true);
+        }
+        console.error("Gagal memuat pengajuan komisi:", e);
+      });
   };
 
   useEffect(() => {
@@ -211,6 +221,14 @@ function OwnerKomisiPage() {
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-24 lg:pb-12 max-w-[1600px] w-full mx-auto">
+          {isLocked ? (
+            <FeatureLockedCard
+              featureName="Komisi & Bagi Hasil Capster"
+              description="Fitur persentase komisi, pencatatan otomatis per layanan, pengajuan penarikan, dan pembayaran bagi hasil capster tersedia eksklusif pada paket Pro."
+              requiredPlan="PRO"
+            />
+          ) : (
+            <>
           {/* Top Title & Navigation */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -524,6 +542,8 @@ function OwnerKomisiPage() {
               <li>Perubahan persentase komisi akan tercatat di Audit Aktivitas.</li>
             </ol>
           </div>
+          </>
+          )}
         </main>
 
         <OwnerBottomNav activePath="/owner/gaji" />

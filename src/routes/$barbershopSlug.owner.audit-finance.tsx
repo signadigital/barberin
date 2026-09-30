@@ -45,6 +45,8 @@ import {
 } from "@/lib/owner";
 import { OwnerDateRangePicker, type DateRangeResult } from "@/components/owner/date-range-picker";
 import { cn } from "@/lib/utils";
+import { FeatureLockedCard } from "@/components/subscription/FeatureLockedCard";
+import { verifyExportQuota, recordExportTokenConsumption } from "@/lib/subscriptions";
 
 export const Route = createFileRoute("/$barbershopSlug/owner/audit-finance")({
   head: () => ({
@@ -185,6 +187,9 @@ function OwnerAuditFinancePage() {
   const handleExportPDF = async () => {
     try {
       setIsExportingPdf(true);
+      // Validasi Kuota Token Ekspor (Bagian 37 & 38)
+      await verifyExportQuota();
+
       if (!data || data.totalTransactionsCount === 0) {
         toast.error("Tidak ada data transaksi untuk diekspor.");
         return;
@@ -502,6 +507,9 @@ function OwnerAuditFinancePage() {
       const safeSlug = (barbershopSlug || "barberin").replace(/[^a-zA-Z0-9_-]/g, "");
       doc.save(`audit-transaksi-${safeSlug}-${period}-${dateStr}.pdf`);
 
+      // Konsumsi token ekspor setelah sukses (Bagian 38)
+      await recordExportTokenConsumption();
+
       toast.success(`Berhasil mengunduh PDF (${listToExport.length} transaksi).`);
     } catch (err: any) {
       console.error("Gagal mengekspor PDF:", err);
@@ -514,6 +522,9 @@ function OwnerAuditFinancePage() {
   const handleExportCSV = async () => {
     try {
       setIsExporting(true);
+      // Validasi Kuota Token Ekspor (Bagian 37 & 38)
+      await verifyExportQuota();
+
       if (!data || data.totalTransactionsCount === 0) {
         toast.error("Tidak ada data transaksi untuk diekspor.");
         return;
@@ -603,6 +614,9 @@ function OwnerAuditFinancePage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      // Konsumsi token ekspor setelah sukses (Bagian 38)
+      await recordExportTokenConsumption();
+
       toast.success(`Berhasil mengekspor ${listToExport.length} transaksi ke CSV.`);
     } catch (err: any) {
       console.error("Gagal mengekspor CSV:", err);
@@ -670,6 +684,14 @@ function OwnerAuditFinancePage() {
         <OwnerHeader onRefresh={fetchFinanceData} isRefreshing={loading} />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-24 lg:pb-12 max-w-[1600px] w-full mx-auto">
+          {error && (error.includes("paket Pro") || error.includes("FEATURE_LOCKED")) ? (
+            <FeatureLockedCard
+              featureName="Audit Keuangan & Rekonsiliasi Kas"
+              description="Pemeriksaan rincian audit metode pembayaran (Tunai, QRIS, Transfer), cek selisih kas fisik di laci, dan jejak riwayat audit finansial tersedia eksklusif pada paket Pro."
+              requiredPlan="PRO"
+            />
+          ) : (
+            <>
           {/* Header Title & Date Range */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -1436,6 +1458,8 @@ function OwnerAuditFinancePage() {
               </table>
             </div>
           </div>
+          </>
+          )}
         </main>
 
         <OwnerBottomNav activePath="/owner/audit-finance" />
