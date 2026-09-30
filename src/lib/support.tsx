@@ -12,6 +12,9 @@ export interface SupportContact {
   description: string;
 }
 
+export const PRICING_WHATSAPP_NUMBER = "6281226244941";
+export const PRICING_WHATSAPP_DISPLAY = "+62 812-2624-4941";
+
 export const BARBERIN_SUPPORT_CONTACTS: SupportContact[] = [
   {
     name: "Fibula",
