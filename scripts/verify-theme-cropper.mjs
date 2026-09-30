@@ -37,19 +37,19 @@ const brandingContent = fs.readFileSync(brandingDomainsPath, "utf-8");
 const stylesContent = fs.readFileSync(stylesCssPath, "utf-8");
 const layoutContent = fs.readFileSync(layoutRoutePath, "utf-8");
 
-// TEST 1: Logo Cropper Configuration (Aspect Ratio 3:1 Horizontal)
+// TEST 1: Logo Cropper Configuration (Aspect Ratio 1:1 Persegi)
 assert(
-  cropperContent.includes("aspectRatio = 3 / 1") &&
-    themeContent.includes("aspectRatio={cropTarget === \"logo\" ? 3 / 1 : 1 / 1}"),
-  "TEST 1: Logo Cropper menggunakan aspect ratio horizontal 3:1",
-  "Aspect ratio 3/1 diterapkan untuk logo barbershop."
+  cropperContent.includes("aspectRatio = 1 / 1") &&
+    themeContent.includes("aspectRatio={1 / 1}"),
+  "TEST 1: Logo Cropper menggunakan aspect ratio persegi 1:1",
+  "Aspect ratio 1:1 diterapkan untuk logo barbershop."
 );
 
 // TEST 2: Favicon Cropper Configuration (Aspect Ratio 1:1 Square & 512x512)
 assert(
   cropperContent.includes("targetWidth = 512") &&
     cropperContent.includes("targetHeight = 512") &&
-    themeContent.includes("aspectRatio={cropTarget === \"logo\" ? 3 / 1 : 1 / 1}"),
+    themeContent.includes("aspectRatio={1 / 1}"),
   "TEST 2: Favicon Cropper menggunakan aspect ratio persegi 1:1 dan output standar 512x512",
   "Output canvas favicon distandarisasi ke 512x512 square PNG."
 );

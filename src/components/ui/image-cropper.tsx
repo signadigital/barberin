@@ -18,7 +18,7 @@ export interface ImageCropperProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageSrc: string | null;
-  aspectRatio?: number; // Default 3 / 1 untuk logo, 1 / 1 untuk favicon
+  aspectRatio?: number; // Default 1 / 1 (persegi)
   title?: string;
   description?: string;
   outputType?: "logo" | "favicon";
@@ -100,10 +100,10 @@ export async function getCroppedImg(
     targetWidth = 512;
     targetHeight = 512;
   } else {
-    // Untuk logo horizontal (maks lebar 900px untuk ketajaman retina dan performa hemat payload)
-    if (targetWidth > 900) {
-      const ratio = 900 / targetWidth;
-      targetWidth = 900;
+    // Untuk logo (maks lebar 800px untuk ketajaman retina dan performa hemat payload)
+    if (targetWidth > 800) {
+      const ratio = 800 / targetWidth;
+      targetWidth = 800;
       targetHeight = Math.round(targetHeight * ratio);
     }
   }
@@ -157,7 +157,7 @@ export function ImageCropper({
   open,
   onOpenChange,
   imageSrc,
-  aspectRatio = 3 / 1,
+  aspectRatio = 1 / 1,
   title = "Crop Gambar",
   description = "Geser dan sesuaikan area gambar yang ingin digunakan.",
   outputType = "logo",

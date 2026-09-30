@@ -479,7 +479,7 @@ function OwnerWhiteLabelingPage() {
                             <span className="text-rose-400">*</span>
                           </label>
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                            3:1 Horizontal
+                            1:1 Persegi
                           </span>
                         </div>
                         {logoUrl && (
@@ -527,7 +527,7 @@ function OwnerWhiteLabelingPage() {
                           <div className="flex items-center justify-between pt-1">
                             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                              <span>Logo Terpotong (3:1)</span>
+                              <span>Logo Terpotong (1:1)</span>
                             </span>
                             <div className="flex items-center gap-2">
                               <button
@@ -566,7 +566,7 @@ function OwnerWhiteLabelingPage() {
                             Upload &amp; Crop Logo
                           </div>
                           <div className="text-[11px] text-muted-foreground mt-0.5">
-                            Rasio horizontal 3:1 • Klik atau drag file di sini
+                            Rasio persegi 1:1 • Klik atau drag file di sini
                           </div>
                         </div>
                       )}
@@ -1172,7 +1172,7 @@ function OwnerWhiteLabelingPage() {
           </div>
         )}
 
-        {/* MODAL 4: IMAGE CROPPER (Logo 3:1 & Favicon 1:1) */}
+        {/* MODAL 4: IMAGE CROPPER (Logo 1:1 & Favicon 1:1) */}
         <ImageCropper
           open={cropperOpen}
           onOpenChange={(isOpen) => {
@@ -1183,12 +1183,12 @@ function OwnerWhiteLabelingPage() {
             }
           }}
           imageSrc={cropperImageSrc}
-          aspectRatio={cropTarget === "logo" ? 3 / 1 : 1 / 1}
+          aspectRatio={1 / 1}
           outputType={cropTarget}
           title={cropTarget === "logo" ? "Crop Logo Barbershop" : "Crop Favicon Tab"}
           description={
             cropTarget === "logo"
-              ? "Atur posisi dan perbesaran area logo dengan rasio 3:1 (horizontal). Hanya area di dalam bingkai yang akan digunakan."
+              ? "Atur posisi dan perbesaran area logo dengan rasio 1:1 (persegi). Hanya area di dalam bingkai yang akan digunakan."
               : "Atur posisi dan perbesaran area favicon dengan rasio 1:1 (persegi). Hanya area di dalam bingkai yang akan digunakan."
           }
           onCropComplete={handleCropComplete}
