@@ -26,11 +26,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "superadmin",
 ]);
 
-export const commonStatusEnum = pgEnum("common_status", [
-  "active",
-  "inactive",
-  "suspended",
-]);
+export const commonStatusEnum = pgEnum("common_status", ["active", "inactive", "suspended"]);
 
 export const bookingStatusEnum = pgEnum("booking_status", [
   "pending",
@@ -44,11 +40,7 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "expired",
 ]);
 
-export const shiftStatusEnum = pgEnum("shift_status", [
-  "ongoing",
-  "completed",
-  "cancelled",
-]);
+export const shiftStatusEnum = pgEnum("shift_status", ["ongoing", "completed", "cancelled"]);
 
 export const transaksiStatusEnum = pgEnum("transaksi_status", [
   "pending",
@@ -60,11 +52,7 @@ export const transaksiStatusEnum = pgEnum("transaksi_status", [
   "expired",
 ]);
 
-export const metodePembayaranEnum = pgEnum("metode_pembayaran", [
-  "tunai",
-  "qris",
-  "transfer",
-]);
+export const metodePembayaranEnum = pgEnum("metode_pembayaran", ["tunai", "qris", "transfer"]);
 
 export const pembayaranStatusEnum = pgEnum("pembayaran_status", [
   "pending",
@@ -125,10 +113,9 @@ export const users = pgTable(
     no_hp: varchar("no_hp", { length: 50 }),
     role: userRoleEnum("role").notNull(),
     status: commonStatusEnum("status").notNull().default("active"),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "set null" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "set null",
+    }),
     email_verified: boolean("email_verified").notNull().default(false),
     email_verified_at: timestamp("email_verified_at", { mode: "date" }),
     verification_status: varchar("verification_status", { length: 50 })
@@ -155,10 +142,9 @@ export const pelanggan = pgTable(
       .notNull()
       .unique()
       .references(() => users.id_user, { onDelete: "cascade" }),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "cascade" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     nama_pelanggan: varchar("nama_pelanggan", { length: 255 }),
     no_hp: varchar("no_hp", { length: 50 }),
     alamat: text("alamat"),
@@ -301,8 +287,9 @@ export const detailBooking = pgTable(
     id_booking: uuid("id_booking")
       .notNull()
       .references(() => booking.id_booking, { onDelete: "cascade" }),
-    id_barbershop: uuid("id_barbershop")
-      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     id_layanan: uuid("id_layanan")
       .notNull()
       .references(() => layanan.id_layanan, { onDelete: "restrict" }),
@@ -329,10 +316,9 @@ export const shiftCapster = pgTable(
     id_capster: uuid("id_capster")
       .notNull()
       .references(() => capster.id_capster, { onDelete: "cascade" }),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "cascade" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     tanggal: timestamp("tanggal", { mode: "date" }).notNull(),
     waktu_mulai: varchar("waktu_mulai", { length: 30 }).notNull(),
     waktu_selesai: varchar("waktu_selesai", { length: 30 }),
@@ -361,10 +347,9 @@ export const transaksi = pgTable(
   "transaksi",
   {
     id_transaksi: uuid("id_transaksi").defaultRandom().primaryKey(),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "restrict" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "restrict",
+    }),
     id_booking: uuid("id_booking").references(() => booking.id_booking, {
       onDelete: "set null",
     }),
@@ -378,13 +363,9 @@ export const transaksi = pgTable(
       onDelete: "restrict",
     }),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
-    diskon: numeric("diskon", { precision: 12, scale: 2 })
-      .notNull()
-      .default("0"),
+    diskon: numeric("diskon", { precision: 12, scale: 2 }).notNull().default("0"),
     total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-    status_transaksi: transaksiStatusEnum("status_transaksi")
-      .notNull()
-      .default("pending"),
+    status_transaksi: transaksiStatusEnum("status_transaksi").notNull().default("pending"),
     waktu_selesai_layanan: timestamp("waktu_selesai_layanan", { mode: "date" }),
     batas_pembayaran: timestamp("batas_pembayaran", { mode: "date" }),
     catatan_pemeriksaan: text("catatan_pemeriksaan"),
@@ -409,10 +390,9 @@ export const pembayaran = pgTable(
   "pembayaran",
   {
     id_pembayaran: uuid("id_pembayaran").defaultRandom().primaryKey(),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "cascade" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     id_transaksi: uuid("id_transaksi")
       .notNull()
       .references(() => transaksi.id_transaksi, { onDelete: "cascade" }),
@@ -421,9 +401,7 @@ export const pembayaran = pgTable(
       precision: 12,
       scale: 2,
     }).notNull(),
-    status_pembayaran: pembayaranStatusEnum("status_pembayaran")
-      .notNull()
-      .default("pending"),
+    status_pembayaran: pembayaranStatusEnum("status_pembayaran").notNull().default("pending"),
     waktu_bayar: timestamp("waktu_bayar", { mode: "date" }),
     batas_pembayaran: timestamp("batas_pembayaran", { mode: "date" }),
     dikonfirmasi_oleh: uuid("dikonfirmasi_oleh").references(() => users.id_user, {
@@ -447,18 +425,15 @@ export const struk = pgTable(
   "struk",
   {
     id_struk: uuid("id_struk").defaultRandom().primaryKey(),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "cascade" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     id_transaksi: uuid("id_transaksi")
       .notNull()
       .unique()
       .references(() => transaksi.id_transaksi, { onDelete: "cascade" }),
     no_struk: varchar("no_struk", { length: 50 }).notNull().unique(),
-    tanggal_cetak: timestamp("tanggal_cetak", { mode: "date" })
-      .notNull()
-      .defaultNow(),
+    tanggal_cetak: timestamp("tanggal_cetak", { mode: "date" }).notNull().defaultNow(),
     url_struk: text("url_struk"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
@@ -472,16 +447,13 @@ export const struk = pgTable(
 // ==============================
 // 12. ALASAN PEMBATALAN
 // ==============================
-export const alasanPembatalan = pgTable(
-  "alasan_pembatalan",
-  {
-    id_alasan: uuid("id_alasan").defaultRandom().primaryKey(),
-    tipe_aktor: varchar("tipe_aktor", { length: 50 }).notNull(), // 'pelanggan' | 'admin/capster'
-    alasan: varchar("alasan", { length: 100 }).notNull(),
-    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-  }
-);
+export const alasanPembatalan = pgTable("alasan_pembatalan", {
+  id_alasan: uuid("id_alasan").defaultRandom().primaryKey(),
+  tipe_aktor: varchar("tipe_aktor", { length: 50 }).notNull(), // 'pelanggan' | 'admin/capster'
+  alasan: varchar("alasan", { length: 100 }).notNull(),
+  created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+});
 
 // ==============================
 // 13. PEMBATALAN
@@ -497,9 +469,7 @@ export const pembatalan = pgTable(
       onDelete: "set null",
     }),
     dibatalkan_oleh: varchar("dibatalkan_oleh", { length: 50 }).notNull(), // 'pelanggan' | 'admin/capster'
-    waktu_pembatalan: timestamp("waktu_pembatalan", { mode: "date" })
-      .notNull()
-      .defaultNow(),
+    waktu_pembatalan: timestamp("waktu_pembatalan", { mode: "date" }).notNull().defaultNow(),
     catatan: text("catatan"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
@@ -517,10 +487,9 @@ export const pemeriksaanKeuangan = pgTable(
   "pemeriksaan_keuangan",
   {
     id_pemeriksaan: uuid("id_pemeriksaan").defaultRandom().primaryKey(),
-    id_barbershop: uuid("id_barbershop").references(
-      () => barbershop.id_barbershop,
-      { onDelete: "cascade" },
-    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     tanggal: timestamp("tanggal", { mode: "date" }).notNull().defaultNow(),
     periode: varchar("periode", { length: 50 }).notNull(),
     kas_sistem: numeric("kas_sistem", { precision: 12, scale: 2 }).notNull(),
@@ -531,9 +500,7 @@ export const pemeriksaanKeuangan = pgTable(
     keterangan: text("keterangan"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [
-    index("pemeriksaan_barbershop_idx").on(table.id_barbershop),
-  ],
+  (table) => [index("pemeriksaan_barbershop_idx").on(table.id_barbershop)],
 );
 
 // ==============================
@@ -768,15 +735,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   verificationTokens: many(ownerVerificationTokens),
 }));
 
-export const ownerVerificationTokensRelations = relations(
-  ownerVerificationTokens,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [ownerVerificationTokens.id_user],
-      references: [users.id_user],
-    }),
+export const ownerVerificationTokensRelations = relations(ownerVerificationTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [ownerVerificationTokens.id_user],
+    references: [users.id_user],
   }),
-);
+}));
 
 export const pelangganRelations = relations(pelanggan, ({ one, many }) => ({
   user: one(users, {
@@ -883,15 +847,12 @@ export const transaksiRelations = relations(transaksi, ({ one, many }) => ({
   }),
 }));
 
-export const pemeriksaanKeuanganRelations = relations(
-  pemeriksaanKeuangan,
-  ({ one }) => ({
-    barbershop: one(barbershop, {
-      fields: [pemeriksaanKeuangan.id_barbershop],
-      references: [barbershop.id_barbershop],
-    }),
+export const pemeriksaanKeuanganRelations = relations(pemeriksaanKeuangan, ({ one }) => ({
+  barbershop: one(barbershop, {
+    fields: [pemeriksaanKeuangan.id_barbershop],
+    references: [barbershop.id_barbershop],
   }),
-);
+}));
 
 export const pembayaranRelations = relations(pembayaran, ({ one }) => ({
   transaksi: one(transaksi, {
@@ -996,10 +957,7 @@ export const saasAccountStatusEnum = pgEnum("saas_account_status", [
   "suspended",
 ]);
 
-export const saasPlanStatusEnum = pgEnum("saas_plan_status", [
-  "active",
-  "archived",
-]);
+export const saasPlanStatusEnum = pgEnum("saas_plan_status", ["active", "archived"]);
 
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "pending",
@@ -1008,10 +966,12 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "cancelled",
 ]);
 
-export const subscriptionPaymentStatusEnum = pgEnum(
-  "subscription_payment_status",
-  ["pending", "success", "failed", "refunded"],
-);
+export const subscriptionPaymentStatusEnum = pgEnum("subscription_payment_status", [
+  "pending",
+  "success",
+  "failed",
+  "refunded",
+]);
 
 export const demoRequestStatusEnum = pgEnum("demo_request_status", [
   "pending",
@@ -1033,10 +993,7 @@ export const owner = pgTable(
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [
-    index("owner_email_idx").on(table.email),
-    index("owner_status_idx").on(table.status),
-  ],
+  (table) => [index("owner_email_idx").on(table.email), index("owner_status_idx").on(table.status)],
 );
 
 // 2. BUSINESS (Menyimpan data barbershop/bisnis di bawah Owner)
@@ -1047,6 +1004,9 @@ export const business = pgTable(
     owner_id: bigint("owner_id", { mode: "number" })
       .notNull()
       .references(() => owner.owner_id, { onDelete: "cascade" }),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     business_name: varchar("business_name", { length: 255 }).notNull(),
     status: saasAccountStatusEnum("status").notNull().default("active"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
@@ -1054,6 +1014,7 @@ export const business = pgTable(
   },
   (table) => [
     index("business_owner_idx").on(table.owner_id),
+    index("business_barbershop_idx").on(table.id_barbershop),
     index("business_status_idx").on(table.status),
   ],
 );
@@ -1066,10 +1027,10 @@ export const plan = pgTable(
     plan_name: varchar("plan_name", { length: 100 }).notNull().unique(),
     description: text("description"),
     price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
-    billing_period: varchar("billing_period", { length: 50 })
-      .notNull()
-      .default("monthly"),
+    billing_period: varchar("billing_period", { length: 50 }).notNull().default("monthly"),
     status: saasPlanStatusEnum("status").notNull().default("active"),
+    is_free: boolean("is_free").default(false),
+    sort_order: integer("sort_order").default(1),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
@@ -1084,6 +1045,7 @@ export const feature = pgTable(
   "feature",
   {
     feature_id: bigserial("feature_id", { mode: "number" }).primaryKey(),
+    feature_key: varchar("feature_key", { length: 100 }).unique(),
     feature_name: varchar("feature_name", { length: 255 }).notNull(),
     description: text("description"),
     module: varchar("module", { length: 100 }).notNull(),
@@ -1092,6 +1054,7 @@ export const feature = pgTable(
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [
+    index("feature_key_idx").on(table.feature_key),
     index("feature_module_idx").on(table.module),
     index("feature_status_idx").on(table.status),
   ],
@@ -1146,22 +1109,153 @@ export const subscriptionPayment = pgTable(
     subscription_payment_id: bigserial("subscription_payment_id", {
       mode: "number",
     }).primaryKey(),
-    subscription_id: bigint("subscription_id", { mode: "number" })
-      .notNull()
-      .references(() => subscription.subscription_id, { onDelete: "cascade" }),
+    subscription_id: bigint("subscription_id", { mode: "number" }).references(
+      () => subscription.subscription_id,
+      { onDelete: "cascade" },
+    ),
+    id_barbershop: uuid("id_barbershop").references(() => barbershop.id_barbershop, {
+      onDelete: "cascade",
+    }),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     payment_method: varchar("payment_method", { length: 50 }).notNull(),
     status: subscriptionPaymentStatusEnum("status").notNull().default("pending"),
     payment_date: timestamp("payment_date", { mode: "date" }).notNull().defaultNow(),
     reference_id: varchar("reference_id", { length: 255 }).notNull().unique(),
+    proof_image: text("proof_image"),
+    notes: text("notes"),
+    verified_by: uuid("verified_by").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
+    verified_at: timestamp("verified_at", { mode: "date" }),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [
     index("sub_payment_subscription_idx").on(table.subscription_id),
+    index("sub_payment_barbershop_idx").on(table.id_barbershop),
     index("sub_payment_status_idx").on(table.status),
     index("sub_payment_reference_idx").on(table.reference_id),
   ],
+);
+
+// 8. PLAN_FEATURE_LIMITS (Batas fitur per paket SaaS)
+export const planFeatureLimits = pgTable(
+  "plan_feature_limits",
+  {
+    id_limit: bigserial("id_limit", { mode: "number" }).primaryKey(),
+    plan_id: bigint("plan_id", { mode: "number" })
+      .notNull()
+      .references(() => plan.plan_id, { onDelete: "cascade" }),
+    feature_key: varchar("feature_key", { length: 100 }).notNull(),
+    is_enabled: boolean("is_enabled").notNull().default(true),
+    limit_value: integer("limit_value"),
+    limit_type: varchar("limit_type", { length: 50 }).notNull().default("quota"),
+    config_value: varchar("config_value", { length: 100 }),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("pfl_plan_idx").on(table.plan_id),
+    index("pfl_feature_key_idx").on(table.feature_key),
+  ],
+);
+
+// 9. SUBSCRIPTION_CODES (Kode redeem paket langganan)
+export const subscriptionCodes = pgTable(
+  "subscription_codes",
+  {
+    id_code: uuid("id_code").defaultRandom().primaryKey(),
+    code: varchar("code", { length: 100 }).notNull().unique(),
+    plan_id: bigint("plan_id", { mode: "number" })
+      .notNull()
+      .references(() => plan.plan_id, { onDelete: "restrict" }),
+    jenis: varchar("jenis", { length: 50 }).notNull().default("upgrade"),
+    durasi_hari: integer("durasi_hari").notNull().default(30),
+    status: varchar("status", { length: 50 }).notNull().default("unused"),
+    id_used_by: uuid("id_used_by").references(() => barbershop.id_barbershop, {
+      onDelete: "set null",
+    }),
+    used_at: timestamp("used_at", { mode: "date" }),
+    expired_at: timestamp("expired_at", { mode: "date" }),
+    created_by: uuid("created_by").references(() => users.id_user, {
+      onDelete: "set null",
+    }),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("sub_codes_code_idx").on(table.code),
+    index("sub_codes_status_idx").on(table.status),
+    index("sub_codes_plan_idx").on(table.plan_id),
+  ],
+);
+
+// 10. SUBSCRIPTION_REDEMPTIONS (Pencatatan penukaran kode redeem)
+export const subscriptionRedemptions = pgTable(
+  "subscription_redemptions",
+  {
+    id_redemption: uuid("id_redemption").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    id_code: uuid("id_code")
+      .notNull()
+      .references(() => subscriptionCodes.id_code, { onDelete: "restrict" }),
+    id_subscription: bigint("id_subscription", { mode: "number" })
+      .notNull()
+      .references(() => subscription.subscription_id, { onDelete: "cascade" }),
+    redeemed_at: timestamp("redeemed_at", { mode: "date" }).notNull().defaultNow(),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("sub_redemptions_barbershop_idx").on(table.id_barbershop),
+    index("sub_redemptions_code_idx").on(table.id_code),
+    index("sub_redemptions_subscription_idx").on(table.id_subscription),
+  ],
+);
+
+// 11. SUBSCRIPTION_HISTORIES (Riwayat perubahan siklus hidup paket langganan)
+export const subscriptionHistories = pgTable(
+  "subscription_histories",
+  {
+    id_history: uuid("id_history").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    id_subscription: bigint("id_subscription", { mode: "number" })
+      .notNull()
+      .references(() => subscription.subscription_id, { onDelete: "cascade" }),
+    id_plan: bigint("id_plan", { mode: "number" })
+      .notNull()
+      .references(() => plan.plan_id, { onDelete: "restrict" }),
+    status: varchar("status", { length: 50 }).notNull(),
+    start_date: timestamp("start_date", { mode: "date" }).notNull(),
+    end_date: timestamp("end_date", { mode: "date" }),
+    jenis: varchar("jenis", { length: 50 }).notNull(),
+    keterangan: text("keterangan"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("sub_histories_barbershop_idx").on(table.id_barbershop),
+    index("sub_histories_subscription_idx").on(table.id_subscription),
+    index("sub_histories_created_at_idx").on(table.created_at),
+  ],
+);
+
+// 12. SUBSCRIPTION_USAGE (Pelacakan kuota token ekspor dan pemakaian bulanan)
+export const subscriptionUsage = pgTable(
+  "subscription_usage",
+  {
+    id_usage: uuid("id_usage").defaultRandom().primaryKey(),
+    id_barbershop: uuid("id_barbershop")
+      .notNull()
+      .references(() => barbershop.id_barbershop, { onDelete: "cascade" }),
+    period_month: varchar("period_month", { length: 7 }).notNull(),
+    export_token_used: integer("export_token_used").notNull().default(0),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("sub_usage_barbershop_period_idx").on(table.id_barbershop, table.period_month)],
 );
 
 // 8. DEMO_REQUEST (Menyimpan permintaan demo dari calon pelanggan)
@@ -1169,10 +1263,9 @@ export const demoRequest = pgTable(
   "demo_request",
   {
     demo_request_id: bigserial("demo_request_id", { mode: "number" }).primaryKey(),
-    owner_id: bigint("owner_id", { mode: "number" }).references(
-      () => owner.owner_id,
-      { onDelete: "set null" },
-    ),
+    owner_id: bigint("owner_id", { mode: "number" }).references(() => owner.owner_id, {
+      onDelete: "set null",
+    }),
     name: varchar("name", { length: 255 }).notNull(),
     email: varchar("email", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 50 }).notNull(),
@@ -1237,15 +1330,72 @@ export const subscriptionRelations = relations(subscription, ({ one, many }) => 
   payments: many(subscriptionPayment),
 }));
 
-export const subscriptionPaymentRelations = relations(
-  subscriptionPayment,
-  ({ one }) => ({
-    subscription: one(subscription, {
-      fields: [subscriptionPayment.subscription_id],
-      references: [subscription.subscription_id],
-    }),
+export const subscriptionPaymentRelations = relations(subscriptionPayment, ({ one }) => ({
+  subscription: one(subscription, {
+    fields: [subscriptionPayment.subscription_id],
+    references: [subscription.subscription_id],
   }),
-);
+  barbershop: one(barbershop, {
+    fields: [subscriptionPayment.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+}));
+
+export const planFeatureLimitsRelations = relations(planFeatureLimits, ({ one }) => ({
+  plan: one(plan, {
+    fields: [planFeatureLimits.plan_id],
+    references: [plan.plan_id],
+  }),
+}));
+
+export const subscriptionCodesRelations = relations(subscriptionCodes, ({ one, many }) => ({
+  plan: one(plan, {
+    fields: [subscriptionCodes.plan_id],
+    references: [plan.plan_id],
+  }),
+  usedByBarbershop: one(barbershop, {
+    fields: [subscriptionCodes.id_used_by],
+    references: [barbershop.id_barbershop],
+  }),
+  redemptions: many(subscriptionRedemptions),
+}));
+
+export const subscriptionRedemptionsRelations = relations(subscriptionRedemptions, ({ one }) => ({
+  barbershop: one(barbershop, {
+    fields: [subscriptionRedemptions.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+  code: one(subscriptionCodes, {
+    fields: [subscriptionRedemptions.id_code],
+    references: [subscriptionCodes.id_code],
+  }),
+  subscription: one(subscription, {
+    fields: [subscriptionRedemptions.id_subscription],
+    references: [subscription.subscription_id],
+  }),
+}));
+
+export const subscriptionHistoriesRelations = relations(subscriptionHistories, ({ one }) => ({
+  barbershop: one(barbershop, {
+    fields: [subscriptionHistories.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+  subscription: one(subscription, {
+    fields: [subscriptionHistories.id_subscription],
+    references: [subscription.subscription_id],
+  }),
+  plan: one(plan, {
+    fields: [subscriptionHistories.id_plan],
+    references: [plan.plan_id],
+  }),
+}));
+
+export const subscriptionUsageRelations = relations(subscriptionUsage, ({ one }) => ({
+  barbershop: one(barbershop, {
+    fields: [subscriptionUsage.id_barbershop],
+    references: [barbershop.id_barbershop],
+  }),
+}));
 
 export const demoRequestRelations = relations(demoRequest, ({ one }) => ({
   owner: one(owner, {
@@ -1273,11 +1423,26 @@ export type NewFeature = typeof feature.$inferInsert;
 export type PlanFeature = typeof planFeature.$inferSelect;
 export type NewPlanFeature = typeof planFeature.$inferInsert;
 
+export type PlanFeatureLimit = typeof planFeatureLimits.$inferSelect;
+export type NewPlanFeatureLimit = typeof planFeatureLimits.$inferInsert;
+
 export type Subscription = typeof subscription.$inferSelect;
 export type NewSubscription = typeof subscription.$inferInsert;
 
 export type SubscriptionPayment = typeof subscriptionPayment.$inferSelect;
 export type NewSubscriptionPayment = typeof subscriptionPayment.$inferInsert;
+
+export type SubscriptionCode = typeof subscriptionCodes.$inferSelect;
+export type NewSubscriptionCode = typeof subscriptionCodes.$inferInsert;
+
+export type SubscriptionRedemption = typeof subscriptionRedemptions.$inferSelect;
+export type NewSubscriptionRedemption = typeof subscriptionRedemptions.$inferInsert;
+
+export type SubscriptionHistory = typeof subscriptionHistories.$inferSelect;
+export type NewSubscriptionHistory = typeof subscriptionHistories.$inferInsert;
+
+export type SubscriptionUsage = typeof subscriptionUsage.$inferSelect;
+export type NewSubscriptionUsage = typeof subscriptionUsage.$inferInsert;
 
 export type DemoRequest = typeof demoRequest.$inferSelect;
 export type NewDemoRequest = typeof demoRequest.$inferInsert;
@@ -1335,9 +1500,7 @@ export const barbershopBrandings = pgTable(
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [
-    index("barbershop_brandings_shop_idx").on(table.id_barbershop),
-  ],
+  (table) => [index("barbershop_brandings_shop_idx").on(table.id_barbershop)],
 );
 
 export const brandingHistories = pgTable(
@@ -1352,9 +1515,7 @@ export const brandingHistories = pgTable(
     data_after: jsonb("data_after"),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [
-    index("branding_histories_branding_idx").on(table.id_branding),
-  ],
+  (table) => [index("branding_histories_branding_idx").on(table.id_branding)],
 );
 
 export const customDomains = pgTable(
@@ -1396,9 +1557,7 @@ export const domainVerificationLogs = pgTable(
     checked_at: timestamp("checked_at", { mode: "date" }).notNull().defaultNow(),
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [
-    index("domain_verif_logs_domain_idx").on(table.id_domain),
-  ],
+  (table) => [index("domain_verif_logs_domain_idx").on(table.id_domain)],
 );
 
 // Relations

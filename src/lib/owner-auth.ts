@@ -1,7 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, or, desc } from "drizzle-orm";
 import { db } from "@/db";
-import { barbershop, business, layanan, owner, ownerVerificationTokens, users } from "@/db/schema";
+import {
+  barbershop,
+  business,
+  layanan,
+  owner,
+  ownerVerificationTokens,
+  users,
+  plan,
+  subscription,
+  subscriptionHistories,
+} from "@/db/schema";
 import {
   detectEmailOrPhone,
   generateVerificationToken,
@@ -242,7 +252,7 @@ async function handleRegisterOwner(data: OwnerRegisterInput) {
         throw new Error("Gagal membuat akun owner di database.");
       }
 
-      // Step C: Sinkronisasi ke model SaaS (owner & business)
+      // Step C: Sinkronisasi ke model SaaS (owner, business, FREE subscription, history)
       const [saasOwner] = await tx
         .insert(owner)
         .values({
@@ -255,11 +265,47 @@ async function handleRegisterOwner(data: OwnerRegisterInput) {
         .returning();
 
       if (saasOwner) {
-        await tx.insert(business).values({
-          owner_id: saasOwner.owner_id,
-          business_name: namaBarbershop,
-          status: "inactive",
-        });
+        const [biz] = await tx
+          .insert(business)
+          .values({
+            owner_id: saasOwner.owner_id,
+            id_barbershop: shop.id_barbershop,
+            business_name: namaBarbershop,
+            status: "active",
+          })
+          .returning();
+
+        if (biz) {
+          const [freePlan] = await tx
+            .select({ plan_id: plan.plan_id })
+            .from(plan)
+            .where(eq(plan.plan_name, "FREE"))
+            .limit(1);
+
+          const freePlanId = freePlan ? freePlan.plan_id : 1;
+
+          const [newSub] = await tx
+            .insert(subscription)
+            .values({
+              business_id: biz.business_id,
+              plan_id: freePlanId,
+              status: "active",
+              start_date: new Date(),
+              end_date: null,
+            })
+            .returning();
+
+          await tx.insert(subscriptionHistories).values({
+            id_barbershop: shop.id_barbershop,
+            id_subscription: newSub.subscription_id,
+            id_plan: freePlanId,
+            status: "active",
+            start_date: new Date(),
+            end_date: null,
+            jenis: "register_free",
+            keterangan: "Inisialisasi paket gratis (Free) bawaan tenant",
+          });
+        }
       }
 
       // Step D: Zero State - Toko baru dimulai bersih tanpa layanan bawaan

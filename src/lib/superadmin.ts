@@ -3,8 +3,13 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
+  business,
   capster,
   layanan,
+  owner,
+  plan,
+  subscription,
+  subscriptionHistories,
   superadminAuditLogs,
   users,
 } from "@/db/schema";
@@ -375,8 +380,61 @@ export const createTenantWithTransaction = createServerFn({
           throw new Error("Gagal membuat akun Owner untuk toko.");
         }
 
-        // STEP 3: Toko baru dimulai dalam kondisi bersih (0 layanan, 0 capster, 0 transaksi)
-        // Jangan menyalin data apa pun dari owner lain!
+        // STEP 3: Sinkronisasi model SaaS (owner, business, FREE active subscription)
+        const [saasOwner] = await tx
+          .insert(owner)
+          .values({
+            name: newOwner.nama_lengkap || namaOwner,
+            email: newOwner.email,
+            phone: newOwner.no_hp || noHpOwner,
+            password_hash: "MANAGED_VIA_USERS_TABLE",
+            status: "active",
+          })
+          .returning();
+
+        if (saasOwner) {
+          const [biz] = await tx
+            .insert(business)
+            .values({
+              owner_id: saasOwner.owner_id,
+              id_barbershop: newShop.id_barbershop,
+              business_name: newShop.nama_barbershop,
+              status: "active",
+            })
+            .returning();
+
+          if (biz) {
+            const [freePlan] = await tx
+              .select({ plan_id: plan.plan_id })
+              .from(plan)
+              .where(eq(plan.plan_name, "FREE"))
+              .limit(1);
+
+            const freePlanId = freePlan ? freePlan.plan_id : 1;
+
+            const [newSub] = await tx
+              .insert(subscription)
+              .values({
+                business_id: biz.business_id,
+                plan_id: freePlanId,
+                status: "active",
+                start_date: new Date(),
+                end_date: null,
+              })
+              .returning();
+
+            await tx.insert(subscriptionHistories).values({
+              id_barbershop: newShop.id_barbershop,
+              id_subscription: newSub.subscription_id,
+              id_plan: freePlanId,
+              status: "active",
+              start_date: new Date(),
+              end_date: null,
+              jenis: "register_free",
+              keterangan: "Inisialisasi paket gratis (Free) bawaan tenant",
+            });
+          }
+        }
 
         // STEP 4: Catat ke audit log platform
         await tx.insert(superadminAuditLogs).values({
