@@ -34,7 +34,7 @@ import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   getOwnerAuditActivities,
-  deleteOwnerTransactions,
+  deleteOwnerAuditActivities,
   type OwnerAuditActivitiesResult,
   type OwnerActivityItem,
   type OwnerPeriodFilter,
@@ -73,7 +73,7 @@ function OwnerAuditActivitiesPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Selection & Deletion States
-  const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
+  const [selectedAuditIds, setSelectedAuditIds] = useState<string[]>([]);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState<OwnerActivityItem | null>(null);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -89,62 +89,56 @@ function OwnerAuditActivitiesPage() {
 
   // Clear selections when filters or search change
   useEffect(() => {
-    setSelectedTxIds([]);
+    setSelectedAuditIds([]);
   }, [period, role, activityType, search]);
 
-  const pageTxIds = useMemo(() => {
+  const pageAuditIds = useMemo(() => {
     if (!data?.activities) return [];
-    const ids: string[] = [];
-    data.activities.forEach((item) => {
-      if (item.transactionId && !ids.includes(item.transactionId)) {
-        ids.push(item.transactionId);
-      }
-    });
-    return ids;
+    return data.activities.map((item) => item.id);
   }, [data?.activities]);
 
-  const allFilteredTxIds = useMemo(
-    () => data?.allFilteredTransactionIds || [],
-    [data?.allFilteredTransactionIds]
+  const allFilteredAuditIds = useMemo(
+    () => data?.allFilteredAuditIds || [],
+    [data?.allFilteredAuditIds]
   );
 
   const isAllPageSelected =
-    pageTxIds.length > 0 && pageTxIds.every((id) => selectedTxIds.includes(id));
+    pageAuditIds.length > 0 && pageAuditIds.every((id) => selectedAuditIds.includes(id));
   const isSomePageSelected =
-    pageTxIds.some((id) => selectedTxIds.includes(id)) && !isAllPageSelected;
+    pageAuditIds.some((id) => selectedAuditIds.includes(id)) && !isAllPageSelected;
 
   const handleToggleSelectAllPage = () => {
     if (isAllPageSelected) {
-      setSelectedTxIds((prev) => prev.filter((id) => !pageTxIds.includes(id)));
+      setSelectedAuditIds((prev) => prev.filter((id) => !pageAuditIds.includes(id)));
     } else {
-      setSelectedTxIds((prev) => Array.from(new Set([...prev, ...pageTxIds])));
+      setSelectedAuditIds((prev) => Array.from(new Set([...prev, ...pageAuditIds])));
     }
   };
 
-  const handleToggleRow = (txId: string) => {
-    setSelectedTxIds((prev) =>
-      prev.includes(txId) ? prev.filter((x) => x !== txId) : [...prev, txId]
+  const handleToggleRow = (auditId: string) => {
+    setSelectedAuditIds((prev) =>
+      prev.includes(auditId) ? prev.filter((x) => x !== auditId) : [...prev, auditId]
     );
   };
 
   const handleConfirmSingleDelete = async () => {
-    if (!singleDeleteTarget || !singleDeleteTarget.transactionId) return;
+    if (!singleDeleteTarget || !singleDeleteTarget.id) return;
     try {
       setIsDeleting(true);
-      const txId = singleDeleteTarget.transactionId;
-      const res = await deleteOwnerTransactions({
-        data: { transactionIds: [txId] },
+      const auditId = singleDeleteTarget.id;
+      const res = await deleteOwnerAuditActivities({
+        data: { auditIds: [auditId] },
       });
-      toast.success(res.message || "Transaksi berhasil dihapus permanen.");
+      toast.success(res.message || "Aktivitas berhasil dihapus.");
       setSingleDeleteTarget(null);
-      setSelectedTxIds((prev) => prev.filter((id) => id !== txId));
+      setSelectedAuditIds((prev) => prev.filter((id) => id !== auditId));
       await fetchActivities();
       await router.invalidate();
     } catch (err: any) {
-      console.error("Gagal menghapus transaksi:", err);
+      console.error("Gagal menghapus aktivitas:", err);
       toast.error(
         err?.message ||
-          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database."
+          "Gagal menghapus aktivitas. Silakan coba lagi."
       );
     } finally {
       setIsDeleting(false);
@@ -152,25 +146,25 @@ function OwnerAuditActivitiesPage() {
   };
 
   const handleConfirmBulkDelete = async () => {
-    if (selectedTxIds.length === 0) return;
+    if (selectedAuditIds.length === 0) return;
     try {
       setIsDeleting(true);
-      const countToDelete = selectedTxIds.length;
-      const res = await deleteOwnerTransactions({
-        data: { transactionIds: selectedTxIds },
+      const countToDelete = selectedAuditIds.length;
+      const res = await deleteOwnerAuditActivities({
+        data: { auditIds: selectedAuditIds },
       });
       toast.success(
-        res.message || `${countToDelete} transaksi berhasil dihapus permanen.`
+        res.message || `${countToDelete} aktivitas berhasil dihapus.`
       );
       setIsBulkDeleteOpen(false);
-      setSelectedTxIds([]);
+      setSelectedAuditIds([]);
       await fetchActivities();
       await router.invalidate();
     } catch (err: any) {
-      console.error("Gagal menghapus transaksi terpilih:", err);
+      console.error("Gagal menghapus aktivitas terpilih:", err);
       toast.error(
         err?.message ||
-          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database."
+          "Gagal menghapus aktivitas. Silakan coba lagi."
       );
     } finally {
       setIsDeleting(false);
@@ -541,16 +535,16 @@ function OwnerAuditActivitiesPage() {
             </div>
 
             {/* Selection Toolbar Banner */}
-            {selectedTxIds.length > 0 && (
+            {selectedAuditIds.length > 0 && (
               <div className="mt-4 p-3 bg-muted/90 border border-primary/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150 shadow-xs">
                 <div className="flex items-center gap-2.5">
                   <span className="text-xs font-bold text-foreground">
-                    {selectedTxIds.length} transaksi dipilih
+                    {selectedAuditIds.length} aktivitas dipilih
                   </span>
                   <span className="text-muted-foreground text-xs">•</span>
                   <button
                     type="button"
-                    onClick={() => setSelectedTxIds([])}
+                    onClick={() => setSelectedAuditIds([])}
                     className="text-xs text-primary font-medium hover:underline cursor-pointer"
                   >
                     Batalkan Pilihan
@@ -562,29 +556,29 @@ function OwnerAuditActivitiesPage() {
                   className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus {selectedTxIds.length} Transaksi</span>
+                  <span>Hapus yang Dipilih ({selectedAuditIds.length})</span>
                 </button>
               </div>
             )}
 
             {/* Select All Filtered Prompt Banner */}
-            {isAllPageSelected && allFilteredTxIds.length > pageTxIds.length && (
+            {isAllPageSelected && allFilteredAuditIds.length > pageAuditIds.length && (
               <div className="mt-3 px-3.5 py-2.5 bg-primary/10 border border-primary/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <span>
-                  {selectedTxIds.length === allFilteredTxIds.length ? (
+                  {selectedAuditIds.length === allFilteredAuditIds.length ? (
                     <>
-                      Seluruh <strong className="text-foreground font-semibold">{allFilteredTxIds.length}</strong> transaksi hasil filter telah dipilih.
+                      Seluruh <strong className="text-foreground font-semibold">{allFilteredAuditIds.length}</strong> aktivitas hasil filter telah dipilih.
                     </>
                   ) : (
                     <>
-                      Semua <strong className="text-foreground font-semibold">{pageTxIds.length}</strong> transaksi di halaman ini terpilih.
+                      Semua <strong className="text-foreground font-semibold">{pageAuditIds.length}</strong> aktivitas di halaman ini terpilih.
                     </>
                   )}
                 </span>
-                {selectedTxIds.length === allFilteredTxIds.length ? (
+                {selectedAuditIds.length === allFilteredAuditIds.length ? (
                   <button
                     type="button"
-                    onClick={() => setSelectedTxIds(pageTxIds)}
+                    onClick={() => setSelectedAuditIds(pageAuditIds)}
                     className="text-primary font-bold hover:underline cursor-pointer text-left sm:text-right"
                   >
                     Batalkan pilihan seluruh filter (hanya halaman ini)
@@ -592,10 +586,10 @@ function OwnerAuditActivitiesPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setSelectedTxIds(allFilteredTxIds)}
+                    onClick={() => setSelectedAuditIds(allFilteredAuditIds)}
                     className="text-primary font-bold hover:underline cursor-pointer text-left sm:text-right"
                   >
-                    Pilih seluruh {allFilteredTxIds.length} transaksi hasil filter
+                    Pilih seluruh {allFilteredAuditIds.length} aktivitas hasil filter
                   </button>
                 )}
               </div>
@@ -631,7 +625,7 @@ function OwnerAuditActivitiesPage() {
                                     : false
                               }
                               onCheckedChange={handleToggleSelectAllPage}
-                              aria-label="Pilih semua transaksi pada halaman ini"
+                              aria-label="Pilih semua aktivitas pada halaman ini"
                             />
                           </div>
                         </th>
@@ -652,21 +646,17 @@ function OwnerAuditActivitiesPage() {
                           key={item.id}
                           className={cn(
                             "hover:bg-muted/50 transition-colors group",
-                            item.transactionId && selectedTxIds.includes(item.transactionId) && "bg-primary/5 hover:bg-primary/10"
+                            selectedAuditIds.includes(item.id) && "bg-primary/5 hover:bg-primary/10"
                           )}
                         >
                           <td className="py-3.5 px-3 text-center">
-                            {item.transactionId ? (
-                              <div className="flex items-center justify-center">
-                                <Checkbox
-                                  checked={selectedTxIds.includes(item.transactionId)}
-                                  onCheckedChange={() => handleToggleRow(item.transactionId!)}
-                                  aria-label={`Pilih transaksi ${item.dataTerkait}`}
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground/30 text-[10px]">—</span>
-                            )}
+                            <div className="flex items-center justify-center">
+                              <Checkbox
+                                checked={selectedAuditIds.includes(item.id)}
+                                onCheckedChange={() => handleToggleRow(item.id)}
+                                aria-label={`Pilih aktivitas ${item.id}`}
+                              />
+                            </div>
                           </td>
                           <td className="py-3.5 px-3 text-muted-foreground">{item.no}</td>
                           <td className="py-3.5 px-3 text-muted-foreground font-mono text-[11px]">
@@ -711,17 +701,15 @@ function OwnerAuditActivitiesPage() {
                                 <span>Lihat Detail</span>
                                 <ArrowRight className="h-3 w-3" />
                               </Link>
-                              {item.transactionId && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSingleDeleteTarget(item)}
-                                  className="text-destructive hover:text-destructive/80 font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
-                                  title="Hapus transaksi ini secara permanen"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  <span>Hapus</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => setSingleDeleteTarget(item)}
+                                className="text-destructive hover:text-destructive/80 font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer"
+                                title="Hapus aktivitas ini secara permanen"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>Hapus</span>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -737,20 +725,16 @@ function OwnerAuditActivitiesPage() {
                       key={item.id}
                       className={cn(
                         "bg-card border border-border rounded-xl p-3.5 transition-colors",
-                        item.transactionId && selectedTxIds.includes(item.transactionId) && "border-primary/50 bg-primary/5"
+                        selectedAuditIds.includes(item.id) && "border-primary/50 bg-primary/5"
                       )}
                     >
                       <div className="flex items-center justify-between text-xs pb-2 border-b border-border">
                         <div className="flex items-center gap-2.5">
-                          {item.transactionId ? (
-                            <Checkbox
-                              checked={selectedTxIds.includes(item.transactionId)}
-                              onCheckedChange={() => handleToggleRow(item.transactionId!)}
-                              aria-label={`Pilih transaksi ${item.dataTerkait}`}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground/30 text-[10px] w-4 text-center">—</span>
-                          )}
+                          <Checkbox
+                            checked={selectedAuditIds.includes(item.id)}
+                            onCheckedChange={() => handleToggleRow(item.id)}
+                            aria-label={`Pilih aktivitas ${item.id}`}
+                          />
                           <span className="text-muted-foreground font-mono text-[11px]">
                             {item.waktu}
                           </span>
@@ -795,16 +779,14 @@ function OwnerAuditActivitiesPage() {
                             <span>Detail</span>
                             <ArrowRight className="h-3 w-3" />
                           </Link>
-                          {item.transactionId && (
-                            <button
-                              type="button"
-                              onClick={() => setSingleDeleteTarget(item)}
-                              className="text-destructive hover:bg-destructive/10 font-semibold px-2 py-1 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span>Hapus</span>
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSingleDeleteTarget(item)}
+                            className="text-destructive hover:bg-destructive/10 font-semibold px-2 py-1 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Hapus</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1004,7 +986,7 @@ function OwnerAuditActivitiesPage() {
 
       {/* Modal Single Delete Confirmation Dialog */}
       <AlertDialog
-        open={!!singleDeleteTarget}
+        open={Boolean(singleDeleteTarget)}
         onOpenChange={(open) => !isDeleting && !open && setSingleDeleteTarget(null)}
       >
         <AlertDialogContent className="max-w-md">
@@ -1014,34 +996,31 @@ function OwnerAuditActivitiesPage() {
                 <Trash2 className="h-5 w-5" />
               </div>
               <AlertDialogTitle className="text-base font-bold text-foreground">
-                Hapus transaksi?
+                Hapus aktivitas ini?
               </AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
               <span>
-                Anda akan menghapus transaksi:
+                Apakah Anda yakin ingin menghapus aktivitas ini secara permanen dari database Supabase?
               </span>
               <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-1.5 font-mono text-xs">
                 <div className="font-bold text-primary font-mono text-sm">
-                  {singleDeleteTarget?.dataTerkait}
+                  {singleDeleteTarget?.aktivitas}
                 </div>
-                {singleDeleteTarget?.details?.nominal !== undefined && (
-                  <div className="text-muted-foreground font-sans text-xs">
-                    Nominal: <strong className="text-foreground">{formatRupiah(singleDeleteTarget.details.nominal)}</strong>
-                  </div>
-                )}
                 <div className="text-muted-foreground font-sans text-xs">
                   Pengguna: <strong className="text-foreground">{singleDeleteTarget?.pengguna}</strong> ({singleDeleteTarget?.role})
                 </div>
                 <div className="text-muted-foreground font-sans text-xs">
-                  Aktivitas: {singleDeleteTarget?.aktivitas}
-                </div>
-                <div className="text-muted-foreground font-sans text-xs">
                   Waktu: {singleDeleteTarget?.waktu}
                 </div>
+                {singleDeleteTarget?.dataTerkait && singleDeleteTarget.dataTerkait !== "-" && (
+                  <div className="text-muted-foreground font-sans text-xs">
+                    Data Terkait: <strong className="text-foreground font-mono">{singleDeleteTarget.dataTerkait}</strong>
+                  </div>
+                )}
               </div>
               <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
-                Data transaksi dan data terkait yang memang menjadi bagian dari transaksi akan dihapus secara permanen.
+                Data rekaman aktivitas audit akan dihapus secara permanen dari database Supabase. Akun pengguna, transaksi, dan data bisnis lainnya tetap aman dan tidak akan terhapus.
               </div>
               <div className="font-semibold text-foreground text-xs">
                 Tindakan ini tidak dapat dibatalkan.
@@ -1072,7 +1051,7 @@ function OwnerAuditActivitiesPage() {
               ) : (
                 <>
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus Permanen</span>
+                  <span>Hapus</span>
                 </>
               )}
             </button>
@@ -1092,15 +1071,15 @@ function OwnerAuditActivitiesPage() {
                 <Trash2 className="h-5 w-5" />
               </div>
               <AlertDialogTitle className="text-base font-bold text-foreground">
-                Hapus {selectedTxIds.length} transaksi?
+                Hapus {selectedAuditIds.length} aktivitas?
               </AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
               <span>
-                <strong className="text-foreground">{selectedTxIds.length} transaksi</strong> akan dihapus secara permanen dari database.
+                Anda akan menghapus <strong className="text-foreground">{selectedAuditIds.length} aktivitas</strong> secara permanen. Data yang dihapus tidak dapat dikembalikan.
               </span>
               <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
-                Data transaksi dan data terkait yang memang menjadi bagian dari transaksi akan dihapus secara permanen.
+                Data rekaman aktivitas audit akan dihapus secara permanen dari database Supabase. Akun pengguna, data transaksi, dan entitas bisnis lainnya tetap aman dan tidak akan terhapus.
               </div>
               <div className="font-semibold text-foreground text-xs">
                 Tindakan ini tidak dapat dibatalkan.
@@ -1131,7 +1110,7 @@ function OwnerAuditActivitiesPage() {
               ) : (
                 <>
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Hapus Permanen</span>
+                  <span>Hapus yang Dipilih</span>
                 </>
               )}
             </button>

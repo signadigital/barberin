@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { CAPSTERS, type Capster } from "@/lib/barberin-store";
+import { logoutCapsterAction } from "./capsters";
 
 export { CAPSTERS, type Capster };
 
@@ -215,7 +216,7 @@ export function getUrlTenantSlug(): string | null {
     parts[0] !== "customer" &&
     parts[0] !== "superadmin"
   ) {
-    return parts[0];
+    return parts[0] ?? null;
   }
   return null;
 }
@@ -523,6 +524,20 @@ export const capsterActions = {
   logout(targetSlug?: string | null) {
     const slug = targetSlug || state.barbershopSlug || state.barbershopId || getUrlTenantSlug();
     const capId = state.capsterId;
+    const bId = state.barbershopId;
+    const capName = state.capsterName;
+
+    // Trigger audit log logout secara asynchronous
+    if (bId) {
+      logoutCapsterAction({
+        data: {
+          barbershopId: bId,
+          capsterId: capId || undefined,
+          name: capName || undefined,
+        },
+      }).catch((err) => console.error("Gagal mencatat audit logout capster:", err));
+    }
+
     if (typeof window !== "undefined") {
       try {
         if (slug) {

@@ -27,7 +27,7 @@ import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   getOwnerAuditActivityDetail,
-  deleteOwnerTransactions,
+  deleteOwnerAuditActivities,
   type OwnerActivityItem,
 } from "@/lib/owner";
 import {
@@ -71,21 +71,21 @@ function OwnerAuditActivityDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleDeleteTransaction = async () => {
-    if (!activity?.transactionId) return;
+  const handleDeleteActivity = async () => {
+    if (!activity?.id) return;
     try {
       setIsDeleting(true);
-      const res = await deleteOwnerTransactions({
-        data: { transactionIds: [activity.transactionId] },
+      const res = await deleteOwnerAuditActivities({
+        data: { auditIds: [activity.id] },
       });
-      toast.success(res.message || "Transaksi berhasil dihapus permanen.");
+      toast.success(res.message || "Aktivitas berhasil dihapus.");
       setIsDeleteDialogOpen(false);
       navigate({ to: `/${barbershopSlug}/owner/audit-activities` as any });
     } catch (err: any) {
-      console.error("Gagal menghapus transaksi:", err);
+      console.error("Gagal menghapus aktivitas:", err);
       toast.error(
         err?.message ||
-          "Gagal menghapus transaksi. Data tidak berhasil dihapus dari database."
+          "Gagal menghapus aktivitas. Silakan coba lagi."
       );
     } finally {
       setIsDeleting(false);
@@ -182,17 +182,15 @@ function OwnerAuditActivityDetailPage() {
 
                   <div className="flex items-center gap-2">
                     {statusBadge(activity.status)}
-                    {activity.transactionId && (
-                      <button
-                        type="button"
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                        className="px-3 py-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 rounded-full text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Hapus transaksi ini secara permanen"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span>Hapus Transaksi</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="px-3 py-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 rounded-full text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Hapus aktivitas ini secara permanen"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Hapus Aktivitas</span>
+                    </button>
                   </div>
                 </div>
 
@@ -328,20 +326,23 @@ function OwnerAuditActivityDetailPage() {
                 <Trash2 className="h-5 w-5" />
               </div>
               <AlertDialogTitle className="text-base font-bold text-foreground">
-                Hapus transaksi?
+                Hapus aktivitas?
               </AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-xs text-muted-foreground space-y-3 pt-2 text-left">
               <span>
-                Anda akan menghapus transaksi:
+                Apakah Anda yakin ingin menghapus aktivitas ini secara permanen?
               </span>
               <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-1.5 font-mono text-xs">
-                <div className="font-bold text-primary font-mono text-sm">
-                  {activity?.dataTerkait}
+                <div className="font-bold text-foreground font-sans text-sm">
+                  {activity?.aktivitas}
                 </div>
-                {activity?.details?.nominal !== undefined && (
-                  <div className="text-muted-foreground font-sans text-xs">
-                    Nominal: <strong className="text-foreground">{formatRupiah(activity.details.nominal)}</strong>
+                <div className="text-primary font-mono text-xs">
+                  ID: {activity?.id}
+                </div>
+                {activity?.dataTerkait && (
+                  <div className="text-muted-foreground font-mono text-xs">
+                    Data Terkait: <strong className="text-foreground">{activity.dataTerkait}</strong>
                   </div>
                 )}
                 <div className="text-muted-foreground font-sans text-xs">
@@ -352,7 +353,7 @@ function OwnerAuditActivityDetailPage() {
                 </div>
               </div>
               <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 font-medium text-[11px]">
-                Data transaksi dan data terkait yang memang menjadi bagian dari transaksi akan dihapus secara permanen.
+                Data audit aktivitas ini akan dihapus secara permanen dari database Supabase. Akun pengguna dan data bisnis terkait (seperti transaksi/layanan) tidak akan terhapus.
               </div>
               <div className="font-semibold text-foreground text-xs">
                 Tindakan ini tidak dapat dibatalkan.
@@ -369,7 +370,7 @@ function OwnerAuditActivityDetailPage() {
             <button
               type="button"
               disabled={isDeleting}
-              onClick={handleDeleteTransaction}
+              onClick={handleDeleteActivity}
               className={cn(
                 buttonVariants({ variant: "destructive" }),
                 "text-xs font-semibold gap-1.5 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"

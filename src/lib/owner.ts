@@ -3,6 +3,7 @@ import { and, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-o
 import { db } from "@/db";
 import {
   alasanPembatalan,
+  auditLog,
   barbershop,
   booking,
   capster,
@@ -1068,6 +1069,7 @@ export type OwnerAuditActivitiesResult = {
     isShiftUp: boolean;
   };
   activities: OwnerActivityItem[];
+  allFilteredAuditIds: string[];
   allFilteredTransactionIds?: string[];
   totalCount: number;
   totalPages: number;
@@ -1090,137 +1092,68 @@ export const getOwnerAuditActivities = createServerFn({
     const { startDate, endDate, prevStartDate, prevEndDate, deltaLabel } =
       getPeriodDates(period, data?.startDate, data?.endDate);
 
-    const [txRows, cancelRows, payRows, shiftRows, userRows, capsterRows] =
-      await Promise.all([
-        // 1. Transaksi
-        db
-          .select({
-            id_transaksi: transaksi.id_transaksi,
-            id_shift: transaksi.id_shift,
-            id_pelanggan: transaksi.id_pelanggan,
-            total: transaksi.total,
-            status_transaksi: transaksi.status_transaksi,
-            created_at: transaksi.created_at,
-            customerName: users.nama_lengkap,
-            capsterId: shiftCapster.id_capster,
-          })
-          .from(transaksi)
-          .leftJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
-          .leftJoin(users, eq(pelanggan.id_user, users.id_user))
-          .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
-          .where(
-            and(
-              eq(transaksi.id_barbershop, targetShopId),
-              gte(transaksi.created_at, startDate),
-              lte(transaksi.created_at, endDate),
-            ),
-          )
-          .orderBy(desc(transaksi.created_at)),
+    const [auditRows, txRows, capsterRows] = await Promise.all([
+      // 1. Audit Log (Event nyata tersimpan di database Supabase)
+      db
+        .select({
+          id_audit: auditLog.id_audit,
+          id_barbershop: auditLog.id_barbershop,
+          id_user: auditLog.id_user,
+          aksi: auditLog.aksi,
+          entity_type: auditLog.entity_type,
+          entity_id: auditLog.entity_id,
+          alasan: auditLog.alasan,
+          created_at: auditLog.created_at,
+          userName: users.nama_lengkap,
+          userRole: users.role,
+        })
+        .from(auditLog)
+        .leftJoin(users, eq(auditLog.id_user, users.id_user))
+        .where(
+          and(
+            eq(auditLog.id_barbershop, targetShopId),
+            gte(auditLog.created_at, startDate),
+            lte(auditLog.created_at, endDate),
+          ),
+        )
+        .orderBy(desc(auditLog.created_at)),
 
-        // 2. Pembatalan
-        db
-          .select({
-            id_pembatalan: pembatalan.id_pembatalan,
-            id_transaksi: pembatalan.id_transaksi,
-            dibatalkan_oleh: pembatalan.dibatalkan_oleh,
-            waktu_pembatalan: pembatalan.waktu_pembatalan,
-            catatan: pembatalan.catatan,
-            alasan_text: alasanPembatalan.alasan,
-          })
-          .from(pembatalan)
-          .innerJoin(transaksi, eq(pembatalan.id_transaksi, transaksi.id_transaksi))
-          .leftJoin(
-            alasanPembatalan,
-            eq(pembatalan.id_alasan, alasanPembatalan.id_alasan),
-          )
-          .where(
-            and(
-              eq(transaksi.id_barbershop, targetShopId),
-              gte(pembatalan.waktu_pembatalan, startDate),
-              lte(pembatalan.waktu_pembatalan, endDate),
-            ),
-          )
-          .orderBy(desc(pembatalan.waktu_pembatalan))
-          .catch(() => []),
+      // 2. Transaksi (untuk data pendukung enrichment: nominal, customer, dll)
+      db
+        .select({
+          id_transaksi: transaksi.id_transaksi,
+          id_shift: transaksi.id_shift,
+          id_pelanggan: transaksi.id_pelanggan,
+          total: transaksi.total,
+          status_transaksi: transaksi.status_transaksi,
+          created_at: transaksi.created_at,
+          customerName: users.nama_lengkap,
+          capsterId: shiftCapster.id_capster,
+        })
+        .from(transaksi)
+        .leftJoin(pelanggan, eq(transaksi.id_pelanggan, pelanggan.id_pelanggan))
+        .leftJoin(users, eq(pelanggan.id_user, users.id_user))
+        .leftJoin(shiftCapster, eq(transaksi.id_shift, shiftCapster.id_shift))
+        .where(
+          and(
+            eq(transaksi.id_barbershop, targetShopId),
+            gte(transaksi.created_at, startDate),
+            lte(transaksi.created_at, endDate),
+          ),
+        ),
 
-        // 3. Pembayaran
-        db
-          .select({
-            id_pembayaran: pembayaran.id_pembayaran,
-            id_transaksi: pembayaran.id_transaksi,
-            metode_pembayaran: pembayaran.metode_pembayaran,
-            jumlah_bayar: pembayaran.jumlah_bayar,
-            status_pembayaran: pembayaran.status_pembayaran,
-            created_at: pembayaran.created_at,
-          })
-          .from(pembayaran)
-          .innerJoin(transaksi, eq(pembayaran.id_transaksi, transaksi.id_transaksi))
-          .where(
-            and(
-              eq(transaksi.id_barbershop, targetShopId),
-              gte(pembayaran.created_at, startDate),
-              lte(pembayaran.created_at, endDate),
-            ),
-          )
-          .orderBy(desc(pembayaran.created_at)),
-
-        // 4. Shift Capster
-        db
-          .select({
-            id_shift: shiftCapster.id_shift,
-            id_capster: shiftCapster.id_capster,
-            tanggal: shiftCapster.tanggal,
-            waktu_mulai: shiftCapster.waktu_mulai,
-            waktu_selesai: shiftCapster.waktu_selesai,
-            status: shiftCapster.status,
-            created_at: shiftCapster.created_at,
-          })
-          .from(shiftCapster)
-          .innerJoin(capster, eq(shiftCapster.id_capster, capster.id_capster))
-          .where(
-            and(
-              eq(capster.id_barbershop, targetShopId),
-              gte(shiftCapster.tanggal, startDate),
-              lte(shiftCapster.tanggal, endDate),
-            ),
-          )
-          .orderBy(desc(shiftCapster.tanggal)),
-
-        // 5. Users (Hanya owner dan capster barbershop ini)
-        db
-          .select({
-            id_user: users.id_user,
-            nama_lengkap: users.nama_lengkap,
-            role: users.role,
-            created_at: users.created_at,
-          })
-          .from(users)
-          .where(
-            or(
-              eq(users.id_user, tenant.userId),
-              inArray(
-                users.id_user,
-                db
-                  .select({ id_user: capster.id_user })
-                  .from(capster)
-                  .where(eq(capster.id_barbershop, targetShopId)),
-              ),
-            ),
-          )
-          .orderBy(desc(users.created_at)),
-
-        // 6. Capsters
-        db
-          .select({
-            id_capster: capster.id_capster,
-            id_user: capster.id_user,
-            no_pegawai: capster.no_pegawai,
-            nama_lengkap: users.nama_lengkap,
-          })
-          .from(capster)
-          .leftJoin(users, eq(capster.id_user, users.id_user))
-          .where(eq(capster.id_barbershop, targetShopId)),
-      ]);
+      // 3. Capsters
+      db
+        .select({
+          id_capster: capster.id_capster,
+          id_user: capster.id_user,
+          no_pegawai: capster.no_pegawai,
+          nama_lengkap: users.nama_lengkap,
+        })
+        .from(capster)
+        .leftJoin(users, eq(capster.id_user, users.id_user))
+        .where(eq(capster.id_barbershop, targetShopId)),
+    ]);
 
     // Build Capster Map
     const capsterMap = new Map<string, string>();
@@ -1228,7 +1161,10 @@ export const getOwnerAuditActivities = createServerFn({
       if (c.nama_lengkap) capsterMap.set(c.id_capster, c.nama_lengkap);
     });
 
-    // Build Layanan per Transaksi
+    // Build Layanan per Transaksi Map
+    const txMap = new Map<string, (typeof txRows)[0]>();
+    txRows.forEach((t) => txMap.set(t.id_transaksi, t));
+
     const txIds = txRows.map((t) => t.id_transaksi);
     const serviceNameMap = new Map<string, string>();
     if (txIds.length > 0) {
@@ -1254,8 +1190,9 @@ export const getOwnerAuditActivities = createServerFn({
       });
     }
 
-    // Build unified events
+    // Build unified events dari audit_log nyata (Database ID sebenarnya)
     type RawEvent = {
+      id: string; // audit_log.id_audit
       timestamp: Date;
       activityType: "transaksi" | "pembatalan" | "pembayaran" | "shift" | "login";
       pengguna: string;
@@ -1263,132 +1200,132 @@ export const getOwnerAuditActivities = createServerFn({
       roleKey: string;
       aktivitas: string;
       dataTerkait: string;
-      relatedId?: string;
+      relatedId?: string | undefined;
+      transactionId?: string | undefined;
       status: "Berhasil" | "Dibatalkan" | "Diproses";
       details: OwnerActivityItem["details"];
     };
 
     const rawEvents: RawEvent[] = [];
 
-    // Transaksi Selesai & Dibuat
-    txRows.forEach((t) => {
-      const capsterName = t.capsterId ? capsterMap.get(t.capsterId) || "Capster" : "Capster";
-      const shortId = formatTransactionId(t.id_transaksi, t.created_at);
-      const services = serviceNameMap.get(t.id_transaksi) || "Gentleman Cut";
-      const isCompleted = t.status_transaksi === "paid" || t.status_transaksi === "completed";
-      const isCancelled = t.status_transaksi === "cancelled";
+    // Map setiap row audit_log ke RawEvent
+    auditRows.forEach((row) => {
+      // 1. Activity Type
+      let actType: "transaksi" | "pembatalan" | "pembayaran" | "shift" | "login" = "transaksi";
+      const eType = (row.entity_type || "").toLowerCase();
+      const aksiLower = (row.aksi || "").toLowerCase();
+
+      if (
+        eType === "login" ||
+        eType === "logout" ||
+        eType === "keamanan_akun" ||
+        aksiLower.includes("login") ||
+        aksiLower.includes("logout")
+      ) {
+        actType = "login";
+      } else if (
+        eType === "pembatalan" ||
+        aksiLower.includes("cancel") ||
+        aksiLower.includes("expire") ||
+        aksiLower.includes("batal") ||
+        aksiLower.includes("kedaluwarsa")
+      ) {
+        actType = "pembatalan";
+      } else if (
+        eType === "pembayaran" ||
+        aksiLower.includes("payment") ||
+        aksiLower.includes("bayar")
+      ) {
+        actType = "pembayaran";
+      } else if (eType === "shift" || aksiLower.includes("shift")) {
+        actType = "shift";
+      } else {
+        actType = "transaksi";
+      }
+
+      // 2. Role & Pengguna
+      let roleLabel: "Capster" | "Pelanggan" | "Admin" | "Owner" = "Admin";
+      const uRole = row.userRole?.toLowerCase();
+      if (uRole === "owner") roleLabel = "Owner";
+      else if (uRole === "capster") roleLabel = "Capster";
+      else if (uRole === "pelanggan") roleLabel = "Pelanggan";
+      else if (row.alasan?.toLowerCase().includes("owner")) roleLabel = "Owner";
+      else if (row.alasan?.toLowerCase().includes("capster")) roleLabel = "Capster";
+      else if (row.alasan?.toLowerCase().includes("pelanggan")) roleLabel = "Pelanggan";
+      else if (actType === "shift") roleLabel = "Capster";
+      else if (actType === "pembayaran") roleLabel = "Pelanggan";
+
+      let pengguna = row.userName;
+      if (!pengguna && row.alasan) {
+        const match = row.alasan.match(/\(([^)]+)\)/);
+        if (match && match[1]) {
+          pengguna = match[1];
+        }
+      }
+      if (!pengguna) {
+        pengguna = roleLabel === "Pelanggan" ? "Pelanggan" : roleLabel === "Capster" ? "Capster" : "Owner";
+      }
+
+      // 3. Human-readable aktivitas label
+      let aktivitas = row.aksi;
+      if (row.aksi === "Login ke sistem") aktivitas = "Login ke sistem";
+      else if (row.aksi === "Logout dari sistem") aktivitas = "Logout dari sistem";
+      else if (row.aksi === "transaction completion") aktivitas = "Menyelesaikan transaksi";
+      else if (row.aksi === "payment confirmation") aktivitas = "Konfirmasi pembayaran";
+      else if (row.aksi === "create request") aktivitas = "Membuat booking layanan";
+      else if (row.aksi === "confirm request" || row.aksi === "confirm and start service" || row.aksi === "start service") aktivitas = "Memulai layanan";
+      else if (row.aksi === "finish service" || row.aksi === "finish service by customer") aktivitas = "Menyelesaikan layanan";
+      else if (row.aksi === "cancel request") aktivitas = "Membatalkan permintaan";
+      else if (row.aksi === "expire request" || row.aksi === "transaction expiration") aktivitas = "Permintaan kedaluwarsa";
+      else if (row.aksi === "pengajuan penarikan komisi") aktivitas = "Pengajuan penarikan komisi";
+      else if (row.aksi === "persetujuan pengajuan komisi") aktivitas = "Persetujuan komisi";
+      else if (row.aksi === "penolakan pengajuan komisi") aktivitas = "Penolakan komisi";
+      else if (row.aksi === "pembayaran komisi sukses") aktivitas = "Pembayaran komisi sukses";
+      else if (row.aksi === "request_change_password") aktivitas = "Permintaan ubah password";
+      else if (row.aksi === "verify_change_password") aktivitas = "Verifikasi ubah password";
+      else if (row.aksi === "request_change_email") aktivitas = "Permintaan ubah email";
+      else if (row.aksi === "verify_change_email") aktivitas = "Verifikasi ubah email";
+
+      // 4. Status
+      let status: "Berhasil" | "Dibatalkan" | "Diproses" = "Berhasil";
+      if (actType === "pembatalan" || aksiLower.includes("tolak") || aksiLower.includes("fail") || aksiLower.includes("gagal")) {
+        status = "Dibatalkan";
+      } else if (row.aksi === "create request" || row.aksi === "start service") {
+        status = "Diproses";
+      }
+
+      // 5. Data Terkait
+      let dataTerkait = "-";
+      if (row.entity_id) {
+        if (eType === "transaksi" || eType === "pembayaran" || eType === "permintaan_layanan") {
+          dataTerkait = formatTransactionId(row.entity_id, row.created_at);
+        } else if (eType === "shift") {
+          dataTerkait = `SFT-${row.entity_id.slice(-3).toUpperCase()}`;
+        }
+      }
+
+      // 6. Enrichment
+      const txInfo = row.entity_id ? txMap.get(row.entity_id) : undefined;
+      const services = row.entity_id ? serviceNameMap.get(row.entity_id) : undefined;
 
       rawEvents.push({
-        timestamp: t.created_at,
-        activityType: "transaksi",
-        pengguna: capsterName,
-        role: "Capster",
-        roleKey: "capster",
-        aktivitas: isCompleted
-          ? "Menyelesaikan transaksi"
-          : isCancelled
-            ? "Membatalkan transaksi"
-            : "Membuat transaksi",
-        dataTerkait: shortId,
-        relatedId: t.id_transaksi,
-        status: isCancelled ? "Dibatalkan" : "Berhasil",
-        details: {
-          serviceNames: services,
-          capsterName,
-          customerName: t.customerName || "Pelanggan",
-          nominal: Number(t.total),
-        },
-      });
-    });
-
-    // Pembatalan
-    cancelRows.forEach((c) => {
-      const shortId = formatTransactionId(c.id_transaksi, c.waktu_pembatalan);
-      const isCustomer = c.dibatalkan_oleh.toLowerCase().includes("pelanggan");
-      rawEvents.push({
-        timestamp: c.waktu_pembatalan,
-        activityType: "pembatalan",
-        pengguna: isCustomer ? "Pelanggan" : "Capster",
-        role: isCustomer ? "Pelanggan" : "Capster",
-        roleKey: isCustomer ? "pelanggan" : "capster",
-        aktivitas: "Membatalkan transaksi",
-        dataTerkait: shortId,
-        relatedId: c.id_transaksi,
-        status: "Dibatalkan",
-        details: {
-          cancelReason: c.alasan_text || c.catatan || "Menunggu terlalu lama",
-          cancelledBy: isCustomer ? "Pelanggan" : "Capster",
-          cancelTime: c.waktu_pembatalan.toLocaleString("id-ID"),
-          cancelNotes: c.catatan || "-",
-        },
-      });
-    });
-
-    // Pembayaran
-    payRows.forEach((p) => {
-      const shortId = formatTransactionId(p.id_transaksi, p.created_at);
-      const method = p.metode_pembayaran.toUpperCase();
-      rawEvents.push({
-        timestamp: p.created_at,
-        activityType: "pembayaran",
-        pengguna: "Pelanggan",
-        role: "Pelanggan",
-        roleKey: "pelanggan",
-        aktivitas: `Melakukan pembayaran ${method}`,
-        dataTerkait: shortId,
-        relatedId: p.id_transaksi,
-        status: p.status_pembayaran === "success" ? "Berhasil" : "Diproses",
-        details: {
-          nominal: Number(p.jumlah_bayar),
-          paymentMethod: p.metode_pembayaran,
-        },
-      });
-    });
-
-    // Shift
-    shiftRows.forEach((s) => {
-      const capsterName = capsterMap.get(s.id_capster) || "Capster";
-      const shiftCode = `SFT-${s.id_shift.slice(-3).toUpperCase()}`;
-      const isClosed = s.status === "completed";
-      rawEvents.push({
-        timestamp: s.tanggal,
-        activityType: "shift",
-        pengguna: capsterName,
-        role: "Capster",
-        roleKey: "capster",
-        aktivitas: isClosed ? "Menutup shift" : "Membuka shift",
-        dataTerkait: shiftCode,
-        relatedId: s.id_shift,
-        status: "Berhasil",
-        details: {
-          capsterName,
-          shiftStatus: s.status,
-          shiftTime: `${s.waktu_mulai} ${s.waktu_selesai ? `- ${s.waktu_selesai}` : ""}`,
-        },
-      });
-    });
-
-    // Login / Aktivitas Pengguna
-    userRows.slice(0, 10).forEach((u) => {
-      const roleLabel: "Capster" | "Pelanggan" | "Admin" | "Owner" =
-        u.role === "capster"
-          ? "Capster"
-          : u.role === "pelanggan"
-            ? "Pelanggan"
-            : u.role === "owner"
-              ? "Owner"
-              : "Admin";
-      rawEvents.push({
-        timestamp: u.created_at,
-        activityType: "login",
-        pengguna: u.nama_lengkap,
+        id: row.id_audit, // REAL DATABASE UUID DARI SUPABASE audit_log!
+        timestamp: row.created_at,
+        activityType: actType,
+        pengguna,
         role: roleLabel,
-        roleKey: u.role,
-        aktivitas: "Login ke sistem",
-        dataTerkait: "-",
-        status: "Berhasil",
+        roleKey: roleLabel.toLowerCase(),
+        aktivitas,
+        dataTerkait,
+        relatedId: row.entity_id || row.id_audit,
+        transactionId: (actType === "transaksi" || actType === "pembatalan" || actType === "pembayaran") && row.entity_id ? row.entity_id : undefined,
+        status,
         details: {
-          notes: `Aktivitas autentikasi akun ${u.nama_lengkap}`,
+          serviceNames: services || (txInfo ? "Gentleman Cut" : undefined),
+          capsterName: txInfo?.capsterId ? capsterMap.get(txInfo.capsterId) : undefined,
+          customerName: txInfo?.customerName || (roleLabel === "Pelanggan" ? pengguna : undefined),
+          nominal: txInfo ? Number(txInfo.total) : undefined,
+          notes: row.alasan || undefined,
         },
       });
     });
@@ -1431,10 +1368,9 @@ export const getOwnerAuditActivities = createServerFn({
     const totalPages = Math.ceil(totalCount / pageSize) || 1;
     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-    // Map to OwnerActivityItem with formatted labels
+    // Map to OwnerActivityItem with REAL database UUID id
     const activities: OwnerActivityItem[] = paginated.map((e, idx) => {
       const overallIndex = (page - 1) * pageSize + idx + 1;
-      const idCode = `AUD-${String(overallIndex).padStart(3, "0")}`;
       const dateFormatted = e.timestamp.toLocaleDateString("id-ID", {
         day: "numeric",
         month: "short",
@@ -1449,16 +1385,10 @@ export const getOwnerAuditActivities = createServerFn({
         month: "short",
       })} ${timeFormatted}`;
 
-      const isTxActivity =
-        e.activityType === "transaksi" ||
-        e.activityType === "pembatalan" ||
-        e.activityType === "pembayaran";
-      const transactionId = isTxActivity ? e.relatedId : undefined;
-
       return {
         no: overallIndex,
-        id: idCode,
-        activityId: e.relatedId ? `${idCode}_${e.relatedId}` : idCode,
+        id: e.id, // REAL DATABASE UUID DARI audit_log!
+        activityId: e.id, // REAL DATABASE UUID DARI audit_log!
         waktu,
         dateFormatted,
         timeFormatted,
@@ -1469,24 +1399,19 @@ export const getOwnerAuditActivities = createServerFn({
         aktivitas: e.aktivitas,
         dataTerkait: e.dataTerkait,
         relatedId: e.relatedId,
-        transactionId,
+        transactionId: e.transactionId,
         status: e.status,
         activityType: e.activityType,
         details: e.details,
       };
     });
 
+    const allFilteredAuditIds = filtered.map((e) => e.id);
     const allFilteredTransactionIds = Array.from(
       new Set(
         filtered
-          .filter(
-            (e) =>
-              (e.activityType === "transaksi" ||
-                e.activityType === "pembatalan" ||
-                e.activityType === "pembayaran") &&
-              Boolean(e.relatedId),
-          )
-          .map((e) => e.relatedId as string),
+          .filter((e) => Boolean(e.transactionId))
+          .map((e) => e.transactionId as string),
       ),
     );
 
@@ -1547,6 +1472,7 @@ export const getOwnerAuditActivities = createServerFn({
         isShiftUp: true,
       },
       activities,
+      allFilteredAuditIds,
       allFilteredTransactionIds,
       totalCount,
       totalPages,
@@ -1559,8 +1485,125 @@ export const getOwnerAuditActivityDetail = createServerFn({
 })
   .validator((id: string) => id)
   .handler(async ({ data: activityId }): Promise<OwnerActivityItem> => {
-    requireOwnerTenant();
-    // Call getOwnerAuditActivities with 30d to find the activity
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
+    // 1. Direct query ke audit_log berdasarkan id_audit & targetShopId
+    const [row] = await db
+      .select({
+        id_audit: auditLog.id_audit,
+        id_barbershop: auditLog.id_barbershop,
+        id_user: auditLog.id_user,
+        aksi: auditLog.aksi,
+        entity_type: auditLog.entity_type,
+        entity_id: auditLog.entity_id,
+        alasan: auditLog.alasan,
+        created_at: auditLog.created_at,
+        userName: users.nama_lengkap,
+        userRole: users.role,
+      })
+      .from(auditLog)
+      .leftJoin(users, eq(auditLog.id_user, users.id_user))
+      .where(
+        and(
+          eq(auditLog.id_audit, activityId),
+          eq(auditLog.id_barbershop, targetShopId),
+        ),
+      )
+      .limit(1);
+
+    if (row) {
+      const eType = (row.entity_type || "").toLowerCase();
+      const aksiLower = (row.aksi || "").toLowerCase();
+
+      let actType: "transaksi" | "pembatalan" | "pembayaran" | "shift" | "login" = "transaksi";
+      if (
+        eType === "login" ||
+        eType === "logout" ||
+        eType === "keamanan_akun" ||
+        aksiLower.includes("login") ||
+        aksiLower.includes("logout")
+      ) {
+        actType = "login";
+      } else if (
+        eType === "pembatalan" ||
+        aksiLower.includes("cancel") ||
+        aksiLower.includes("expire") ||
+        aksiLower.includes("batal") ||
+        aksiLower.includes("kedaluwarsa")
+      ) {
+        actType = "pembatalan";
+      } else if (
+        eType === "pembayaran" ||
+        aksiLower.includes("payment") ||
+        aksiLower.includes("bayar")
+      ) {
+        actType = "pembayaran";
+      } else if (eType === "shift" || aksiLower.includes("shift")) {
+        actType = "shift";
+      }
+
+      let roleLabel: "Capster" | "Pelanggan" | "Admin" | "Owner" = "Admin";
+      const uRole = row.userRole?.toLowerCase();
+      if (uRole === "owner") roleLabel = "Owner";
+      else if (uRole === "capster") roleLabel = "Capster";
+      else if (uRole === "pelanggan") roleLabel = "Pelanggan";
+      else if (row.alasan?.toLowerCase().includes("owner")) roleLabel = "Owner";
+      else if (row.alasan?.toLowerCase().includes("capster")) roleLabel = "Capster";
+      else if (row.alasan?.toLowerCase().includes("pelanggan")) roleLabel = "Pelanggan";
+      else if (actType === "shift") roleLabel = "Capster";
+      else if (actType === "pembayaran") roleLabel = "Pelanggan";
+
+      let pengguna = row.userName;
+      if (!pengguna && row.alasan) {
+        const match = row.alasan.match(/\(([^)]+)\)/);
+        if (match && match[1]) pengguna = match[1];
+      }
+      if (!pengguna) pengguna = roleLabel;
+
+      let dataTerkait = "-";
+      if (row.entity_id) {
+        if (eType === "transaksi" || eType === "pembayaran" || eType === "permintaan_layanan") {
+          dataTerkait = formatTransactionId(row.entity_id, row.created_at);
+        } else if (eType === "shift") {
+          dataTerkait = `SFT-${row.entity_id.slice(-3).toUpperCase()}`;
+        }
+      }
+
+      const dateFormatted = row.created_at.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      const timeFormatted = row.created_at.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      return {
+        no: 1,
+        id: row.id_audit,
+        activityId: row.id_audit,
+        waktu: `${row.created_at.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} ${timeFormatted}`,
+        dateFormatted,
+        timeFormatted,
+        rawDate: row.created_at.toISOString(),
+        pengguna,
+        role: roleLabel,
+        roleKey: roleLabel.toLowerCase(),
+        aktivitas: row.aksi,
+        dataTerkait,
+        relatedId: row.entity_id || row.id_audit,
+        transactionId: (actType === "transaksi" || actType === "pembatalan" || actType === "pembayaran") && row.entity_id ? row.entity_id : undefined,
+        status: actType === "pembatalan" ? "Dibatalkan" : "Berhasil",
+        activityType: actType,
+        details: {
+          notes: row.alasan || undefined,
+        },
+      };
+    }
+
+    // 2. Fallback query list dengan periode 30d
     const listRes = await getOwnerAuditActivities({ data: { period: "30d", pageSize: 100 } });
     const found = listRes.activities.find(
       (a) => a.id === activityId || a.activityId === activityId || a.relatedId === activityId,
@@ -1568,7 +1611,91 @@ export const getOwnerAuditActivityDetail = createServerFn({
 
     if (found) return found;
 
-    throw new Error("Aktivitas tidak ditemukan atau tidak memiliki akses.");
+    throw new Error("Aktivitas tidak ditemukan atau Anda tidak memiliki akses.");
+  });
+
+// ============================================================================
+// DELETE AUDIT ACTIVITIES (HANYA DARI OWNER -> AUDIT AKTIVITAS)
+// ============================================================================
+
+export type DeleteOwnerAuditActivitiesResult = {
+  success: boolean;
+  deletedCount: number;
+  message: string;
+};
+
+export const deleteOwnerAuditActivities = createServerFn({
+  method: "POST",
+})
+  .validator((data: { auditIds: string[] }) => data)
+  .handler(async ({ data }): Promise<DeleteOwnerAuditActivitiesResult> => {
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
+    if (!data?.auditIds || !Array.isArray(data.auditIds) || data.auditIds.length === 0) {
+      throw new Error("Tidak ada aktivitas yang dipilih untuk dihapus.");
+    }
+
+    const requestedIds = Array.from(
+      new Set(
+        data.auditIds.filter(
+          (id): id is string => typeof id === "string" && id.trim().length > 0,
+        ),
+      ),
+    );
+
+    if (requestedIds.length === 0) {
+      throw new Error("ID aktivitas tidak valid.");
+    }
+
+    // 1. Ambil audit records yang benar-benar milik tenant barbershop ini
+    const targetAudits = await db
+      .select({
+        id_audit: auditLog.id_audit,
+        id_barbershop: auditLog.id_barbershop,
+        aksi: auditLog.aksi,
+        entity_type: auditLog.entity_type,
+      })
+      .from(auditLog)
+      .where(
+        and(
+          inArray(auditLog.id_audit, requestedIds),
+          eq(auditLog.id_barbershop, targetShopId),
+        ),
+      );
+
+    if (targetAudits.length === 0) {
+      throw new Error("Aktivitas tidak ditemukan atau Anda tidak memiliki akses untuk menghapus aktivitas ini.");
+    }
+
+    // Multi-tenant isolation: jika ada ID yang tidak cocok dengan tenant barbershop, tolak seluruh operasi!
+    if (targetAudits.length !== requestedIds.length) {
+      throw new Error("Beberapa aktivitas yang dipilih tidak ditemukan atau bukan milik barbershop Anda.");
+    }
+
+    const validIdsToDelete = targetAudits.map((a) => a.id_audit);
+
+    // 2. Eksekusi DELETE dari tabel audit_log di Supabase secara permanen
+    // PERINGATAN KRITIKAL: HANYA HAPUS DARI audit_log!
+    // TIDAK PERNAH menghapus users, auth, transaksi, booking, layanan, ataupun entitas bisnis lainnya!
+    const deletedRows = await db
+      .delete(auditLog)
+      .where(
+        and(
+          inArray(auditLog.id_audit, validIdsToDelete),
+          eq(auditLog.id_barbershop, targetShopId),
+        ),
+      )
+      .returning({ id_audit: auditLog.id_audit });
+
+    const count = deletedRows.length;
+    return {
+      success: true,
+      deletedCount: count,
+      message: count === 1
+        ? "Aktivitas berhasil dihapus."
+        : `${count} aktivitas berhasil dihapus.`,
+    };
   });
 
 // ============================================================================

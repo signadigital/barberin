@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { capster, shiftCapster, users, barbershop, booking, transaksi } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
+import { logAudit } from "./audit";
 
 export type CapsterView = {
   id: string;
@@ -213,6 +214,20 @@ export const loginCapster = createServerFn({
       }
     }
 
+    // Catat event audit login capster secara fail-safe
+    try {
+      await logAudit({
+        barbershopId: matched.id_barbershop,
+        userId: matched.id_user,
+        aksi: "Login ke sistem",
+        entityType: "login",
+        entityId: matched.id_user,
+        alasan: `Login Capster (${matched.nama_lengkap})`,
+      });
+    } catch (auditErr) {
+      console.error("[AUDIT LOG ERROR] Gagal mencatat audit login capster:", auditErr);
+    }
+
     return {
       id_capster: matched.id_capster,
       id_user: matched.id_user,
@@ -221,6 +236,31 @@ export const loginCapster = createServerFn({
       nama_lengkap: matched.nama_lengkap,
       role: matched.no_pegawai === "CAP-001" ? "Senior Barber" : "Barber",
     };
+  });
+
+export const logoutCapsterAction = createServerFn({
+  method: "POST",
+})
+  .validator(
+    (data: { barbershopId?: string | undefined; capsterId?: string | undefined; userId?: string | undefined; name?: string | undefined } | undefined) =>
+      data,
+  )
+  .handler(async ({ data }) => {
+    if (data?.barbershopId) {
+      try {
+        await logAudit({
+          barbershopId: data.barbershopId,
+          userId: data.userId || null,
+          aksi: "Logout dari sistem",
+          entityType: "logout",
+          entityId: data.capsterId || data.userId || null,
+          alasan: `Logout Capster (${data.name || "Capster"})`,
+        });
+      } catch (auditErr) {
+        console.error("[AUDIT LOG ERROR] Gagal mencatat audit logout capster:", auditErr);
+      }
+    }
+    return { success: true };
   });
 
 // ============================================================================

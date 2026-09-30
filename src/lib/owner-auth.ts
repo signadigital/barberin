@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth-session";
 import { supabase } from "@/lib/supabase-client";
 import { generateUniqueBarbershopSlug } from "./slug";
+import { logAudit } from "@/lib/audit";
 
 export type OwnerRegisterInput = {
   nama_lengkap: string;
@@ -631,6 +632,20 @@ async function handleVerifyOwnerEmail(data: VerifyEmailInput) {
       namaLengkap: record.nama_lengkap,
     });
 
+    // 6. Catat event audit login nyata (fail-safe)
+    try {
+      await logAudit({
+        barbershopId: shop.id_barbershop,
+        userId: record.id_user,
+        aksi: "Login ke sistem",
+        entityType: "login",
+        entityId: record.id_user,
+        alasan: `Login Owner via Verifikasi Email (${record.nama_lengkap})`,
+      });
+    } catch (auditErr) {
+      console.error("[AUDIT LOG ERROR] Gagal mencatat audit login owner:", auditErr);
+    }
+
     const result = {
       success: true,
       user: {
@@ -859,6 +874,20 @@ async function handleLoginOwnerBpmn(data: OwnerLoginInput) {
     namaLengkap: foundUser.nama_lengkap,
   });
 
+  // 9. Catat event audit login nyata (fail-safe)
+  try {
+    await logAudit({
+      barbershopId: shop.id_barbershop,
+      userId: foundUser.id_user,
+      aksi: "Login ke sistem",
+      entityType: "login",
+      entityId: foundUser.id_user,
+      alasan: `Login Owner (${foundUser.nama_lengkap})`,
+    });
+  } catch (auditErr) {
+    console.error("[AUDIT LOG ERROR] Gagal mencatat audit login owner:", auditErr);
+  }
+
   return {
     success: true,
     id_user: foundUser.id_user,
@@ -981,6 +1010,21 @@ export const getOwnerServerSession = createServerFn({
 export const logoutOwnerAction = createServerFn({
   method: "POST",
 }).handler(async () => {
+  const session = getOwnerSession();
+  if (session && session.barbershopId) {
+    try {
+      await logAudit({
+        barbershopId: session.barbershopId,
+        userId: session.userId,
+        aksi: "Logout dari sistem",
+        entityType: "logout",
+        entityId: session.userId,
+        alasan: `Logout Owner (${session.namaLengkap || session.email})`,
+      });
+    } catch (auditErr) {
+      console.error("[AUDIT LOG ERROR] Gagal mencatat audit logout owner:", auditErr);
+    }
+  }
   clearOwnerSessionCookie();
   return { success: true };
 });

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { layanan, barbershop, detailBooking, booking } from "@/db/schema";
 import { requireOwnerTenant } from "@/lib/auth-session";
 import { resolveBarbershopBySlug } from "./tenant-resolver";
+import { logAudit } from "./audit";
 
 export type OwnerServiceItem = {
   id: string;
@@ -200,6 +201,19 @@ export const createOwnerService = createServerFn({
       throw new Error("Gagal menyimpan layanan baru ke database.");
     }
 
+    try {
+      await logAudit({
+        barbershopId,
+        userId: tenant.userId,
+        aksi: `Membuat layanan: ${nama}`,
+        entityType: "layanan",
+        entityId: created.id_layanan,
+        alasan: `Tarif: Rp ${harga.toLocaleString("id-ID")}, Durasi: ${durasi} menit`,
+      });
+    } catch (err) {
+      console.error("Gagal mencatat audit layanan:", err);
+    }
+
     return {
       success: true,
       service: {
@@ -254,6 +268,19 @@ export const updateOwnerService = createServerFn({
 
     if (!updated) {
       throw new Error("Layanan tidak ditemukan atau Anda tidak memiliki akses untuk mengubahnya.");
+    }
+
+    try {
+      await logAudit({
+        barbershopId,
+        userId: tenant.userId,
+        aksi: `Mengubah layanan: ${updated.nama_layanan}`,
+        entityType: "layanan",
+        entityId: updated.id_layanan,
+        alasan: `Tarif: Rp ${Number(updated.harga).toLocaleString("id-ID")}, Status: ${updated.status}`,
+      });
+    } catch (err) {
+      console.error("Gagal mencatat audit layanan:", err);
     }
 
     return {
@@ -370,6 +397,19 @@ export const deleteOwnerService = createServerFn({
 
     if (!deleted) {
       throw new Error("Layanan tidak ditemukan atau gagal dihapus.");
+    }
+
+    try {
+      await logAudit({
+        barbershopId,
+        userId: tenant.userId,
+        aksi: "Menghapus layanan",
+        entityType: "layanan",
+        entityId: data.id_layanan,
+        alasan: "Layanan dihapus secara permanen dari katalog oleh Owner",
+      });
+    } catch (err) {
+      console.error("Gagal mencatat audit layanan:", err);
     }
 
     return {

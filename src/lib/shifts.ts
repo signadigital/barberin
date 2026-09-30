@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { capster, shiftCapster, transaksi, users } from "@/db/schema";
 import { getWibTimeString } from "@/lib/format";
+import { logAudit } from "./audit";
 
 export const getActiveShift = createServerFn({
   method: "GET",
@@ -85,6 +86,20 @@ export const checkInShift = createServerFn({
       })
       .returning();
 
+    if (newShift && c?.id_barbershop) {
+      try {
+        await logAudit({
+          barbershopId: c.id_barbershop,
+          aksi: "Membuka shift",
+          entityType: "shift",
+          entityId: newShift.id_shift,
+          alasan: `Check-in shift (${timeStr})`,
+        });
+      } catch (err) {
+        console.error("Gagal mencatat audit shift:", err);
+      }
+    }
+
     return newShift;
   });
 
@@ -121,6 +136,20 @@ export const endShift = createServerFn({
       })
       .where(eq(shiftCapster.id_shift, data.shiftId))
       .returning();
+
+    if (updated?.id_barbershop) {
+      try {
+        await logAudit({
+          barbershopId: updated.id_barbershop,
+          aksi: "Menutup shift",
+          entityType: "shift",
+          entityId: updated.id_shift,
+          alasan: `Tutup shift: ${totalTransaksi} transaksi, total Rp ${Number(totalPendapatan).toLocaleString("id-ID")}`,
+        });
+      } catch (err) {
+        console.error("Gagal mencatat audit shift:", err);
+      }
+    }
 
     return updated;
   });
