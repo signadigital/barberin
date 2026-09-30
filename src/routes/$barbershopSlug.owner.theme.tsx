@@ -22,8 +22,10 @@ import {
   X,
   FileCheck,
   ShieldAlert,
+  Crop,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ImageCropper } from "@/components/ui/image-cropper";
 
 import {
   OwnerSidebar,
@@ -81,6 +83,13 @@ function OwnerWhiteLabelingPage() {
   const [histories, setHistories] = useState<any[]>([]);
   const [loadingHistories, setLoadingHistories] = useState(false);
 
+  // Image Cropper States (Logo & Favicon)
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"logo" | "favicon">("logo");
+  const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null);
+  const [logoOriginalSrc, setLogoOriginalSrc] = useState<string | null>(null);
+  const [faviconOriginalSrc, setFaviconOriginalSrc] = useState<string | null>(null);
+
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +104,8 @@ function OwnerWhiteLabelingPage() {
         setTagline(data.tagline || "");
         setLogoUrl(data.logo_url || null);
         setFaviconUrl(data.favicon_url || null);
+        setLogoOriginalSrc(data.logo_url || null);
+        setFaviconOriginalSrc(data.favicon_url || null);
         setSelectedTheme((data.theme as BrandingTheme) || "default");
         setDisplayMode((data.display_mode as "light" | "dark") || "dark");
         setHideBarberinBrand(Boolean(data.hide_barberin_brand));
@@ -129,47 +140,155 @@ function OwnerWhiteLabelingPage() {
   const currentColorPreset =
     COLOR_PRESETS.find((c) => c.key === selectedColorKey) || COLOR_PRESETS[0]!;
 
-  // Handle Logo Upload
+  // Handle Logo Upload with Cropper (Flow: Select -> Validate -> Open Cropper)
   const handleLogoFile = (file: File) => {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/svg+xml", "image/webp"].includes(file.type)) {
-      toast.error("Format file logo tidak valid. Gunakan JPG, PNG, atau SVG.");
+    if (file.size <= 0) {
+      toast.error("File logo tidak valid atau kosong.");
+      if (logoInputRef.current) logoInputRef.current.value = "";
+      return;
+    }
+    const isImage = file.type.startsWith("image/");
+    const isSupported = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+    if (!isImage || !isSupported) {
+      toast.error("Format file logo tidak valid. Gunakan gambar berformat JPG, PNG, atau WEBP.");
+      if (logoInputRef.current) logoInputRef.current.value = "";
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Ukuran file logo terlalu besar. Maksimal 5 MB.");
+      if (logoInputRef.current) logoInputRef.current.value = "";
       return;
     }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      toast.error("Gagal membaca file gambar logo. Pastikan file tidak rusak.");
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    };
     reader.onload = (e) => {
-      setLogoUrl(e.target?.result as string);
-      toast.success("Logo berhasil diunggah.");
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) {
+        toast.error("File gambar kosong.");
+        return;
+      }
+      setLogoOriginalSrc(dataUrl);
+      setCropperImageSrc(dataUrl);
+      setCropTarget("logo");
+      setCropperOpen(true);
+      if (logoInputRef.current) logoInputRef.current.value = "";
     };
     reader.readAsDataURL(file);
   };
 
-  // Handle Favicon Upload
+  // Handle Favicon Upload with Cropper (Flow: Select -> Validate -> Open Cropper)
   const handleFaviconFile = (file: File) => {
     if (!file) return;
-    if (
-      !["image/x-icon", "image/vnd.microsoft.icon", "image/png", "image/svg+xml"].includes(
+    if (file.size <= 0) {
+      toast.error("File favicon tidak valid atau kosong.");
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
+      return;
+    }
+    const isImage = file.type.startsWith("image/") || file.name.endsWith(".ico");
+    const isSupported =
+      ["image/png", "image/jpeg", "image/webp", "image/x-icon", "image/vnd.microsoft.icon"].includes(
         file.type
-      ) &&
-      !file.name.endsWith(".ico")
-    ) {
-      toast.error("Format file favicon tidak valid. Rekomendasi ICO atau PNG.");
+      ) || file.name.endsWith(".ico");
+    if (!isImage || !isSupported) {
+      toast.error("Format file favicon tidak valid. Gunakan format PNG, JPG, WEBP, atau ICO.");
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Ukuran file favicon maksimal 2 MB.");
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
       return;
     }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      toast.error("Gagal membaca file favicon. Pastikan file tidak rusak.");
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
+    };
     reader.onload = (e) => {
-      setFaviconUrl(e.target?.result as string);
-      toast.success("Favicon berhasil diunggah.");
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) {
+        toast.error("File favicon kosong.");
+        return;
+      }
+      setFaviconOriginalSrc(dataUrl);
+      setCropperImageSrc(dataUrl);
+      setCropTarget("favicon");
+      setCropperOpen(true);
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
     };
     reader.readAsDataURL(file);
+  };
+
+  // Callback saat crop berhasil diproses oleh Canvas
+  const handleCropComplete = ({ dataUrl }: { blob: Blob; dataUrl: string; file: File }) => {
+    if (cropTarget === "logo") {
+      setLogoUrl(dataUrl);
+      toast.success("Hasil crop logo siap digunakan. Klik 'Simpan Perubahan' untuk menerapkan.");
+    } else {
+      setFaviconUrl(dataUrl);
+      // Langsung sinkronkan favicon tab browser
+      if (typeof document !== "undefined") {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
+        }
+        link.href = dataUrl;
+      }
+      toast.success("Hasil crop favicon siap digunakan. Klik 'Simpan Perubahan' untuk menerapkan.");
+    }
+  };
+
+  // Handler Crop Ulang dari gambar yang aktif
+  const handleReCrop = (target: "logo" | "favicon") => {
+    if (target === "logo") {
+      const srcToCrop = logoOriginalSrc || logoUrl;
+      if (!srcToCrop) {
+        toast.error("Belum ada logo untuk dipotong ulang.");
+        return;
+      }
+      setCropTarget("logo");
+      setCropperImageSrc(srcToCrop);
+      setCropperOpen(true);
+    } else {
+      const srcToCrop = faviconOriginalSrc || faviconUrl;
+      if (!srcToCrop) {
+        toast.error("Belum ada favicon untuk dipotong ulang.");
+        return;
+      }
+      setCropTarget("favicon");
+      setCropperImageSrc(srcToCrop);
+      setCropperOpen(true);
+    }
+  };
+
+  // Handler Hapus Logo
+  const handleRemoveLogo = () => {
+    setLogoUrl(null);
+    setLogoOriginalSrc(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+    toast.info("Logo dihapus.");
+  };
+
+  // Handler Hapus Favicon
+  const handleRemoveFavicon = () => {
+    setFaviconUrl(null);
+    setFaviconOriginalSrc(null);
+    if (faviconInputRef.current) faviconInputRef.current.value = "";
+    if (typeof document !== "undefined") {
+      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link) {
+        link.href = "/favicon.png";
+      }
+    }
+    toast.info("Favicon dihapus.");
   };
 
   // Save changes (BPMN Step 5, 6, 8, 10, 11)
@@ -189,9 +308,9 @@ function OwnerWhiteLabelingPage() {
       const res = await saveOwnerBranding({
         data: {
           nama_brand: namaBrand.trim(),
-          tagline: tagline.trim() || undefined,
-          logo_url: logoUrl || undefined,
-          favicon_url: faviconUrl || undefined,
+          tagline: tagline.trim() || null,
+          logo_url: logoUrl || null,
+          favicon_url: faviconUrl || null,
           theme: selectedTheme,
           display_mode: displayMode,
           color_preset: selectedColorKey,
@@ -354,25 +473,41 @@ function OwnerWhiteLabelingPage() {
                     {/* Upload Logo */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                          <span>Logo</span>
-                          <span className="text-rose-400">*</span>
-                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <span>Logo Barbershop</span>
+                            <span className="text-rose-400">*</span>
+                          </label>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                            3:1 Horizontal
+                          </span>
+                        </div>
                         {logoUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setLogoUrl(null)}
-                            className="text-[10px] text-rose-400 hover:text-rose-300 transition-colors"
-                          >
-                            Hapus Logo
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleReCrop("logo")}
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                            >
+                              <Crop className="h-3 w-3" />
+                              <span>Crop Ulang</span>
+                            </button>
+                            <span className="text-muted-foreground text-xs">•</span>
+                            <button
+                              type="button"
+                              onClick={handleRemoveLogo}
+                              className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         )}
                       </div>
 
                       <input
                         type="file"
                         ref={logoInputRef}
-                        accept="image/jpeg,image/png,image/svg+xml,image/webp"
+                        accept="image/jpeg,image/png,image/webp"
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
@@ -380,71 +515,102 @@ function OwnerWhiteLabelingPage() {
                         }}
                       />
 
-                      <div
-                        onClick={() => logoInputRef.current?.click()}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const file = e.dataTransfer.files?.[0];
-                          if (file) handleLogoFile(file);
-                        }}
-                        className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
-                      >
-                        {logoUrl ? (
-                          <div className="flex items-center gap-4">
+                      {logoUrl ? (
+                        <div className="border border-border bg-card rounded-xl p-4 transition-all space-y-3">
+                          <div className="w-full h-24 sm:h-28 rounded-lg bg-muted/40 border border-border flex items-center justify-center p-3 overflow-hidden">
                             <img
                               src={logoUrl}
                               alt="Logo Barbershop"
-                              className="h-16 w-16 object-contain rounded-lg bg-background border border-border p-1"
+                              className="max-h-full max-w-full object-contain"
                             />
-                            <div className="text-left">
-                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                                Logo Terpasang
-                              </span>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Klik untuk mengganti logo
-                              </p>
+                          </div>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              <span>Logo Terpotong (3:1)</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleReCrop("logo")}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium border border-border bg-muted/50 hover:bg-muted text-foreground transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <Crop className="h-3 w-3" />
+                                <span>Crop Ulang</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => logoInputRef.current?.click()}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                              >
+                                Ubah Logo
+                              </button>
                             </div>
                           </div>
-                        ) : (
-                          <>
-                            <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                              <Upload className="h-4 w-4" />
-                            </div>
-                            <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                              Upload Logo
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              Klik atau drag &amp; drop di sini
-                            </div>
-                          </>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => logoInputRef.current?.click()}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const file = e.dataTransfer.files?.[0];
+                            if (file) handleLogoFile(file);
+                          }}
+                          className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] group"
+                        >
+                          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                            <Upload className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                            Upload &amp; Crop Logo
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            Rasio horizontal 3:1 • Klik atau drag file di sini
+                          </div>
+                        </div>
+                      )}
+
                       <div className="text-[10px] text-muted-foreground">
-                        Format: JPG, PNG, atau SVG. Maksimal ukuran file 5 MB.
+                        Format: JPG, PNG, atau WEBP. Maksimal ukuran file 5 MB.
                       </div>
                     </div>
 
                     {/* Upload Favicon */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-foreground">Favicon</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-xs font-semibold text-foreground">Favicon Tab</label>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                            1:1 Persegi
+                          </span>
+                        </div>
                         {faviconUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setFaviconUrl(null)}
-                            className="text-[10px] text-rose-400 hover:text-rose-300 transition-colors"
-                          >
-                            Hapus Favicon
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleReCrop("favicon")}
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                            >
+                              <Crop className="h-3 w-3" />
+                              <span>Crop Ulang</span>
+                            </button>
+                            <span className="text-muted-foreground text-xs">•</span>
+                            <button
+                              type="button"
+                              onClick={handleRemoveFavicon}
+                              className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         )}
                       </div>
 
                       <input
                         type="file"
                         ref={faviconInputRef}
-                        accept="image/x-icon,image/png,image/svg+xml,.ico"
+                        accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico"
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
@@ -452,49 +618,73 @@ function OwnerWhiteLabelingPage() {
                         }}
                       />
 
-                      <div
-                        onClick={() => faviconInputRef.current?.click()}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const file = e.dataTransfer.files?.[0];
-                          if (file) handleFaviconFile(file);
-                        }}
-                        className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group"
-                      >
-                        {faviconUrl ? (
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={faviconUrl}
-                              alt="Favicon"
-                              className="h-10 w-10 object-contain rounded-md bg-background border border-border p-1"
-                            />
-                            <div className="text-left">
-                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                                Favicon Terpasang
-                              </span>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Klik untuk mengganti favicon
-                              </p>
+                      {faviconUrl ? (
+                        <div className="border border-border bg-card rounded-xl p-4 transition-all space-y-3">
+                          <div className="w-full h-24 sm:h-28 rounded-lg bg-muted/40 border border-border flex items-center justify-center gap-4 p-3">
+                            <div className="h-16 w-16 rounded-xl bg-background border border-border flex items-center justify-center p-2 shadow-inner">
+                              <img
+                                src={faviconUrl}
+                                alt="Favicon"
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                            <div className="text-left space-y-1">
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-background border border-border text-[11px] font-mono text-muted-foreground">
+                                <img src={faviconUrl} alt="" className="h-3.5 w-3.5 object-contain" />
+                                <span className="truncate max-w-[120px]">{namaBrand || "Barbershop"}</span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">Simulasi tab browser</p>
                             </div>
                           </div>
-                        ) : (
-                          <>
-                            <div className="h-9 w-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                              <Upload className="h-4 w-4" />
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              <span>Favicon Terpotong (1:1)</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleReCrop("favicon")}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium border border-border bg-muted/50 hover:bg-muted text-foreground transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <Crop className="h-3 w-3" />
+                                <span>Crop Ulang</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => faviconInputRef.current?.click()}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                              >
+                                Ubah Favicon
+                              </button>
                             </div>
-                            <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                              Upload Favicon
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              Rekomendasi 32×32px • ICO/PNG
-                            </div>
-                          </>
-                        )}
-                      </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => faviconInputRef.current?.click()}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const file = e.dataTransfer.files?.[0];
+                            if (file) handleFaviconFile(file);
+                          }}
+                          className="border-2 border-dashed border-border hover:border-primary/80 bg-muted/40 hover:bg-muted/60 rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] group"
+                        >
+                          <div className="h-9 w-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                            <Upload className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                            Upload &amp; Crop Favicon
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            Rasio persegi 1:1 • Output 512×512 PNG
+                          </div>
+                        </div>
+                      )}
+
                       <div className="text-[10px] text-muted-foreground">
-                        Ikon yang ditampilkan pada tab browser pelanggan.
+                        Format: PNG, JPG, WEBP, atau ICO. Maksimal 2 MB.
                       </div>
                     </div>
                   </div>
@@ -782,7 +972,11 @@ function OwnerWhiteLabelingPage() {
                     >
                       <div className="flex items-center gap-3">
                         {logoUrl ? (
-                          <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded-lg" />
+                          <img
+                            src={logoUrl}
+                            alt="Logo"
+                            className="h-10 max-w-[140px] w-auto object-contain rounded-lg"
+                          />
                         ) : (
                           <div
                             className="h-10 w-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md"
@@ -977,6 +1171,28 @@ function OwnerWhiteLabelingPage() {
             </div>
           </div>
         )}
+
+        {/* MODAL 4: IMAGE CROPPER (Logo 3:1 & Favicon 1:1) */}
+        <ImageCropper
+          open={cropperOpen}
+          onOpenChange={(isOpen) => {
+            setCropperOpen(isOpen);
+            if (!isOpen) {
+              if (logoInputRef.current) logoInputRef.current.value = "";
+              if (faviconInputRef.current) faviconInputRef.current.value = "";
+            }
+          }}
+          imageSrc={cropperImageSrc}
+          aspectRatio={cropTarget === "logo" ? 3 / 1 : 1 / 1}
+          outputType={cropTarget}
+          title={cropTarget === "logo" ? "Crop Logo Barbershop" : "Crop Favicon Tab"}
+          description={
+            cropTarget === "logo"
+              ? "Atur posisi dan perbesaran area logo dengan rasio 3:1 (horizontal). Hanya area di dalam bingkai yang akan digunakan."
+              : "Atur posisi dan perbesaran area favicon dengan rasio 1:1 (persegi). Hanya area di dalam bingkai yang akan digunakan."
+          }
+          onCropComplete={handleCropComplete}
+        />
       </div>
     </OwnerAuthGuard>
   );

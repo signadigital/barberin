@@ -102,15 +102,15 @@ export const COLOR_PRESETS: ColorPreset[] = [
 
 export interface SaveBrandingInput {
   nama_brand: string;
-  tagline?: string;
-  logo_url?: string;
-  favicon_url?: string;
+  tagline?: string | null;
+  logo_url?: string | null;
+  favicon_url?: string | null;
   theme?: BrandingTheme;
   display_mode?: DisplayMode;
   color_preset?: string;
   hide_barberin_brand?: boolean;
-  meta_title?: string;
-  meta_description?: string;
+  meta_title?: string | null;
+  meta_description?: string | null;
   status?: BrandingStatus;
 }
 
@@ -349,7 +349,13 @@ export const saveOwnerBranding = createServerFn({
     });
 
     // Invalidate in-memory tenant cache so loaders immediately return fresh branding
-    invalidateTenantCache(tenant.barbershopSlug);
+    const shopRecord = await db.query.barbershop.findFirst({
+      where: eq(barbershop.id_barbershop, shopId),
+      columns: { slug: true },
+    });
+    if (shopRecord?.slug) {
+      invalidateTenantCache(shopRecord.slug);
+    }
     invalidateTenantCache();
 
     return {
@@ -384,7 +390,11 @@ export const getOwnerBrandingHistories = createServerFn({
     },
   });
 
-  return histories;
+  return histories.map((h) => ({
+    ...h,
+    data_before: typeof h.data_before === "string" ? h.data_before : JSON.stringify(h.data_before ?? null),
+    data_after: typeof h.data_after === "string" ? h.data_after : JSON.stringify(h.data_after ?? null),
+  }));
 });
 
 // ============================================================================
