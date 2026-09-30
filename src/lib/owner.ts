@@ -7,6 +7,7 @@ import {
   booking,
   capster,
   detailBooking,
+  komisiTransaksi,
   layanan,
   notifikasi,
   pelanggan,
@@ -19,6 +20,7 @@ import {
   transaksi,
   users,
 } from "@/db/schema";
+import { logAudit } from "@/lib/audit";
 import {
   formatRupiah,
   formatTransactionId,
@@ -1549,14 +1551,14 @@ export const getOwnerAuditActivityDetail = createServerFn({
 // ============================================================================
 
 export type OwnerFinanceFilter = {
-  period?: OwnerPeriodFilter;
-  startDate?: string;
-  endDate?: string;
-  paymentMethod?: string;
-  status?: string;
-  search?: string;
-  page?: number;
-  pageSize?: number;
+  period?: OwnerPeriodFilter | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  paymentMethod?: string | undefined;
+  status?: string | undefined;
+  search?: string | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 };
 
 export type OwnerFinanceTransactionItem = {
@@ -1617,6 +1619,7 @@ export type OwnerAuditFinanceResult = {
     totalNonTunai: { count: number; total: number };
   };
   transactions: OwnerFinanceTransactionItem[];
+  allFilteredTransactionIds: string[];
   totalTransactionsCount: number;
   totalPages: number;
   currentPage: number;
@@ -2055,6 +2058,7 @@ export const getOwnerAuditFinance = createServerFn({
         totalNonTunai,
       },
       transactions: paginatedTxs,
+      allFilteredTransactionIds: transactionItems.map((t) => t.id),
       totalTransactionsCount,
       totalPages,
       currentPage: page,
@@ -2612,5 +2616,125 @@ export const markNotificationAsRead = createServerFn({
       .catch(() => {});
     return { success: true };
   });
+
+export type DeleteOwnerTransactionsResult = {
+  success: boolean;
+  deletedCount: number;
+  message: string;
+};
+
+export const deleteOwnerTransactions = createServerFn({
+  method: "POST",
+})
+  .validator((data: { transactionIds: string[] }) => data)
+  .handler(async ({ data }): Promise<DeleteOwnerTransactionsResult> => {
+    const tenant = requireOwnerTenant();
+    const targetShopId = tenant.barbershopId;
+
+    if (!data?.transactionIds || !Array.isArray(data.transactionIds) || data.transactionIds.length === 0) {
+      throw new Error("Tidak ada transaksi yang dipilih untuk dihapus.");
+    }
+
+    const requestedIds = Array.from(
+      new Set(
+        data.transactionIds.filter(
+          (id): id is string => typeof id === "string" && id.trim().length > 0,
+        ),
+      ),
+    );
+
+    if (requestedIds.length === 0) {
+      throw new Error("ID transaksi tidak valid.");
+    }
+
+    // Ambil transaksi yang benar-benar milik tenant barbershop ini
+    const targetTransactions = await db
+      .select({
+        id_transaksi: transaksi.id_transaksi,
+        total: transaksi.total,
+        status_transaksi: transaksi.status_transaksi,
+        created_at: transaksi.created_at,
+      })
+      .from(transaksi)
+      .where(
+        and(
+          inArray(transaksi.id_transaksi, requestedIds),
+          eq(transaksi.id_barbershop, targetShopId),
+        ),
+      );
+
+    if (targetTransactions.length === 0) {
+      throw new Error("Transaksi tidak ditemukan atau Anda tidak memiliki akses untuk menghapus transaksi ini.");
+    }
+
+    // Proteksi isolasi multi-tenant yang ketat:
+    // Jika ada ID yang diminta namun bukan milik barbershop tenant, tolak seluruh operasi!
+    if (targetTransactions.length !== requestedIds.length) {
+      throw new Error("Beberapa transaksi yang dipilih tidak ditemukan atau bukan milik barbershop Anda.");
+    }
+
+    const validIdsToDelete = targetTransactions.map((t) => t.id_transaksi);
+
+    // Eksekusi penghapusan permanen secara atomic di dalam database transaction
+    await db.transaction(async (tx) => {
+      // 1. Hapus pembatalan terkait
+      await tx
+        .delete(pembatalan)
+        .where(inArray(pembatalan.id_transaksi, validIdsToDelete));
+
+      // 2. Hapus struk terkait
+      await tx
+        .delete(struk)
+        .where(inArray(struk.id_transaksi, validIdsToDelete));
+
+      // 3. Hapus pembayaran terkait
+      await tx
+        .delete(pembayaran)
+        .where(inArray(pembayaran.id_transaksi, validIdsToDelete));
+
+      // 4. Hapus komisi_transaksi terkait
+      await tx
+        .delete(komisiTransaksi)
+        .where(inArray(komisiTransaksi.id_transaksi, validIdsToDelete));
+
+      // 5. Hapus transaksi utama dari database Supabase
+      const deletedRows = await tx
+        .delete(transaksi)
+        .where(
+          and(
+            inArray(transaksi.id_transaksi, validIdsToDelete),
+            eq(transaksi.id_barbershop, targetShopId),
+          ),
+        )
+        .returning({ id_transaksi: transaksi.id_transaksi });
+
+      if (deletedRows.length !== validIdsToDelete.length) {
+        throw new Error("Gagal menghapus seluruh transaksi yang dipilih dari database.");
+      }
+    });
+
+    // Catat log aktivitas ke tabel audit_log untuk riwayat finansial
+    for (const t of targetTransactions) {
+      const shortId = formatTransactionId(t.id_transaksi, t.created_at);
+      await logAudit({
+        barbershopId: targetShopId,
+        userId: tenant.userId,
+        aksi: "OWNER_DELETE_TRANSACTION",
+        entityType: "transaksi",
+        entityId: t.id_transaksi,
+        alasan: `Owner ${tenant.namaLengkap} menghapus transaksi ${shortId} secara permanen (Nominal: ${t.total}, Status: ${t.status_transaksi})`,
+      });
+    }
+
+    const count = validIdsToDelete.length;
+    return {
+      success: true,
+      deletedCount: count,
+      message: count === 1
+        ? "Transaksi berhasil dihapus permanen."
+        : `${count} transaksi berhasil dihapus permanen.`,
+    };
+  });
+
 
 
