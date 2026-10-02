@@ -27,7 +27,14 @@ import { registerOwner, resendVerificationEmail } from "@/lib/owner-auth";
 import { normalizePhoneNumber } from "@/lib/auth-utils";
 import { getOwnerAuth, useOwner } from "@/lib/owner-store";
 
+export type OwnerRegisterSearch = {
+  plan?: string | undefined;
+};
+
 export const Route = createFileRoute("/owner/register")({
+  validateSearch: (search: Record<string, unknown>): OwnerRegisterSearch => ({
+    plan: typeof search["plan"] === "string" ? search["plan"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Registrasi Owner Baru — BARBERIN" },
@@ -56,6 +63,8 @@ export const Route = createFileRoute("/owner/register")({
 function OwnerRegisterPage() {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useOwner();
+  const search = Route.useSearch();
+  const selectedPlan = search?.plan;
 
   // Form states
   const [namaLengkap, setNamaLengkap] = useState("");
@@ -466,6 +475,21 @@ function OwnerRegisterPage() {
         ) : (
           /* REGISTRATION FORM */
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            {/* Plan Selected Banner (From Landing Page) */}
+            {selectedPlan && (
+              <div className="p-3.5 bg-blue-500/10 border border-blue-500/25 rounded-2xl flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-slate-400">Paket Terpilih: </span>
+                  <span className="font-bold text-white uppercase tracking-wider">
+                    {selectedPlan}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-md">
+                  Aktivasi Pasca Registrasi
+                </span>
+              </div>
+            )}
+
             {/* Error Alert */}
             {error && (
               <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2.5 text-rose-300 text-xs">
