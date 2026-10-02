@@ -144,9 +144,18 @@ export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
       } catch (err: any) {
         if (!active) return;
         console.error("OwnerAuthGuard verification failed:", err);
+        const rawMsg = err?.message || "";
+        const isTechnicalOrDbError =
+          rawMsg.includes("Failed query") ||
+          rawMsg.includes("syntax for type") ||
+          rawMsg.includes("relation \"") ||
+          rawMsg.includes("column \"");
+
         setDeniedInfo({
           title: "Gagal Verifikasi Sesi",
-          message: err?.message || "Terjadi kendala saat memverifikasi sesi otorisasi.",
+          message: isTechnicalOrDbError
+            ? "Terjadi kendala saat memverifikasi sesi otorisasi. Silakan masuk kembali."
+            : rawMsg || "Terjadi kendala saat memverifikasi sesi otorisasi.",
           actionLabel: "Login Ulang",
           actionTo: "/owner/login",
         });

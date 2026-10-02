@@ -1089,108 +1089,129 @@ export const validateOwnerTenantAccess = createServerFn({
 })
   .validator((data: { targetSlug: string }) => data)
   .handler(async ({ data }): Promise<ValidateOwnerAccessResult> => {
-    const rawSlug = (data.targetSlug || "").trim();
-    if (!rawSlug) {
-      return {
-        authorized: false,
-        reason: "TENANT_NOT_FOUND",
-        redirectTo: "/owner/login",
-      };
-    }
+    try {
+      const rawSlug = (data.targetSlug || "").trim();
+      const cleanSlug = rawSlug.toLowerCase();
+      if (!cleanSlug) {
+        return {
+          authorized: false,
+          reason: "TENANT_NOT_FOUND",
+          redirectTo: "/owner/login",
+        };
+      }
 
-    const session = getOwnerSession();
-    if (!session || !session.userId || !session.barbershopId) {
+      const session = getOwnerSession();
+      if (!session || !session.userId || !session.barbershopId) {
+        return {
+          authorized: false,
+          reason: "NO_SESSION",
+          redirectTo: "/owner/login",
+        };
+      }
+
+      // Ambil data barbershop yang diminta oleh URL
+      // PENTING: barbershop.id_barbershop bertipe UUID di Postgres.
+      // Jika slug bukan format UUID, jangan compare dengan id_barbershop agar tidak error invalid syntax for uuid.
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          rawSlug,
+        );
+      const shopCondition = isUuid
+        ? or(eq(barbershop.slug, cleanSlug), eq(barbershop.id_barbershop, rawSlug))
+        : eq(barbershop.slug, cleanSlug);
+
+      const [targetShop] = await db
+        .select({
+          id_barbershop: barbershop.id_barbershop,
+          slug: barbershop.slug,
+          nama_barbershop: barbershop.nama_barbershop,
+          status: barbershop.status,
+          alamat: barbershop.alamat,
+          no_hp: barbershop.no_hp,
+          jam_buka: barbershop.jam_buka,
+          jam_tutup: barbershop.jam_tutup,
+        })
+        .from(barbershop)
+        .where(shopCondition)
+        .limit(1);
+
+      if (!targetShop) {
+        return {
+          authorized: false,
+          reason: "TENANT_NOT_FOUND",
+          redirectTo: "/owner/login",
+        };
+      }
+
+      // Validasi multi-tenant: apakah barbershop yang dituju cocok dengan sesi?
+      if (session.barbershopId !== targetShop.id_barbershop) {
+        return {
+          authorized: false,
+          reason: "TENANT_MISMATCH",
+          message: `Akses ditolak: Akun Anda tidak memiliki izin untuk mengelola barbershop "${targetShop.nama_barbershop}".`,
+          redirectTo: "/owner/login",
+        };
+      }
+
+      // Validasi status toko: jika suspended, tolak akses
+      if (targetShop.status === "suspended") {
+        return {
+          authorized: false,
+          reason: "TENANT_SUSPENDED",
+          message: `Barbershop "${targetShop.nama_barbershop}" sedang dinonaktifkan (suspended). Silakan hubungi platform admin.`,
+          redirectTo: "/owner/login",
+        };
+      }
+
+      // Validasi user Owner riil di database
+      const [u] = await db
+        .select({
+          id_user: users.id_user,
+          email: users.email,
+          nama_lengkap: users.nama_lengkap,
+          role: users.role,
+          status: users.status,
+          email_verified: users.email_verified,
+        })
+        .from(users)
+        .where(eq(users.id_user, session.userId))
+        .limit(1);
+
+      if (!u || u.role !== "owner" || u.status !== "active") {
+        clearOwnerSessionCookie();
+        return {
+          authorized: false,
+          reason: "USER_INACTIVE",
+          message: "Akun Owner tidak aktif atau telah dinonaktifkan.",
+          redirectTo: "/owner/login",
+        };
+      }
+
+      return {
+        authorized: true,
+        user: {
+          id_user: u.id_user,
+          email: u.email,
+          nama_lengkap: u.nama_lengkap,
+          role: u.role,
+          id_barbershop: targetShop.id_barbershop,
+          barbershopSlug: targetShop.slug,
+          barbershopName: targetShop.nama_barbershop,
+          alamat: targetShop.alamat ?? undefined,
+          no_hp: targetShop.no_hp ?? undefined,
+          jam_buka: targetShop.jam_buka ?? undefined,
+          jam_tutup: targetShop.jam_tutup ?? undefined,
+        },
+      };
+    } catch (err: any) {
+      console.error("validateOwnerTenantAccess error:", err);
       return {
         authorized: false,
         reason: "NO_SESSION",
+        message: "Terjadi kesalahan saat memverifikasi sesi akses toko.",
         redirectTo: "/owner/login",
       };
     }
-
-    // Ambil data barbershop yang diminta oleh URL
-    const [targetShop] = await db
-      .select({
-        id_barbershop: barbershop.id_barbershop,
-        slug: barbershop.slug,
-        nama_barbershop: barbershop.nama_barbershop,
-        status: barbershop.status,
-        alamat: barbershop.alamat,
-        no_hp: barbershop.no_hp,
-        jam_buka: barbershop.jam_buka,
-        jam_tutup: barbershop.jam_tutup,
-      })
-      .from(barbershop)
-      .where(or(eq(barbershop.slug, rawSlug), eq(barbershop.id_barbershop, rawSlug)))
-      .limit(1);
-
-    if (!targetShop) {
-      return {
-        authorized: false,
-        reason: "TENANT_NOT_FOUND",
-        redirectTo: "/owner/login",
-      };
-    }
-
-    // Validasi multi-tenant: apakah barbershop yang dituju cocok dengan sesi?
-    if (session.barbershopId !== targetShop.id_barbershop) {
-      return {
-        authorized: false,
-        reason: "TENANT_MISMATCH",
-        message: `Akses ditolak: Akun Anda tidak memiliki izin untuk mengelola barbershop "${targetShop.nama_barbershop}".`,
-        redirectTo: "/owner/login",
-      };
-    }
-
-    // Validasi status toko: jika suspended, tolak akses
-    if (targetShop.status === "suspended") {
-      return {
-        authorized: false,
-        reason: "TENANT_SUSPENDED",
-        message: `Barbershop "${targetShop.nama_barbershop}" sedang dinonaktifkan (suspended). Silakan hubungi platform admin.`,
-        redirectTo: "/owner/login",
-      };
-    }
-
-    // Validasi user Owner riil di database
-    const [u] = await db
-      .select({
-        id_user: users.id_user,
-        email: users.email,
-        nama_lengkap: users.nama_lengkap,
-        role: users.role,
-        status: users.status,
-        email_verified: users.email_verified,
-      })
-      .from(users)
-      .where(eq(users.id_user, session.userId))
-      .limit(1);
-
-    if (!u || u.role !== "owner" || u.status !== "active") {
-      clearOwnerSessionCookie();
-      return {
-        authorized: false,
-        reason: "USER_INACTIVE",
-        message: "Akun Owner tidak aktif atau telah dinonaktifkan.",
-        redirectTo: "/owner/login",
-      };
-    }
-
-    return {
-      authorized: true,
-      user: {
-        id_user: u.id_user,
-        email: u.email,
-        nama_lengkap: u.nama_lengkap,
-        role: u.role,
-        id_barbershop: targetShop.id_barbershop,
-        barbershopSlug: targetShop.slug,
-        barbershopName: targetShop.nama_barbershop,
-        alamat: targetShop.alamat ?? undefined,
-        no_hp: targetShop.no_hp ?? undefined,
-        jam_buka: targetShop.jam_buka ?? undefined,
-        jam_tutup: targetShop.jam_tutup ?? undefined,
-      },
-    };
   });
 
 // ============================================================================
