@@ -37,7 +37,7 @@ export function SolutionSection() {
   return (
     <section
       id="solusi"
-      className="py-16 sm:py-24 scroll-mt-20 bg-[#F8FAFC] text-slate-800 transition-colors"
+      className="py-16 sm:py-24 scroll-mt-24 sm:scroll-mt-28 bg-[#F8FAFC] text-slate-800 transition-colors"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

@@ -101,7 +101,7 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="cara-kerja" className="py-16 sm:py-24 scroll-mt-20 bg-[#070D18] text-slate-100 transition-colors">
+    <section id="cara-kerja" className="py-16 sm:py-24 scroll-mt-24 sm:scroll-mt-28 bg-[#070D18] text-slate-100 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">

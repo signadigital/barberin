@@ -1,133 +1,176 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { BarberinLogo } from "@/components/barberin/ui";
 
-const navLinks = [
+// Single Source of Truth for Navigation
+export const NAV_LINKS = [
   { id: "home", label: "Home", href: "#home" },
   { id: "problem", label: "Problem", href: "#problem" },
   { id: "solusi", label: "Solusi", href: "#solusi" },
   { id: "cara-kerja", label: "Cara Kerja", href: "#cara-kerja" },
   { id: "harga", label: "Harga", href: "#harga" },
   { id: "faq", label: "FAQ", href: "#faq" },
-];
+] as const;
 
-const sectionIds = ["home", "problem", "impact", "solusi", "cara-kerja", "harga", "faq"];
+// DOM order of sections with mapping (Impact maps to Problem)
+export const SECTION_DOM_CONFIG = [
+  { id: "home", mappedNavId: "home" },
+  { id: "problem", mappedNavId: "problem" },
+  { id: "impact", mappedNavId: "problem" },
+  { id: "solusi", mappedNavId: "solusi" },
+  { id: "cara-kerja", mappedNavId: "cara-kerja" },
+  { id: "harga", mappedNavId: "harga" },
+  { id: "faq", mappedNavId: "faq" },
+] as const;
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("home");
-  const isClickScrolling = useRef(false);
+
+  const headerRef = useRef<HTMLElement | null>(null);
+  const activeSectionRef = useRef<string>("home");
+
+  // Pure position-based active section calculator based on viewport geometry
+  const calculateActiveSection = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const scrollY = window.scrollY;
+    const navbarHeight = headerRef.current?.offsetHeight || 80;
+    const activationPoint = navbarHeight + 80;
+
+    let currentNavId = "home";
+
+    // 1. If at the very top of the page, Home is always active
+    if (scrollY < 50) {
+      currentNavId = "home";
+    }
+    // 2. If at the bottom of the page (FAQ / CTA), FAQ is active
+    else if (
+      window.innerHeight + scrollY >=
+      document.documentElement.scrollHeight - 60
+    ) {
+      currentNavId = "faq";
+    }
+    // 3. Otherwise find which section currently intersects the activation point
+    else {
+      let matched = false;
+      for (const item of SECTION_DOM_CONFIG) {
+        const el = document.getElementById(item.id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= activationPoint && rect.bottom > activationPoint) {
+          currentNavId = item.mappedNavId;
+          matched = true;
+          break;
+        }
+      }
+
+      // Edge-case fallback: choose the section closest to activation point
+      if (!matched) {
+        let maxTop = -Infinity;
+        for (const item of SECTION_DOM_CONFIG) {
+          const el = document.getElementById(item.id);
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= activationPoint && rect.top > maxTop) {
+            maxTop = rect.top;
+            currentNavId = item.mappedNavId;
+          }
+        }
+      }
+    }
+
+    // Only update state if active section has genuinely changed
+    if (currentNavId !== activeSectionRef.current) {
+      activeSectionRef.current = currentNavId;
+      setActiveSection(currentNavId);
+    }
+  }, []);
 
   useEffect(() => {
-    // Initial scroll check for header glassmorphism
+    let rafId: number | null = null;
+
     const handleScroll = () => {
+      // Toggle navbar glassmorphism
       setScrolled(window.scrollY > 20);
-      if (window.scrollY < 50 && !isClickScrolling.current) {
-        setActiveSection("home");
+
+      // Throttle viewport calculations to requestAnimationFrame (no per-pixel re-renders)
+      if (rafId === null) {
+        rafId = window.requestAnimationFrame(() => {
+          calculateActiveSection();
+          rafId = null;
+        });
       }
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Initial hash navigation check on mount
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+
+    // Initial check on mount
+    calculateActiveSection();
+
+    // Check direct hash URL on initial load (e.g. /#harga)
     if (typeof window !== "undefined" && window.location.hash) {
       const hash = window.location.hash.replace("#", "");
       const targetElement = document.getElementById(hash);
       if (targetElement) {
-        const mappedId = hash === "impact" ? "problem" : hash;
-        setActiveSection(mappedId);
         setTimeout(() => {
-          targetElement.scrollIntoView({ behavior: "smooth" });
+          targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+          calculateActiveSection();
         }, 150);
       }
     }
 
-    // Hash change handler for browser Back/Forward navigation
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace("#", "");
-      if (hash) {
-        const mappedId = hash === "impact" ? "problem" : hash;
-        setActiveSection(mappedId);
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      if (window.location.hash) {
+        const hash = window.location.hash.replace("#", "");
         const targetElement = document.getElementById(hash);
         if (targetElement) {
-          targetElement.scrollIntoView({ behavior: "smooth" });
+          targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-      } else {
-        setActiveSection("home");
       }
+      window.requestAnimationFrame(calculateActiveSection);
     };
-    window.addEventListener("popstate", handleHashChange);
-
-    // IntersectionObserver to detect active section without per-pixel scroll listeners
-    const intersectingMap = new Map<string, boolean>();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isClickScrolling.current) return;
-
-        entries.forEach((entry) => {
-          intersectingMap.set(entry.target.id, entry.isIntersecting);
-        });
-
-        // Determine which observed section is currently visible in document order
-        for (const id of sectionIds) {
-          if (intersectingMap.get(id)) {
-            const mappedId = id === "impact" ? "problem" : id;
-            setActiveSection(mappedId);
-            break;
-          }
-        }
-      },
-      {
-        rootMargin: "-80px 0px -55% 0px",
-        threshold: 0,
-      }
-    );
-
-    sectionIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("popstate", handleHashChange);
-      observer.disconnect();
+      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("popstate", handlePopState);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
     };
-  }, []);
+  }, [calculateActiveSection]);
 
+  // Click handler: initiates smooth scroll without artificially forcing activeSection state
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    href: string,
-    id: string
+    href: string
   ) => {
     e.preventDefault();
-    setActiveSection(id);
     setMobileMenuOpen(false);
 
     const targetId = href.replace("#", "");
     const targetElement = document.getElementById(targetId);
 
     if (targetElement) {
-      isClickScrolling.current = true;
-      targetElement.scrollIntoView({ behavior: "smooth" });
+      targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
 
       if (window.history.pushState) {
         window.history.pushState(null, "", href);
       } else {
         window.location.hash = href;
       }
-
-      // Re-enable observer after smooth scroll finishes
-      setTimeout(() => {
-        isClickScrolling.current = false;
-      }, 800);
     }
   };
 
   return (
     <header
+      ref={headerRef}
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-[#070D18]/90 backdrop-blur-md border-b border-slate-800 shadow-xl shadow-black/30"
@@ -139,7 +182,7 @@ export function LandingNavbar() {
           {/* Brand Logo */}
           <Link
             to="/"
-            onClick={(e) => handleNavClick(e as any, "#home", "home")}
+            onClick={(e) => handleNavClick(e as any, "#home")}
             className="flex items-center gap-2.5 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1"
           >
             <BarberinLogo className="h-8 w-8 sm:h-9 sm:w-9 transition-transform duration-300 group-hover:scale-105" />
@@ -158,13 +201,13 @@ export function LandingNavbar() {
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
-            {navLinks.map((item) => {
+            {NAV_LINKS.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={(e) => handleNavClick(e, item.href, item.id)}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className={`px-3 py-1.5 text-xs lg:text-sm font-semibold rounded-lg transition-all duration-200 border ${
                     isActive
                       ? "text-blue-400 bg-blue-500/10 border-blue-500/25 shadow-xs font-bold"
@@ -220,13 +263,13 @@ export function LandingNavbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-[#0A1322] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top-4 duration-200 shadow-2xl">
           <nav className="flex flex-col space-y-1">
-            {navLinks.map((item) => {
+            {NAV_LINKS.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={(e) => handleNavClick(e, item.href, item.id)}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className={`px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-colors border ${
                     isActive
                       ? "text-blue-400 bg-blue-500/10 border-blue-500/20 font-bold"
