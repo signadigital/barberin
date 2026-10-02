@@ -40,13 +40,13 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq" className="py-16 sm:py-24 scroll-mt-20 border-t border-slate-800/80 bg-[#0A1424]/40">
+    <section id="faq" className="py-16 sm:py-24 scroll-mt-20 bg-[#070D18] text-slate-100 transition-colors">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-3">
             <HelpCircle className="h-3.5 w-3.5" />
-            <span>06 - FAQ</span>
+            <span>07 - FAQ</span>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-snug">
             Pertanyaan yang Sering Diajukan
@@ -63,7 +63,7 @@ export function FAQSection() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl bg-[#0F1D33]/80 border border-slate-800 overflow-hidden transition-all duration-200"
+                className="rounded-2xl bg-[#0F1D33] border border-slate-800 overflow-hidden transition-all duration-200"
               >
                 <button
                   type="button"
@@ -78,7 +78,7 @@ export function FAQSection() {
                     className={`h-7 w-7 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 ${
                       isOpen
                         ? "rotate-180 bg-blue-600 text-white"
-                        : "bg-slate-800 text-slate-400"
+                        : "bg-slate-800/80 text-blue-400"
                     }`}
                   >
                     <ChevronDown className="h-4 w-4" />

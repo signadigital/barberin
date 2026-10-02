@@ -4,28 +4,28 @@ export function ProblemSection() {
   const problems = [
     {
       icon: Receipt,
-      iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+      iconColor: "text-rose-600 bg-rose-50 border-rose-100",
       title: "Apakah Setiap Uang yang Masuk Sudah Tercatat?",
       description:
         "Ketika transaksi masih dicatat secara manual, Owner kesulitan mencocokkan uang yang diterima dengan layanan yang telah diselesaikan.",
     },
     {
       icon: Calculator,
-      iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+      iconColor: "text-amber-600 bg-amber-50 border-amber-100",
       title: "Apakah Perhitungan Komisi Capster Sudah Jelas?",
       description:
         "Perhitungan manual dapat menimbulkan perbedaan nominal, kesalahan rekap, dan pertanyaan mengenai komisi yang belum dibayarkan.",
     },
     {
       icon: Clock,
-      iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+      iconColor: "text-blue-600 bg-blue-50 border-blue-100",
       title: "Apakah Pelanggan Tahu Kapan Akan Dilayani?",
       description:
         "Antrean yang tidak teratur membuat pelanggan harus terus bertanya dan Capster kesulitan mengelola urutan layanan.",
     },
     {
       icon: BarChart3,
-      iconColor: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+      iconColor: "text-purple-600 bg-purple-50 border-purple-100",
       title: "Apakah Anda Mengetahui Kondisi Bisnis Tanpa Harus Datang ke Lokasi?",
       description:
         "Tanpa rekap terpusat, Owner perlu memeriksa catatan satu per satu untuk mengetahui pendapatan, transaksi, dan aktivitas operasional.",
@@ -33,18 +33,21 @@ export function ProblemSection() {
   ];
 
   return (
-    <section id="problem" className="py-16 sm:py-24 scroll-mt-20 border-t border-slate-800/60 bg-[#070D18]/40">
+    <section
+      id="problem"
+      className="py-16 sm:py-24 scroll-mt-20 bg-[#F8FAFC] text-slate-800 transition-colors"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold mb-3">
-            <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
-            <span>01 - Problem</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-3">
+            <AlertCircle className="h-3.5 w-3.5 text-blue-600" />
+            <span>02 - Problem</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-snug">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0A1424] tracking-tight leading-snug">
             Mengelola Barbershop Seharusnya Tidak Bergantung pada Perkiraan.
           </h2>
-          <p className="text-sm sm:text-base text-slate-400 mt-3">
+          <p className="text-sm sm:text-base text-slate-600 mt-3">
             Tantangan operasional nyata yang dihadapi ratusan pemilik barbershop setiap hari.
           </p>
         </div>
@@ -56,7 +59,7 @@ export function ProblemSection() {
             return (
               <div
                 key={idx}
-                className="group p-6 sm:p-7 rounded-2xl bg-[#0F1D33]/80 hover:bg-[#0F1D33] border border-slate-800 hover:border-slate-700 transition-all duration-300 shadow-lg shadow-black/20 hover:shadow-xl hover:-translate-y-0.5"
+                className="group p-6 sm:p-7 rounded-2xl bg-white hover:bg-white border border-slate-200/90 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
               >
                 <div className="flex items-start gap-4">
                   <div
@@ -65,10 +68,10 @@ export function ProblemSection() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-300 transition-colors">
+                    <h3 className="text-base sm:text-lg font-bold text-[#0A1424] group-hover:text-blue-600 transition-colors">
                       {p.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                       {p.description}
                     </p>
                   </div>
