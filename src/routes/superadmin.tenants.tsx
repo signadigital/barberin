@@ -1,30 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import {
-  Building2,
   Users,
   Search,
-  Plus,
   RefreshCw,
   Store,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   SlidersHorizontal,
-  ExternalLink,
-  Shield,
-  Eye,
-  EyeOff,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  X,
-  Lock,
-  ArrowRight,
-  Sparkles,
-  Info,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,9 +20,7 @@ import {
 } from "@/components/superadmin/ui";
 import {
   getSuperadminTenants,
-  createTenantWithTransaction,
   toggleTenantStatus,
-  logSuperadminAction,
   type SuperadminTenantItem,
   type SuperadminStats,
 } from "@/lib/superadmin";
@@ -76,20 +57,6 @@ function SuperadminTenantsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
   const [sortBy, setSortBy] = useState<"terbaru" | "terlama" | "name_asc" | "name_desc">("terbaru");
 
-  // Modal State
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedTenantDetail, setSelectedTenantDetail] = useState<SuperadminTenantItem | null>(null);
-
-  // Form Tambah Toko
-  const [formNamaBarbershop, setFormNamaBarbershop] = useState("");
-  const [formNamaOwner, setFormNamaOwner] = useState("");
-  const [formEmailOwner, setFormEmailOwner] = useState("");
-  const [formPasswordAwal, setFormPasswordAwal] = useState("");
-  const [formAlamat, setFormAlamat] = useState("");
-  const [formNoHp, setFormNoHp] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
   const fetchData = async () => {
@@ -130,48 +97,6 @@ function SuperadminTenantsPage() {
     return () => clearTimeout(timer);
   }, [isLoggedIn, statusFilter, sortBy, search]);
 
-  // Handle Tambah Toko Baru (Database Transaction)
-  const handleCreateTenant = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-    setIsSubmitting(true);
-
-    try {
-      const res = await createTenantWithTransaction({
-        data: {
-          nama_barbershop: formNamaBarbershop,
-          nama_owner: formNamaOwner,
-          email_owner: formEmailOwner,
-          password_awal: formPasswordAwal,
-          alamat: formAlamat,
-          no_hp_barbershop: formNoHp,
-        },
-      });
-
-      toast.success("Toko Berhasil Ditambahkan", {
-        description: `Toko '${formNamaBarbershop}' dan akun Owner telah dibuat via DB Transaction.`,
-      });
-
-      // Reset form & close modal
-      setFormNamaBarbershop("");
-      setFormNamaOwner("");
-      setFormEmailOwner("");
-      setFormPasswordAwal("");
-      setFormAlamat("");
-      setFormNoHp("");
-      setIsAddModalOpen(false);
-
-      // Refresh data
-      fetchData();
-    } catch (err: any) {
-      console.error("Gagal tambah toko:", err);
-      const msg = err?.message || "Toko gagal dibuat. Tidak ada data yang disimpan.";
-      setFormError(msg);
-      toast.error("Gagal Tambah Toko", { description: msg });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Handle Toggle Active ↔ Suspended
   const handleToggleStatus = async (tenant: SuperadminTenantItem) => {
@@ -231,28 +156,17 @@ function SuperadminTenantsPage() {
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 pb-24 lg:pb-12 max-w-[1600px] w-full mx-auto">
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-            <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-2">
-                <Store className="h-3.5 w-3.5" />
-                <span>Multi-Tenant Management</span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-                Manajemen Toko & Barbershop
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Kelola seluruh barbershop terdaftar, akun Owner, dan status operasional toko.
-              </p>
+          <div className="border-b border-slate-800/80 pb-5">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-2">
+              <Store className="h-3.5 w-3.5" />
+              <span>Multi-Tenant Management</span>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Tambah Toko Baru</span>
-            </button>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+              Manajemen Toko & Barbershop
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Kelola seluruh barbershop terdaftar, akun Owner, dan status operasional toko.
+            </p>
           </div>
 
           {/* Statistics Cards (Real Database Data) */}
@@ -379,7 +293,7 @@ function SuperadminTenantsPage() {
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
                   {search
                     ? `Tidak ada hasil untuk pencarian "${search}". Coba kata kunci lain.`
-                    : "Belum ada toko yang terdaftar. Klik tombol 'Tambah Toko Baru' untuk menambahkan toko pertama."}
+                    : "Belum ada toko yang terdaftar."}
                 </p>
               </div>
             ) : (
@@ -576,194 +490,6 @@ function SuperadminTenantsPage() {
           </div>
         </main>
       </div>
-
-      {/* ==================================================================== */}
-      {/* MODAL TAMBAH TOKO BARU (DB TRANSACTION) */}
-      {/* ==================================================================== */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-[#0F1D33] border border-slate-700/90 rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <Store className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">
-                    Tambah Toko / Tenant Baru
-                  </h2>
-                  <p className="text-[11px] text-slate-400">
-                    Proses pembuatan otomatis via Database Transaction
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="mb-4 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateTenant} className="space-y-4 text-xs">
-              {/* Seksi Toko */}
-              <div className="space-y-3">
-                <div className="text-[11px] uppercase font-bold text-blue-400 tracking-wider">
-                  1. Informasi Toko / Barbershop
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Nama Barbershop <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formNamaBarbershop}
-                    onChange={(e) => setFormNamaBarbershop(e.target.value)}
-                    placeholder="Contoh: BARBERIN Platinum Purwokerto"
-                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Alamat Lengkap Toko
-                  </label>
-                  <input
-                    type="text"
-                    value={formAlamat}
-                    onChange={(e) => setFormAlamat(e.target.value)}
-                    placeholder="Jl. Merdeka No. 45, Purwokerto Barat"
-                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    No. Telepon / WhatsApp Toko
-                  </label>
-                  <input
-                    type="text"
-                    value={formNoHp}
-                    onChange={(e) => setFormNoHp(e.target.value)}
-                    placeholder="0812-3456-7890"
-                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Seksi Owner */}
-              <div className="space-y-3 pt-3 border-t border-slate-800">
-                <div className="text-[11px] uppercase font-bold text-emerald-400 tracking-wider">
-                  2. Akun Owner Barbershop
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Nama Lengkap Owner <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formNamaOwner}
-                    onChange={(e) => setFormNamaOwner(e.target.value)}
-                    placeholder="Contoh: Budi Santoso"
-                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Email Owner (Untuk Login) <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formEmailOwner}
-                    onChange={(e) => setFormEmailOwner(e.target.value)}
-                    placeholder="owner@tokoanda.com"
-                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Password Awal <span className="text-rose-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={formPasswordAwal}
-                      onChange={(e) => setFormPasswordAwal(e.target.value)}
-                      placeholder="Minimal 6 karakter"
-                      className="w-full pl-3.5 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* DB Transaction Guarantee Note */}
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-blue-300 flex items-start gap-2">
-                <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>
-                  Sistem mengeksekusi pembuatan toko dan akun owner secara <strong>atomic via DB Transaction</strong>. Jika terjadi kegagalan, seluruh perubahan akan di-rollback tanpa sisa data yatim.
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Menyimpan (DB Transaction)...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Simpan & Aktifkan Toko</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
     </SuperadminAuthGuard>
   );
