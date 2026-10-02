@@ -33,6 +33,7 @@ import { Route as BarbershopSlugCapsterCommissionsRouteImport } from './routes/$
 import { Route as BarbershopSlugCapsterDashboardRouteImport } from './routes/$barbershopSlug.capster.dashboard'
 import { Route as BarbershopSlugCapsterEndShiftRouteImport } from './routes/$barbershopSlug.capster.end-shift'
 import { Route as BarbershopSlugCapsterLoginRouteImport } from './routes/$barbershopSlug.capster.login'
+import { Route as BarbershopSlugCapsterQrCodeRouteImport } from './routes/$barbershopSlug.capster.qr-code'
 import { Route as BarbershopSlugCapsterServicesRouteImport } from './routes/$barbershopSlug.capster.services'
 import { Route as BarbershopSlugCapsterShiftSavedRouteImport } from './routes/$barbershopSlug.capster.shift-saved'
 import { Route as BarbershopSlugCapsterTransactionsRouteImport } from './routes/$barbershopSlug.capster.transactions'
@@ -57,6 +58,7 @@ import { Route as BarbershopSlugOwnerHelpRouteImport } from './routes/$barbersho
 import { Route as BarbershopSlugOwnerKomisiRouteImport } from './routes/$barbershopSlug.owner.komisi'
 import { Route as BarbershopSlugOwnerLoginRouteImport } from './routes/$barbershopSlug.owner.login'
 import { Route as BarbershopSlugOwnerPricingRouteImport } from './routes/$barbershopSlug.owner.pricing'
+import { Route as BarbershopSlugOwnerQrCodeRouteImport } from './routes/$barbershopSlug.owner.qr-code'
 import { Route as BarbershopSlugOwnerResetPasswordRouteImport } from './routes/$barbershopSlug.owner.reset-password'
 import { Route as BarbershopSlugOwnerServicesRouteImport } from './routes/$barbershopSlug.owner.services'
 import { Route as BarbershopSlugOwnerSettingsRouteImport } from './routes/$barbershopSlug.owner.settings'
@@ -203,6 +205,12 @@ const BarbershopSlugCapsterLoginRoute =
     path: '/capster/login',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
+const BarbershopSlugCapsterQrCodeRoute =
+  BarbershopSlugCapsterQrCodeRouteImport.update({
+    id: '/capster/qr-code',
+    path: '/capster/qr-code',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
 const BarbershopSlugCapsterServicesRoute =
   BarbershopSlugCapsterServicesRouteImport.update({
     id: '/capster/services',
@@ -345,6 +353,12 @@ const BarbershopSlugOwnerPricingRoute =
     path: '/owner/pricing',
     getParentRoute: () => BarbershopSlugRoute,
   } as any)
+const BarbershopSlugOwnerQrCodeRoute =
+  BarbershopSlugOwnerQrCodeRouteImport.update({
+    id: '/owner/qr-code',
+    path: '/owner/qr-code',
+    getParentRoute: () => BarbershopSlugRoute,
+  } as any)
 const BarbershopSlugOwnerResetPasswordRoute =
   BarbershopSlugOwnerResetPasswordRouteImport.update({
     id: '/owner/reset-password',
@@ -479,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/qr-code': typeof BarbershopSlugCapsterQrCodeRoute
   '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
   '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
   '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
@@ -503,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
   '/$barbershopSlug/owner/pricing': typeof BarbershopSlugOwnerPricingRoute
+  '/$barbershopSlug/owner/qr-code': typeof BarbershopSlugOwnerQrCodeRoute
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
@@ -547,6 +563,7 @@ export interface FileRoutesByTo {
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/qr-code': typeof BarbershopSlugCapsterQrCodeRoute
   '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
   '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
   '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
@@ -571,6 +588,7 @@ export interface FileRoutesByTo {
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
   '/$barbershopSlug/owner/pricing': typeof BarbershopSlugOwnerPricingRoute
+  '/$barbershopSlug/owner/qr-code': typeof BarbershopSlugOwnerQrCodeRoute
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
@@ -616,6 +634,7 @@ export interface FileRoutesById {
   '/$barbershopSlug/capster/dashboard': typeof BarbershopSlugCapsterDashboardRoute
   '/$barbershopSlug/capster/end-shift': typeof BarbershopSlugCapsterEndShiftRoute
   '/$barbershopSlug/capster/login': typeof BarbershopSlugCapsterLoginRoute
+  '/$barbershopSlug/capster/qr-code': typeof BarbershopSlugCapsterQrCodeRoute
   '/$barbershopSlug/capster/services': typeof BarbershopSlugCapsterServicesRoute
   '/$barbershopSlug/capster/shift-saved': typeof BarbershopSlugCapsterShiftSavedRoute
   '/$barbershopSlug/capster/transactions': typeof BarbershopSlugCapsterTransactionsRouteWithChildren
@@ -640,6 +659,7 @@ export interface FileRoutesById {
   '/$barbershopSlug/owner/komisi': typeof BarbershopSlugOwnerKomisiRoute
   '/$barbershopSlug/owner/login': typeof BarbershopSlugOwnerLoginRoute
   '/$barbershopSlug/owner/pricing': typeof BarbershopSlugOwnerPricingRoute
+  '/$barbershopSlug/owner/qr-code': typeof BarbershopSlugOwnerQrCodeRoute
   '/$barbershopSlug/owner/reset-password': typeof BarbershopSlugOwnerResetPasswordRoute
   '/$barbershopSlug/owner/services': typeof BarbershopSlugOwnerServicesRoute
   '/$barbershopSlug/owner/settings': typeof BarbershopSlugOwnerSettingsRoute
@@ -686,6 +706,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/qr-code'
     | '/$barbershopSlug/capster/services'
     | '/$barbershopSlug/capster/shift-saved'
     | '/$barbershopSlug/capster/transactions'
@@ -710,6 +731,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
     | '/$barbershopSlug/owner/pricing'
+    | '/$barbershopSlug/owner/qr-code'
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
@@ -754,6 +776,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/qr-code'
     | '/$barbershopSlug/capster/services'
     | '/$barbershopSlug/capster/shift-saved'
     | '/$barbershopSlug/capster/transactions'
@@ -778,6 +801,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
     | '/$barbershopSlug/owner/pricing'
+    | '/$barbershopSlug/owner/qr-code'
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
@@ -822,6 +846,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/capster/dashboard'
     | '/$barbershopSlug/capster/end-shift'
     | '/$barbershopSlug/capster/login'
+    | '/$barbershopSlug/capster/qr-code'
     | '/$barbershopSlug/capster/services'
     | '/$barbershopSlug/capster/shift-saved'
     | '/$barbershopSlug/capster/transactions'
@@ -846,6 +871,7 @@ export interface FileRouteTypes {
     | '/$barbershopSlug/owner/komisi'
     | '/$barbershopSlug/owner/login'
     | '/$barbershopSlug/owner/pricing'
+    | '/$barbershopSlug/owner/qr-code'
     | '/$barbershopSlug/owner/reset-password'
     | '/$barbershopSlug/owner/services'
     | '/$barbershopSlug/owner/settings'
@@ -1057,6 +1083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BarbershopSlugCapsterLoginRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
+    '/$barbershopSlug/capster/qr-code': {
+      id: '/$barbershopSlug/capster/qr-code'
+      path: '/capster/qr-code'
+      fullPath: '/$barbershopSlug/capster/qr-code'
+      preLoaderRoute: typeof BarbershopSlugCapsterQrCodeRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
     '/$barbershopSlug/capster/services': {
       id: '/$barbershopSlug/capster/services'
       path: '/capster/services'
@@ -1223,6 +1256,13 @@ declare module '@tanstack/react-router' {
       path: '/owner/pricing'
       fullPath: '/$barbershopSlug/owner/pricing'
       preLoaderRoute: typeof BarbershopSlugOwnerPricingRouteImport
+      parentRoute: typeof BarbershopSlugRoute
+    }
+    '/$barbershopSlug/owner/qr-code': {
+      id: '/$barbershopSlug/owner/qr-code'
+      path: '/owner/qr-code'
+      fullPath: '/$barbershopSlug/owner/qr-code'
+      preLoaderRoute: typeof BarbershopSlugOwnerQrCodeRouteImport
       parentRoute: typeof BarbershopSlugRoute
     }
     '/$barbershopSlug/owner/reset-password': {
@@ -1454,6 +1494,7 @@ interface BarbershopSlugRouteChildren {
   BarbershopSlugCapsterDashboardRoute: typeof BarbershopSlugCapsterDashboardRoute
   BarbershopSlugCapsterEndShiftRoute: typeof BarbershopSlugCapsterEndShiftRoute
   BarbershopSlugCapsterLoginRoute: typeof BarbershopSlugCapsterLoginRoute
+  BarbershopSlugCapsterQrCodeRoute: typeof BarbershopSlugCapsterQrCodeRoute
   BarbershopSlugCapsterServicesRoute: typeof BarbershopSlugCapsterServicesRoute
   BarbershopSlugCapsterShiftSavedRoute: typeof BarbershopSlugCapsterShiftSavedRoute
   BarbershopSlugCapsterTransactionsRoute: typeof BarbershopSlugCapsterTransactionsRouteWithChildren
@@ -1478,6 +1519,7 @@ interface BarbershopSlugRouteChildren {
   BarbershopSlugOwnerKomisiRoute: typeof BarbershopSlugOwnerKomisiRoute
   BarbershopSlugOwnerLoginRoute: typeof BarbershopSlugOwnerLoginRoute
   BarbershopSlugOwnerPricingRoute: typeof BarbershopSlugOwnerPricingRoute
+  BarbershopSlugOwnerQrCodeRoute: typeof BarbershopSlugOwnerQrCodeRoute
   BarbershopSlugOwnerResetPasswordRoute: typeof BarbershopSlugOwnerResetPasswordRoute
   BarbershopSlugOwnerServicesRoute: typeof BarbershopSlugOwnerServicesRoute
   BarbershopSlugOwnerSettingsRoute: typeof BarbershopSlugOwnerSettingsRoute
@@ -1494,6 +1536,7 @@ const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
   BarbershopSlugCapsterDashboardRoute: BarbershopSlugCapsterDashboardRoute,
   BarbershopSlugCapsterEndShiftRoute: BarbershopSlugCapsterEndShiftRoute,
   BarbershopSlugCapsterLoginRoute: BarbershopSlugCapsterLoginRoute,
+  BarbershopSlugCapsterQrCodeRoute: BarbershopSlugCapsterQrCodeRoute,
   BarbershopSlugCapsterServicesRoute: BarbershopSlugCapsterServicesRoute,
   BarbershopSlugCapsterShiftSavedRoute: BarbershopSlugCapsterShiftSavedRoute,
   BarbershopSlugCapsterTransactionsRoute:
@@ -1525,6 +1568,7 @@ const BarbershopSlugRouteChildren: BarbershopSlugRouteChildren = {
   BarbershopSlugOwnerKomisiRoute: BarbershopSlugOwnerKomisiRoute,
   BarbershopSlugOwnerLoginRoute: BarbershopSlugOwnerLoginRoute,
   BarbershopSlugOwnerPricingRoute: BarbershopSlugOwnerPricingRoute,
+  BarbershopSlugOwnerQrCodeRoute: BarbershopSlugOwnerQrCodeRoute,
   BarbershopSlugOwnerResetPasswordRoute: BarbershopSlugOwnerResetPasswordRoute,
   BarbershopSlugOwnerServicesRoute: BarbershopSlugOwnerServicesRoute,
   BarbershopSlugOwnerSettingsRoute: BarbershopSlugOwnerSettingsRoute,

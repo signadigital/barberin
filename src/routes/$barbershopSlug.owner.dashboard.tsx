@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   Calendar,
@@ -10,6 +10,7 @@ import {
   XCircle,
   AlertCircle,
   Clock,
+  QrCode,
 } from "lucide-react";
 
 import {
@@ -237,8 +238,16 @@ function OwnerDashboardPage() {
               </p>
             </div>
 
-            {/* Date & Period Filter Selector */}
-            <div className="flex items-center gap-3 self-start sm:self-auto">
+            {/* Date & Period Filter Selector + QR Pelanggan Quick Action */}
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              <Link
+                to={`/${barbershopSlug}/owner/qr-code` as any}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary/10 border border-primary/30 hover:bg-primary/20 text-primary rounded-xl text-xs font-bold transition-all shadow-xs"
+              >
+                <QrCode className="h-4 w-4" />
+                <span>QR Pelanggan</span>
+              </Link>
+
               <div className="relative">
                 <button
                   type="button"

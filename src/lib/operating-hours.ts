@@ -11,6 +11,7 @@ export type PublicBarbershopInfo = {
   isOpen: boolean;
   currentWibTime: string;
   statusMessage?: string | undefined;
+  status?: string | null | undefined;
 };
 
 /**

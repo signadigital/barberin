@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Calendar, Clock, Coins, Receipt, Scissors, Users } from "lucide-react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { Calendar, Clock, Coins, Receipt, Scissors, Users, QrCode, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { MobileShell } from "@/components/barberin/ui";
@@ -247,6 +247,26 @@ function CapsterDashboardPage() {
           }}
           barbershopSlug={barbershopSlug}
         />
+
+        {/* Banner Pintasan QR Pelanggan */}
+        <Link
+          to={`/${barbershopSlug}/capster/qr-code` as any}
+          className="flex items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-primary/10 p-3.5 shadow-sm transition-all hover:bg-primary/20 active:scale-[0.99] text-card-foreground"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <QrCode className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold text-foreground truncate">QR Code Pelanggan</p>
+              <p className="text-[11px] text-muted-foreground truncate">Tampilkan QR untuk dipindai pelanggan di kursi cukur</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-xs">
+            <span>Buka QR</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </span>
+        </Link>
 
         {/* Daftar Transaksi Belum Dikonfirmasi */}
         <UnconfirmedTransactionsSection transactions={unconfirmedTransactions} />

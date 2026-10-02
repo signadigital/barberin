@@ -262,6 +262,54 @@ function ServicesPage() {
     return `https://www.google.com/maps/search/?api=1&query=${Number(shopInfo.latitude)},${Number(shopInfo.longitude)}`;
   }, [hasCoordinates, shopInfo?.latitude, shopInfo?.longitude]);
 
+  const isSuspended =
+    shopInfo?.status === "suspended" ||
+    parentMatch?.loaderData?.shop?.status === "suspended" ||
+    shopInfo?.status === "inactive" ||
+    parentMatch?.loaderData?.shop?.status === "inactive";
+
+  if (isSuspended) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 text-foreground font-sans">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="flex justify-center">
+            <TenantLogo
+              logoUrl={tenantBranding?.logo_url}
+              brandName={tenantBranding?.nama_brand || shopInfo?.nama_barbershop}
+              className="h-16 w-16 object-contain rounded-2xl shadow-sm"
+            />
+          </div>
+
+          <div className="bg-card border border-border rounded-3xl p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto mb-4">
+              <Store className="w-8 h-8" />
+            </div>
+
+            <h1 className="text-xl font-bold tracking-tight text-foreground mb-2">
+              Barbershop Sedang Tidak Tersedia
+            </h1>
+            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+              Barbershop ini sedang dinonaktifkan sementara oleh pengelola. Pemesanan layanan saat ini belum dapat diproses.
+            </p>
+
+            <div className="pt-2 border-t border-border">
+              <a
+                href="/"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-muted hover:bg-muted/80 border border-border text-sm font-semibold text-foreground transition-all duration-200"
+              >
+                <span>Kembali ke Beranda BARBERIN</span>
+              </a>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            BARBERIN Multi-Tenant Barbershop Platform
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MobileShell>
       <header className="safe-top px-4 pb-2">

@@ -29,6 +29,7 @@ import {
   Search,
   Palette,
   CreditCard,
+  QrCode,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -225,6 +226,7 @@ export function OwnerSidebar({ activePath }: { activePath: string }) {
 
   const navItems = [
     { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "QR Pelanggan", href: getTenantPath(slug, "/owner/qr-code"), icon: QrCode },
     { label: "Langganan", href: getTenantPath(slug, "/owner/pricing"), icon: CreditCard },
     { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
     { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },
@@ -837,6 +839,7 @@ export function OwnerMobileHeader({
   const slug = useTenantSlug();
   const navItems = [
     { label: "Dashboard", href: getTenantPath(slug, "/owner/dashboard"), icon: Home },
+    { label: "QR Pelanggan", href: getTenantPath(slug, "/owner/qr-code"), icon: QrCode },
     { label: "Langganan", href: getTenantPath(slug, "/owner/pricing"), icon: CreditCard },
     { label: "Layanan", href: getTenantPath(slug, "/owner/services"), icon: Scissors },
     { label: "Gaji", href: getTenantPath(slug, "/owner/gaji"), icon: Wallet },

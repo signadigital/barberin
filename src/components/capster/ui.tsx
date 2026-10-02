@@ -19,6 +19,7 @@ import {
   Users,
   Wallet,
   X,
+  QrCode,
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -542,6 +543,14 @@ export function CapsterHeader({
                 </>
               ) : null}
             </button>
+            <Link
+              to={getCapsterTenantPath(slug, "/capster/qr-code") as any}
+              aria-label="QR Pelanggan"
+              title="QR Pelanggan"
+              className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-border bg-card/60 text-muted-foreground transition-colors hover:text-foreground active:bg-muted"
+            >
+              <QrCode className="h-4 w-4" strokeWidth={2} />
+            </Link>
             <Link
               to={getCapsterTenantPath(slug, "/capster/login") as any}
               onClick={() => capsterActions.logout()}

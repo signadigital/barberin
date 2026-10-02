@@ -21,6 +21,7 @@ type CachedOperatingShop = {
   no_hp: string | null;
   jam_buka: string | null;
   jam_tutup: string | null;
+  status: string | null;
 };
 
 const shopOperatingCache = new Map<string, { data: CachedOperatingShop; timestamp: number }>();
@@ -132,6 +133,7 @@ export const getPublicBarbershopInfo = createServerFn({
         jam_tutup: jamTutup,
         isOpen,
         currentWibTime,
+        status: shop.status ?? "active",
       };
     } catch (err: any) {
       console.error("Gagal mengambil profil publik barbershop:", err);
