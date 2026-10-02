@@ -54,9 +54,12 @@ function CapsterTransactionsPage() {
       return;
     }
     let mounted = true;
+    let isFetching = false;
 
     const fetchTransactions = async (isInitial = false) => {
+      if (isFetching) return;
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      isFetching = true;
       if (isInitial) setLoading(true);
       try {
         const data = await getCapsterTransactions({ data: { capsterId } });
@@ -65,14 +68,17 @@ function CapsterTransactionsPage() {
       } catch (err) {
         console.error("Gagal memuat transaksi:", err);
       } finally {
+        isFetching = false;
         if (mounted && isInitial) setLoading(false);
       }
     };
 
     fetchTransactions(true);
     const intervalId = setInterval(() => {
-      fetchTransactions(false);
-    }, 10000);
+      if (document.visibilityState === "visible") {
+        fetchTransactions(false);
+      }
+    }, 20000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {

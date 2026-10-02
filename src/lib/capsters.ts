@@ -125,13 +125,14 @@ export const loginCapster = createServerFn({
       throw new Error("Password wajib diisi.");
     }
 
-    let targetShop: { id_barbershop: string; slug: string; status: string } | null = null;
+    let targetShop: { id_barbershop: string; slug: string; status: string; nama_barbershop?: string } | null = null;
     if (data.barbershopSlug) {
       const [shop] = await db
         .select({
           id_barbershop: barbershop.id_barbershop,
           slug: barbershop.slug,
           status: barbershop.status,
+          nama_barbershop: barbershop.nama_barbershop,
         })
         .from(barbershop)
         .where(eq(barbershop.slug, data.barbershopSlug))
@@ -147,6 +148,7 @@ export const loginCapster = createServerFn({
           id_barbershop: barbershop.id_barbershop,
           slug: barbershop.slug,
           status: barbershop.status,
+          nama_barbershop: barbershop.nama_barbershop,
         })
         .from(barbershop)
         .where(eq(barbershop.id_barbershop, data.barbershopId))
@@ -584,6 +586,7 @@ export const updateOwnerCapster = createServerFn({
         id_capster: capster.id_capster,
         id_user: capster.id_user,
         no_pegawai: capster.no_pegawai,
+        status: capster.status,
       })
       .from(capster)
       .where(

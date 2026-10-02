@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Settings,
@@ -87,7 +87,12 @@ function OwnerKomisiPage() {
   const [payNotes, setPayNotes] = useState("");
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
+  const isFetchingRef = useRef(false);
+
   const loadRequests = () => {
+    if (isFetchingRef.current || isLocked) return;
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    isFetchingRef.current = true;
     getOwnerCommissionRequests({ data: { barbershopSlug } })
       .then((res: any) => {
         if (res?.requests) setRequests(res.requests);
@@ -97,14 +102,32 @@ function OwnerKomisiPage() {
           setIsLocked(true);
         }
         console.error("Gagal memuat pengajuan komisi:", e);
+      })
+      .finally(() => {
+        isFetchingRef.current = false;
       });
   };
 
   useEffect(() => {
     loadRequests();
-    const interval = setInterval(loadRequests, 8000);
-    return () => clearInterval(interval);
-  }, [barbershopSlug]);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible" && !isLocked) {
+        loadRequests();
+      }
+    }, 25000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !isLocked) {
+        loadRequests();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [barbershopSlug, isLocked]);
 
   const handleOpenCommissionModal = (c: CapsterCommissionItem) => {
     setEditingCapster(c);

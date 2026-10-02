@@ -146,11 +146,11 @@ function OwnerVerifyPasswordChangePage() {
 
         // 4. Periksa sesi aktif dari Supabase Auth
         const { data: sessionData } = await supabase.auth.getSession();
-        let user = sessionData?.session?.user;
+        let user = sessionData?.session?.user ?? undefined;
 
         if (!user) {
           const { data: userData } = await supabase.auth.getUser();
-          user = userData?.user;
+          user = userData?.user ?? undefined;
         }
 
         if (!user) {

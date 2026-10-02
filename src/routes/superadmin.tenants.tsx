@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
 import {
   Building2,
   Users,
@@ -9,7 +9,6 @@ import {
   Store,
   CheckCircle2,
   XCircle,
-  LogIn,
   AlertTriangle,
   SlidersHorizontal,
   ExternalLink,
@@ -41,11 +40,10 @@ import {
   createTenantWithTransaction,
   toggleTenantStatus,
   logSuperadminAction,
-  startSuperadminImpersonation,
   type SuperadminTenantItem,
   type SuperadminStats,
 } from "@/lib/superadmin";
-import { superadminActions, useSuperadmin, getSuperadminAuth } from "@/lib/superadmin-store";
+import { useSuperadmin, getSuperadminAuth } from "@/lib/superadmin-store";
 
 export const Route = createFileRoute("/superadmin/tenants")({
   head: () => ({
@@ -61,7 +59,6 @@ export const Route = createFileRoute("/superadmin/tenants")({
 });
 
 function SuperadminTenantsPage() {
-  const navigate = useNavigate();
   const { isLoggedIn, user } = useSuperadmin();
 
   const [tenants, setTenants] = useState<SuperadminTenantItem[]>([]);
@@ -93,8 +90,11 @@ function SuperadminTenantsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const fetchData = async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     try {
       setIsRefreshing(true);
       const res = await getSuperadminTenants({
@@ -112,25 +112,23 @@ function SuperadminTenantsPage() {
         description: err?.message || "Terjadi kesalahan saat memuat tenant.",
       });
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    if (isLoggedIn || getSuperadminAuth()) {
-      fetchData();
-    }
-  }, [isLoggedIn, statusFilter, sortBy]);
-
-  // Debounced search
+  // Coordinated data-fetch lifecycle (initial load, filter/sort change, debounced search)
   useEffect(() => {
     if (!isLoggedIn && !getSuperadminAuth()) return;
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 300);
+    const timer = setTimeout(
+      () => {
+        fetchData();
+      },
+      search ? 300 : 0,
+    );
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [isLoggedIn, statusFilter, sortBy, search]);
 
   // Handle Tambah Toko Baru (Database Transaction)
   const handleCreateTenant = async (e: React.FormEvent) => {
@@ -147,7 +145,6 @@ function SuperadminTenantsPage() {
           password_awal: formPasswordAwal,
           alamat: formAlamat,
           no_hp_barbershop: formNoHp,
-          actor_email: user?.email || "superadmin@barberin.test",
         },
       });
 
@@ -193,7 +190,6 @@ function SuperadminTenantsPage() {
         data: {
           id_barbershop: tenant.id_barbershop,
           targetStatus,
-          actor_email: user?.email || "superadmin@barberin.test",
         },
       });
 
@@ -216,47 +212,6 @@ function SuperadminTenantsPage() {
       console.error("Gagal mengubah status:", err);
       toast.error("Gagal Mengubah Status", {
         description: err?.message || "Terjadi kesalahan.",
-      });
-    }
-  };
-
-  // Handle Impersonate Toko (Server-Side Signed Session)
-  const handleImpersonate = async (tenant: SuperadminTenantItem) => {
-    if (tenant.status === "suspended") {
-      toast.error("Tidak Dapat Impersonate", {
-        description: "Toko ini sedang disuspend. Aktifkan terlebih dahulu sebelum impersonate.",
-      });
-      return;
-    }
-
-    try {
-      const res = await startSuperadminImpersonation({
-        data: {
-          id_barbershop: tenant.id_barbershop,
-        },
-      });
-
-      // Set client impersonate state dengan data riil dari server
-      superadminActions.startImpersonate(
-        {
-          id_barbershop: tenant.id_barbershop,
-          nama_barbershop: tenant.nama_barbershop,
-          slug: tenant.slug,
-          alamat: tenant.alamat,
-          no_hp: tenant.no_hp,
-        },
-        res.owner,
-      );
-
-      toast.success("Masuk sebagai Toko Ini", {
-        description: `Beralih ke konteks ${tenant.nama_barbershop}.`,
-      });
-
-      navigate({ to: `/${tenant.slug}/owner/dashboard` as any });
-    } catch (err: any) {
-      console.error("Gagal impersonate:", err);
-      toast.error("Gagal Impersonasi", {
-        description: err?.message || "Gagal masuk mode impersonasi.",
       });
     }
   };
@@ -286,7 +241,7 @@ function SuperadminTenantsPage() {
                 Manajemen Toko & Barbershop
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Kelola seluruh barbershop terdaftar, akun Owner, status operasional, dan impersonasi toko.
+                Kelola seluruh barbershop terdaftar, akun Owner, dan status operasional toko.
               </p>
             </div>
 
@@ -522,7 +477,7 @@ function SuperadminTenantsPage() {
 
                             {/* Actions */}
                             <td className="py-4 px-5 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end">
                                 {/* Toggle Status */}
                                 <button
                                   type="button"
@@ -539,18 +494,6 @@ function SuperadminTenantsPage() {
                                   }`}
                                 >
                                   {isSuspended ? "Aktifkan" : "Suspend"}
-                                </button>
-
-                                {/* Impersonate Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleImpersonate(t)}
-                                  disabled={isSuspended}
-                                  title="Masuk sebagai Owner Toko Ini"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-sm transition-all cursor-pointer"
-                                >
-                                  <LogIn className="h-3.5 w-3.5" />
-                                  <span>Impersonate</span>
                                 </button>
                               </div>
                             </td>
@@ -611,27 +554,17 @@ function SuperadminTenantsPage() {
                         </div>
 
                         {/* Mobile Actions */}
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+                        <div className="pt-2 border-t border-slate-800/80">
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(t)}
-                            className={`w-full py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                            className={`w-full py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                               isSuspended
-                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                                : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
                             }`}
                           >
                             {isSuspended ? "Aktifkan Toko" : "Suspend Toko"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleImpersonate(t)}
-                            disabled={isSuspended}
-                            className="w-full py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white flex items-center justify-center gap-1.5"
-                          >
-                            <LogIn className="h-3.5 w-3.5" />
-                            <span>Impersonate</span>
                           </button>
                         </div>
                       </div>

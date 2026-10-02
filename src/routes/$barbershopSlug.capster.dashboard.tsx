@@ -91,9 +91,12 @@ function CapsterDashboardPage() {
   useEffect(() => {
     if (!capsterId) return;
     let mounted = true;
+    let isFetching = false;
 
     const fetchAllData = async () => {
+      if (isFetching) return;
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      isFetching = true;
       try {
         const [metrics, txs, comm] = await Promise.all([
           getDashboardMetrics({
@@ -121,14 +124,16 @@ function CapsterDashboardPage() {
         if (comm) setCommissionData(comm);
       } catch (e) {
         console.error("Gagal memuat data dashboard:", e);
+      } finally {
+        isFetching = false;
       }
     };
 
     fetchAllData();
-    const intervalId = setInterval(fetchAllData, 10000);
+    const intervalId = setInterval(fetchAllData, 25000);
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && !isFetching) {
         fetchAllData();
       }
     };
@@ -139,7 +144,7 @@ function CapsterDashboardPage() {
       clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [capsterId, userId]);
+  }, [capsterId, userId, barbershopSlug]);
 
   const liveClock = useLiveClock(1000);
 

@@ -76,7 +76,7 @@ Sesuai rancangan antarmuka wireframe pada menu **Tema** (`Pengaturan > White Lab
 
 | Fitur / Aksi | Owner Barbershop | Admin Platform / Superadmin | Catatan Keamanan |
 | :--- | :---: | :---: | :--- |
-| **Buka Menu Pengaturan Branding / White Label** | ✅ Ya | ❌ Tidak (Opsional via Impersonate) | Akses via sidebar Owner (`/owner/settings` atau `/owner/theme`) |
+| **Buka Menu Pengaturan Branding / White Label** | ✅ Ya | ❌ Tidak | Akses via sidebar Owner (`/owner/settings` atau `/owner/theme`) |
 | **Ubah Nama Brand, Tagline, Logo, Favicon** | ✅ Ya | ❌ Tidak langsung | Hanya untuk barbershop yang dikelola Owner (`id_barbershop`) |
 | **Ubah Tema, Mode Tampilan, & Preset Warna** | ✅ Ya | ❌ Tidak langsung | Menggunakan kombinasi preset kontras tinggi yang aman dibaca |
 | **Preview Perubahan Branding** | ✅ Ya | ❌ Tidak | Simulasi visual sebelum disimpan ke database |

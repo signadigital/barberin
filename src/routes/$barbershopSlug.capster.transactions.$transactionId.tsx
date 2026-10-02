@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -37,6 +37,7 @@ import {
   cancelBookingOrTransaction,
   getTransactionDetail,
 } from "@/lib/bookings";
+import { supabase } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/$barbershopSlug/capster/transactions/$transactionId")({
@@ -63,9 +64,13 @@ function CapsterTransactionDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const isFetchingRef = useRef(false);
+  const isFinalRef = useRef(false);
 
   const fetchDetail = async (isInitial = false) => {
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    if (isFetchingRef.current || isFinalRef.current) return;
+    if (!isInitial && typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    isFetchingRef.current = true;
     if (isInitial && !storeTrx) setLoading(true);
     try {
       const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
@@ -89,6 +94,10 @@ function CapsterTransactionDetailPage() {
         mappedStatus = "Sedang Dilayani";
       } else {
         mappedStatus = "Menunggu";
+      }
+
+      if (mappedStatus === "Selesai" || mappedStatus === "Batal" || mappedStatus === "Kedaluwarsa") {
+        isFinalRef.current = true;
       }
 
       const mapped: CapsterTransaction = {
@@ -141,19 +150,21 @@ function CapsterTransactionDetailPage() {
     } catch (err) {
       console.error("Gagal mengambil detail transaksi:", err);
     } finally {
+      isFetchingRef.current = false;
       if (isInitial) setLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    isFinalRef.current = false;
     fetchDetail(true);
     const intervalId = setInterval(() => {
-      if (mounted) fetchDetail(false);
-    }, 8000);
+      if (mounted && !isFinalRef.current) fetchDetail(false);
+    }, 15000);
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && mounted) {
+      if (document.visibilityState === "visible" && mounted && !isFinalRef.current) {
         fetchDetail(false);
       }
     };
@@ -176,6 +187,23 @@ function CapsterTransactionDetailPage() {
           ...(loggedInCapsterId ? { capsterId: loggedInCapsterId } : {}),
         },
       });
+
+      // Broadcast update langsung ke channel customer
+      try {
+        const ch = supabase.channel(`customer_tx_${transactionId}`);
+        ch.send({
+          type: "broadcast",
+          event: "status_updated",
+          payload: {
+            transactionId,
+            bookingId: trx.bookingId,
+            bookingStatus: "in_service",
+            status: "ongoing",
+            timestamp: new Date().toISOString(),
+          },
+        }).catch(() => {});
+      } catch (_) {}
+
       toast.success("Layanan dikonfirmasi & proses mencukur dimulai!");
       await fetchDetail(false);
     } catch (err: any) {
@@ -194,6 +222,22 @@ function CapsterTransactionDetailPage() {
           ...(loggedInCapsterId ? { capsterId: loggedInCapsterId } : {}),
         },
       });
+
+      // Broadcast update langsung ke channel customer
+      try {
+        const ch = supabase.channel(`customer_tx_${transactionId}`);
+        ch.send({
+          type: "broadcast",
+          event: "payment_confirmed",
+          payload: {
+            transactionId,
+            status: "completed",
+            paymentStatus: "success",
+            timestamp: new Date().toISOString(),
+          },
+        }).catch(() => {});
+      } catch (_) {}
+
       toast.success("Pembayaran berhasil dikonfirmasi & struk terbit!");
       await fetchDetail(false);
     } catch (err: any) {
@@ -218,6 +262,21 @@ function CapsterTransactionDetailPage() {
           reason: cancelReason.trim(),
         },
       });
+
+      // Broadcast cancel langsung ke channel customer
+      try {
+        const ch = supabase.channel(`customer_tx_${transactionId}`);
+        ch.send({
+          type: "broadcast",
+          event: "transaction_cancelled",
+          payload: {
+            transactionId,
+            status: "cancelled",
+            timestamp: new Date().toISOString(),
+          },
+        }).catch(() => {});
+      } catch (_) {}
+
       toast.success("Pesanan berhasil dibatalkan");
       setShowCancelModal(false);
       setCancelReason("");

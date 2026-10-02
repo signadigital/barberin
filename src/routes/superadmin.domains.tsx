@@ -99,7 +99,7 @@ function SuperadminDomainsPage() {
       if (res) {
         setDomains(res.domains || []);
         setBarbershops(res.barbershops || []);
-        if (!formShopId && res.barbershops?.length > 0) {
+        if (!formShopId && res.barbershops?.[0]) {
           setFormShopId(res.barbershops[0].id_barbershop);
         }
       }

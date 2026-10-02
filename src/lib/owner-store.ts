@@ -9,13 +9,13 @@ export type OwnerUser = {
   nama_lengkap: string;
   role: string;
   barbershopName: string;
-  barbershopSlug?: string;
-  id_barbershop?: string;
-  no_hp?: string;
-  alamat?: string;
-  jam_buka?: string;
-  jam_tutup?: string;
-  no_hp_barbershop?: string;
+  barbershopSlug?: string | null | undefined;
+  id_barbershop?: string | null | undefined;
+  no_hp?: string | null | undefined;
+  alamat?: string | null | undefined;
+  jam_buka?: string | null | undefined;
+  jam_tutup?: string | null | undefined;
+  no_hp_barbershop?: string | null | undefined;
 };
 
 export type OwnerState = {
@@ -143,6 +143,38 @@ export const ownerActions = {
       },
     };
     emitChange();
+  },
+
+  syncFromServer: (user: Partial<OwnerUser>) => {
+    currentState = {
+      ...currentState,
+      isLoggedIn: true,
+      user: {
+        ...DEFAULT_OWNER_USER,
+        ...user,
+      },
+    };
+    emitChange();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+      } catch {}
+    }
+  },
+
+  clearSession: () => {
+    currentState = {
+      isLoggedIn: false,
+      user: DEFAULT_OWNER_USER,
+      activePeriod: "today",
+      searchKeyword: "",
+    };
+    emitChange();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
   },
 
   logout: () => {

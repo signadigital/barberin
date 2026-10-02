@@ -39,9 +39,12 @@ function TodayTransactionsPage() {
       return;
     }
     let mounted = true;
+    let isFetching = false;
 
     const fetchToday = async (isInitial = false) => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (isFetching) return;
+      if (!isInitial && typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      isFetching = true;
       if (isInitial) setLoading(true);
       try {
         const data = await getCapsterTransactions({
@@ -58,14 +61,17 @@ function TodayTransactionsPage() {
       } catch (err) {
         console.error("Gagal memuat transaksi hari ini:", err);
       } finally {
+        isFetching = false;
         if (mounted && isInitial) setLoading(false);
       }
     };
 
     fetchToday(true);
     const intervalId = setInterval(() => {
-      fetchToday(false);
-    }, 10000);
+      if (document.visibilityState === "visible") {
+        fetchToday(false);
+      }
+    }, 20000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {

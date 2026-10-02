@@ -31,6 +31,7 @@ import {
   cancelCustomerTransaction,
   getTransactionDetail,
 } from "@/lib/bookings";
+import { supabase } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
 
 type ServiceExecutionSearch = {
@@ -298,6 +299,14 @@ function ServiceExecutionPage() {
     txDetail?.serverTime,
   ]);
 
+  const isFetchingRef = useRef(false);
+  const needsRefetchRef = useRef(false);
+  const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bookingIdRef = useRef<string | null>(null);
+  const lastUpdatedAtRef = useRef<number>(0);
+  const realtimeActiveRef = useRef(false);
+  const [realtimeActive, setRealtimeActive] = useState(false);
+
   useEffect(() => {
     if (!transactionId) {
       let fallback: string | null = null;
@@ -316,111 +325,321 @@ function ServiceExecutionPage() {
       return;
     }
 
-    let pollingActive = true;
-    let isFetching = false;
-    let timerId: ReturnType<typeof setTimeout> | null = null;
+    let isMounted = true;
 
-    const delay = (ms: number) =>
-      new Promise<void>((resolve) => {
-        timerId = setTimeout(resolve, ms);
+    const STATUS_RANK: Record<string, number> = {
+      pending_confirmation: 1,
+      waiting: 2,
+      confirmed: 2,
+      in_service: 3,
+      awaiting_payment: 4,
+      completed: 5,
+      paid: 5,
+      cancelled: 6,
+      expired: 6,
+    };
+
+    // Helper untuk memproses hasil detail transaksi dan memperbarui state
+    const applyDetail = (detail: any) => {
+      if (!isMounted || !detail) return false;
+
+      if (detail.bookingId) {
+        bookingIdRef.current = detail.bookingId;
+      }
+
+      // Stale response guard berdasarkan timestamp updated_at
+      const recordUpdatedAt = detail.updatedAt ? new Date(detail.updatedAt).getTime() : 0;
+      if (recordUpdatedAt > 0) {
+        if (recordUpdatedAt < lastUpdatedAtRef.current) {
+          return false; // Abaikan respons lama yang terlambat datang
+        }
+        lastUpdatedAtRef.current = Math.max(lastUpdatedAtRef.current, recordUpdatedAt);
+      }
+
+      // Cek jika pesanan dibatalkan
+      const isCancelled =
+        detail.status === "cancelled" || detail.bookingStatus === "cancelled";
+      if (isCancelled) {
+        toast.info("Pesanan telah dibatalkan.");
+        actions.reset();
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+        }
+        navigate({ to: `/${barbershopSlug}/customer/services` as any });
+        return true; // Transaksi final
+      }
+
+      // Cek status pembayaran berdasarkan database:
+      const isPaid =
+        detail.status === "paid" ||
+        detail.status === "completed" ||
+        detail.paymentStatus === "success";
+
+      if (isPaid) {
+        actions.setPaymentConfirmationStatus("DIKONFIRMASI");
+        actions.setServiceExecutionStatus("DISELESAIKAN");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+        }
+
+        if (!hasNavigatedRef.current) {
+          hasNavigatedRef.current = true;
+          navigate({
+            to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
+          });
+        }
+        return true; // Transaksi final
+      }
+
+      setTxDetail((prev: any) => {
+        if (prev) {
+          const currentRank = STATUS_RANK[prev.bookingStatus] ?? 0;
+          const incomingRank = STATUS_RANK[detail.bookingStatus] ?? 0;
+          // Jangan turunkan status jika sudah lebih maju, kecuali status final
+          if (incomingRank < currentRank && !["cancelled", "expired"].includes(detail.bookingStatus)) {
+            return {
+              ...detail,
+              bookingStatus: prev.bookingStatus,
+              status: prev.status,
+            };
+          }
+        }
+        return detail;
       });
 
-    const runPollingLoop = async () => {
-      while (pollingActive) {
-        if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-          await delay(2000);
-          continue;
+      actions.setPaymentConfirmationStatus("MENUNGGU");
+
+      // Status pengerjaan layanan
+      if (detail.bookingStatus === "in_service") {
+        actions.setServiceExecutionStatus("DIKERJAKAN");
+      } else if (detail.bookingStatus === "awaiting_payment") {
+        actions.setServiceExecutionStatus("HAMPIR_SELESAI");
+      } else if (
+        detail.bookingStatus === "confirmed" ||
+        detail.bookingStatus === "waiting" ||
+        detail.bookingStatus === "pending_confirmation"
+      ) {
+        actions.setServiceExecutionStatus("MENUNGGU");
+      }
+
+      return false; // Belum final
+    };
+
+    // Fungsi fetch data dengan in-flight guard, deduplication, dan sequential retry
+    const fetchLatest = async (): Promise<boolean> => {
+      if (!isMounted || hasNavigatedRef.current) return false;
+      if (isFetchingRef.current) {
+        needsRefetchRef.current = true;
+        return false;
+      }
+      isFetchingRef.current = true;
+
+      try {
+        const detail = await getTransactionDetail({
+          data: { transactionId, barbershopSlug },
+        });
+        const isFinal = applyDetail(detail);
+        return Boolean(isFinal);
+      } catch (err) {
+        console.error("Gagal mengambil status transaksi customer:", err);
+        return false;
+      } finally {
+        isFetchingRef.current = false;
+        if (needsRefetchRef.current && isMounted && !hasNavigatedRef.current) {
+          needsRefetchRef.current = false;
+          fetchLatest();
         }
-
-        if (isFetching) {
-          await delay(1000);
-          continue;
-        }
-
-        isFetching = true;
-        try {
-          const detail = await getTransactionDetail({ data: { transactionId, barbershopSlug } });
-          if (!pollingActive || !detail) break;
-          setTxDetail(detail);
-
-          // Cek jika pesanan dibatalkan
-          const isCancelled =
-            detail.status === "cancelled" || detail.bookingStatus === "cancelled";
-          if (isCancelled) {
-            pollingActive = false;
-            toast.info("Pesanan telah dibatalkan.");
-            actions.reset();
-            if (typeof window !== "undefined") {
-              localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-              sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-            }
-            navigate({ to: `/${barbershopSlug}/customer/services` as any });
-            break;
-          }
-
-          // Cek status pembayaran berdasarkan database:
-          const isPaid =
-            detail.status === "paid" || detail.status === "completed" || detail.paymentStatus === "success";
-
-          if (isPaid) {
-            pollingActive = false; // HENTIKAN polling saat transaksi final
-            actions.setPaymentConfirmationStatus("DIKONFIRMASI");
-            actions.setServiceExecutionStatus("DISELESAIKAN");
-            if (typeof window !== "undefined") {
-              localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-              sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
-            }
-
-            if (!hasNavigatedRef.current) {
-              hasNavigatedRef.current = true;
-              navigate({
-                to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
-              });
-            }
-            break;
-          }
-
-          actions.setPaymentConfirmationStatus("MENUNGGU");
-
-          // Status pengerjaan layanan
-          if (detail.bookingStatus === "in_service") {
-            actions.setServiceExecutionStatus("DIKERJAKAN");
-          } else if (detail.bookingStatus === "awaiting_payment") {
-            actions.setServiceExecutionStatus("HAMPIR_SELESAI");
-          } else if (
-            detail.bookingStatus === "confirmed" ||
-            detail.bookingStatus === "waiting" ||
-            detail.bookingStatus === "pending_confirmation"
-          ) {
-            actions.setServiceExecutionStatus("MENUNGGU");
-          }
-        } catch (err) {
-          console.error("Polling status error:", err);
-        } finally {
-          isFetching = false;
-        }
-
-        if (!pollingActive) break;
-        // Tunggu interval polling HANYA SETELAH request selesai
-        await delay(5000);
       }
     };
 
-    runPollingLoop();
+    // Helper untuk update state instan dari payload event Realtime (CDC / Broadcast)
+    const applyRealtimeEvent = (payload: any) => {
+      if (!isMounted || hasNavigatedRef.current) return;
 
+      const evtData = payload.payload || payload.new || {};
+      const newStatusTransaksi = evtData.status_transaksi || evtData.status;
+      const newStatusBooking = evtData.status || evtData.bookingStatus;
+      const newStatusPembayaran = evtData.status_pembayaran || evtData.paymentStatus;
+
+      // 1. Cek event pembayaran / selesai
+      if (
+        newStatusTransaksi === "completed" ||
+        newStatusTransaksi === "paid" ||
+        newStatusPembayaran === "success" ||
+        payload.event === "payment_confirmed"
+      ) {
+        actions.setPaymentConfirmationStatus("DIKONFIRMASI");
+        actions.setServiceExecutionStatus("DISELESAIKAN");
+        if (!hasNavigatedRef.current) {
+          hasNavigatedRef.current = true;
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+            sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          }
+          navigate({
+            to: `/${barbershopSlug}/customer/receipt/${transactionId}` as any,
+          });
+        }
+        return;
+      }
+
+      // 2. Cek event pembatalan
+      if (newStatusTransaksi === "cancelled" || newStatusBooking === "cancelled") {
+        toast.info("Pesanan telah dibatalkan.");
+        actions.reset();
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+          sessionStorage.removeItem(`barberin_active_customer_tx_${barbershopSlug}`);
+        }
+        navigate({ to: `/${barbershopSlug}/customer/services` as any });
+        return;
+      }
+
+      // 3. Cek event mulai layanan / in_service
+      if (
+        newStatusBooking === "in_service" ||
+        newStatusTransaksi === "ongoing" ||
+        payload.event === "status_updated"
+      ) {
+        setTxDetail((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            bookingStatus: "in_service",
+            status: "ongoing",
+            waktuMulaiLayanan: evtData.waktu_mulai_layanan || prev.waktuMulaiLayanan || new Date().toISOString(),
+          };
+        });
+        actions.setServiceExecutionStatus("DIKERJAKAN");
+      } else if (newStatusBooking === "awaiting_payment") {
+        setTxDetail((prev: any) => (prev ? { ...prev, bookingStatus: "awaiting_payment" } : prev));
+        actions.setServiceExecutionStatus("HAMPIR_SELESAI");
+      }
+    };
+
+    // 1. Initial immediate fetch
+    fetchLatest();
+
+    // 2. Setup Supabase Realtime Subscription (Primary realtime mechanism)
+    let channel: any = null;
+    try {
+      const channelName = `customer_tx_${transactionId}`;
+      channel = supabase.channel(channelName);
+
+      channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "transaksi",
+            filter: `id_transaksi=eq.${transactionId}`,
+          },
+          (payload: any) => {
+            applyRealtimeEvent({ table: "transaksi", ...payload });
+            fetchLatest();
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "pembayaran",
+            filter: `id_transaksi=eq.${transactionId}`,
+          },
+          (payload: any) => {
+            applyRealtimeEvent({ table: "pembayaran", ...payload });
+            fetchLatest();
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "booking",
+          },
+          (payload: any) => {
+            const changedBookingId = payload?.new?.id_booking;
+            if (!bookingIdRef.current || (changedBookingId && changedBookingId === bookingIdRef.current)) {
+              applyRealtimeEvent({ table: "booking", ...payload });
+              fetchLatest();
+            }
+          },
+        )
+        .on("broadcast", { event: "*" }, (payload: any) => {
+          applyRealtimeEvent(payload);
+          fetchLatest();
+        })
+        .subscribe((status: string) => {
+          if (status === "SUBSCRIBED") {
+            realtimeActiveRef.current = true;
+            setRealtimeActive(true);
+          } else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            realtimeActiveRef.current = false;
+            setRealtimeActive(false);
+          }
+        });
+    } catch (realtimeErr) {
+      console.warn("Inisialisasi Supabase Realtime fallback ke polling:", realtimeErr);
+      realtimeActiveRef.current = false;
+      setRealtimeActive(false);
+    }
+
+    // 3. Setup Controlled Bounded Fallback Polling
+    const schedulePoll = (delayMs: number) => {
+      if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+      if (!isMounted || hasNavigatedRef.current) return;
+
+      pollingTimerRef.current = setTimeout(async () => {
+        if (!isMounted || hasNavigatedRef.current) return;
+
+        // Jangan poll jika tab disembunyikan
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+          schedulePoll(5000);
+          return;
+        }
+
+        const isFinal = await fetchLatest();
+        if (isMounted && !hasNavigatedRef.current && !isFinal) {
+          // Heartbeat 15 detik jika realtime sehat, 5 detik jika offline
+          schedulePoll(realtimeActiveRef.current ? 15000 : 5000);
+        }
+      }, delayMs);
+    };
+
+    schedulePoll(realtimeActiveRef.current ? 15000 : 5000);
+
+    // 4. Tab visibility handler
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && !isFetching && pollingActive) {
-        if (timerId) clearTimeout(timerId);
+      if (
+        document.visibilityState === "visible" &&
+        isMounted &&
+        !hasNavigatedRef.current &&
+        !isFetchingRef.current
+      ) {
+        fetchLatest();
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
+    // 5. Cleanup saat unmount / pindah halaman
     return () => {
-      pollingActive = false;
-      if (timerId) clearTimeout(timerId);
+      isMounted = false;
+      if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+      if (channel) {
+        supabase.removeChannel(channel).catch(() => {});
+      }
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [transactionId, navigate, barbershopSlug]);
+  }, [transactionId, barbershopSlug, navigate]);
 
   const handleConfirmCancel = async () => {
     if (!selectedReason || !transactionId) return;

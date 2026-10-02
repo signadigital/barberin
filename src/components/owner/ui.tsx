@@ -57,12 +57,9 @@ import {
   markNotificationAsRead,
 } from "@/lib/owner";
 import { ownerActions, useOwner, getOwnerAuth } from "@/lib/owner-store";
-import { useSuperadmin, superadminActions } from "@/lib/superadmin-store";
-import { exitSuperadminImpersonation } from "@/lib/superadmin";
+import { validateOwnerTenantAccess } from "@/lib/owner-auth";
 
 export function useTenantSlug(): string {
-  const { user } = useOwner();
-  if (user.barbershopSlug) return user.barbershopSlug;
   if (typeof window !== "undefined") {
     const parts = window.location.pathname.split("/").filter(Boolean);
     if (
@@ -75,6 +72,8 @@ export function useTenantSlug(): string {
       return parts[0]!;
     }
   }
+  const { user } = useOwner();
+  if (user.barbershopSlug) return user.barbershopSlug;
   return "";
 }
 
@@ -85,44 +84,120 @@ export function getTenantPath(slug: string, path: string): string {
 }
 
 // ============================================================================
-// 0. AUTH GUARD
+// 0. AUTH GUARD (SERVER-SIDE AUTHORIZATION AS SOURCE OF TRUTH)
 // ============================================================================
 export function OwnerAuthGuard({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  const { isLoggedIn } = useOwner();
   const navigate = useNavigate();
   const slug = useTenantSlug();
+  const [authStatus, setAuthStatus] = useState<"checking" | "authorized" | "denied">("checking");
+  const [deniedInfo, setDeniedInfo] = useState<{
+    title: string;
+    message: string;
+    actionLabel: string;
+    actionTo: string;
+  } | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    let active = true;
 
-  useEffect(() => {
-    if (!mounted) return;
-    const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
-    if (!hasAuth) {
-      navigate({ to: "/owner/login" as any, replace: true });
-    }
-  }, [mounted, isLoggedIn, slug, navigate]);
+    const verifyAccess = async () => {
+      setAuthStatus("checking");
 
-  if (!mounted) {
+      try {
+        const res = await validateOwnerTenantAccess({
+          data: { targetSlug: slug },
+        });
+
+        if (!active) return;
+
+        if (res.authorized && res.user) {
+          // Sinkronisasi data server ke store client
+          ownerActions.syncFromServer(res.user);
+          setAuthStatus("authorized");
+        } else {
+          // Tangani berbagai alasan penolakan
+          if (res.reason === "TENANT_MISMATCH") {
+            setDeniedInfo({
+              title: "Akses Tenant Ditolak",
+              message:
+                res.message ||
+                "Akun Anda tidak memiliki izin untuk mengelola atau mengakses data barbershop ini.",
+              actionLabel: "Login ke Akun Terkait",
+              actionTo: res.redirectTo || "/owner/login",
+            });
+            setAuthStatus("denied");
+          } else if (res.reason === "TENANT_SUSPENDED") {
+            setDeniedInfo({
+              title: "Barbershop Dinonaktifkan",
+              message:
+                res.message ||
+                "Barbershop ini sedang dalam masa penangguhan (suspended). Silakan hubungi platform admin.",
+              actionLabel: "Halaman Utama",
+              actionTo: "/",
+            });
+            setAuthStatus("denied");
+          } else {
+            // Sesi habis atau tidak ada sesi
+            navigate({ to: (res.redirectTo || "/owner/login") as any, replace: true });
+          }
+        }
+      } catch (err: any) {
+        if (!active) return;
+        console.error("OwnerAuthGuard verification failed:", err);
+        setDeniedInfo({
+          title: "Gagal Verifikasi Sesi",
+          message: err?.message || "Terjadi kendala saat memverifikasi sesi otorisasi.",
+          actionLabel: "Login Ulang",
+          actionTo: "/owner/login",
+        });
+        setAuthStatus("denied");
+      }
+    };
+
+    verifyAccess();
+
+    return () => {
+      active = false;
+    };
+  }, [slug, navigate]);
+
+  if (authStatus === "checking") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-xs text-muted-foreground font-medium">Memuat sesi...</p>
+          <p className="text-xs text-muted-foreground font-medium">Memverifikasi otorisasi sesi...</p>
         </div>
       </div>
     );
   }
 
-  const hasAuth = isLoggedIn || getOwnerAuth(slug || undefined);
-  if (!hasAuth) {
+  if (authStatus === "denied" && deniedInfo) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-xs text-muted-foreground font-medium">Mengarahkan ke login...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 antialiased text-foreground">
+        <div className="max-w-md w-full bg-card border border-border rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl text-card-foreground">
+          <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto text-xl font-bold">
+            🛡️
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground tracking-tight">
+              {deniedInfo.title}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              {deniedInfo.message}
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                navigate({ to: deniedInfo.actionTo as any });
+              }}
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-all shadow-md shadow-primary/30 cursor-pointer"
+            >
+              {deniedInfo.actionLabel}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -274,7 +349,11 @@ export function OwnerNotificationBell({
   const slug = useTenantSlug();
   const isLight = variant === "light";
 
+  const inFlightRef = React.useRef(false);
+
   const fetchNotifs = async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     try {
       setLoading(true);
       const res = await getOwnerNotifications({ data: { limit: 30 } });
@@ -284,6 +363,7 @@ export function OwnerNotificationBell({
     } catch (e) {
       console.error("Gagal memuat notifikasi owner:", e);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   };
@@ -630,54 +710,6 @@ export function OwnerNotificationBell({
   );
 }
 
-// ============================================================================
-// 1.8. BANNER IMPERSONATE (SUPERADMIN TO OWNER)
-// ============================================================================
-export function ImpersonateBanner() {
-  const { impersonation } = useSuperadmin();
-  const navigate = useNavigate();
-
-  if (!impersonation.isImpersonating) return null;
-
-  const handleExit = async () => {
-    try {
-      await exitSuperadminImpersonation();
-    } catch (e) {
-      console.warn("Gagal logout impersonate server-side:", e);
-    }
-    superadminActions.stopImpersonate();
-    navigate({ to: "/superadmin/tenants" });
-  };
-
-  return (
-    <div className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 text-slate-950 px-4 sm:px-6 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-2.5 shadow-md border-b border-amber-600/30 z-50 sticky top-0">
-      <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 rounded-full bg-slate-950/15 items-center justify-center text-slate-950 font-black text-xs shrink-0">
-          ⚠️
-        </span>
-        <span className="leading-snug">
-          <span className="uppercase tracking-wider font-extrabold mr-1.5">Mode Impersonate</span>
-          <span className="opacity-70">|</span>
-          <span className="ml-1.5 font-normal">
-            Anda sedang melihat:{" "}
-            <strong className="font-bold underline">
-              {impersonation.targetTenant?.nama_barbershop || "Barbershop"}
-            </strong>{" "}
-            (Masuk sebagai Owner)
-          </span>
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={handleExit}
-        className="inline-flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all shadow-sm active:scale-95 cursor-pointer shrink-0 ml-auto"
-      >
-        <span>Kembali ke Akun Superadmin</span>
-        <ArrowRight className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
 
 // ============================================================================
 // 2. TOP HEADER (DESKTOP)
@@ -703,9 +735,7 @@ export function OwnerHeader({
   const isLight = variant === "light";
 
   return (
-    <>
-      <ImpersonateBanner />
-      <header
+    <header
         className={`hidden lg:flex items-center ${
           searchPlaceholder ? "justify-between" : "justify-end"
         } px-8 py-3.5 sticky top-0 z-40 transition-colors bg-card/95 backdrop-blur-md border-b border-border text-card-foreground shadow-xs`}
@@ -772,7 +802,6 @@ export function OwnerHeader({
           </div>
         </div>
       </header>
-    </>
   );
 }
 
@@ -825,7 +854,6 @@ export function OwnerMobileHeader({
 
   return (
     <>
-      <ImpersonateBanner />
       <header className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-40 transition-colors bg-card/95 backdrop-blur-md border-b border-border text-card-foreground shadow-xs">
         <div className="flex items-center gap-3">
           <button

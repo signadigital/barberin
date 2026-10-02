@@ -114,7 +114,7 @@ function SuperadminSubscriptionsPage() {
         data: {
           planName: selectedPlan,
           durationDays: Number(durationDays),
-          notes: codeNotes.trim() || undefined,
+          ...(codeNotes.trim() ? { notes: codeNotes.trim() } : {}),
         },
       });
 

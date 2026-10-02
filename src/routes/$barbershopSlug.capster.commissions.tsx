@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -79,10 +79,13 @@ function CapsterCommissionsPage() {
   const [requestDetail, setRequestDetail] = useState<any | null>(null);
 
   // Fetch Commission Detail Data
+  const isFetchingRef = useRef(false);
   const fetchData = useCallback(
     async (isInitial = false) => {
       if (!capsterId && !userId) return;
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (isFetchingRef.current) return;
+      if (!isInitial && typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      isFetchingRef.current = true;
       if (isInitial) setLoading(true);
 
       try {
@@ -99,6 +102,7 @@ function CapsterCommissionsPage() {
       } catch (err) {
         console.error("Gagal memuat detail komisi capster:", err);
       } finally {
+        isFetchingRef.current = false;
         if (isInitial) setLoading(false);
       }
     },
@@ -109,8 +113,10 @@ function CapsterCommissionsPage() {
     fetchData(true);
 
     const intervalId = setInterval(() => {
-      fetchData(false);
-    }, 10000);
+      if (document.visibilityState === "visible") {
+        fetchData(false);
+      }
+    }, 25000);
 
     const onVisibility = () => {
       if (document.visibilityState === "visible") {

@@ -348,6 +348,10 @@ export async function getCurrentSubscription(barbershopId: string) {
       })
       .returning();
 
+    if (!newSub) {
+      throw new Error("Gagal membuat subscription default Free.");
+    }
+
     return {
       subscription_id: newSub.subscription_id,
       business_id: businessId,
@@ -382,16 +386,18 @@ export async function getCurrentSubscription(barbershopId: string) {
         })
         .returning();
 
-      await tx.insert(subscriptionHistories).values({
-        id_barbershop: barbershopId,
-        id_subscription: freeSub.subscription_id,
-        id_plan: freePlanId,
-        status: "active",
-        start_date: new Date(),
-        end_date: null,
-        jenis: "expired_to_free",
-        keterangan: `Masa aktif paket ${sub.plan_name} telah berakhir, kembali otomatis ke paket Free.`,
-      });
+      if (freeSub) {
+        await tx.insert(subscriptionHistories).values({
+          id_barbershop: barbershopId,
+          id_subscription: freeSub.subscription_id,
+          id_plan: freePlanId,
+          status: "active",
+          start_date: new Date(),
+          end_date: null,
+          jenis: "expired_to_free",
+          keterangan: `Masa aktif paket ${sub.plan_name} telah berakhir, kembali otomatis ke paket Free.`,
+        });
+      }
 
       // Notifikasi
       const [u] = await tx
@@ -404,7 +410,7 @@ export async function getCurrentSubscription(barbershopId: string) {
         await tx.insert(notifikasi).values({
           id_barbershop: barbershopId,
           id_user: u.id_user,
-          tipe: "peringatan",
+          tipe: "info",
           judul: "Masa Langganan Berakhir",
           pesan: `Masa aktif paket ${sub.plan_name} barbershop Anda telah berakhir. Sistem telah mengembalikan paket ke Gratis (Free). Silakan lakukan perpanjangan paket untuk menikmati fitur premium.`,
         });
@@ -647,7 +653,7 @@ export async function consumeExportToken(barbershopId: string) {
     })
     .returning();
 
-  const used = updated.export_token_used;
+  const used = updated?.export_token_used ?? 1;
   const remaining = Math.max(0, maxTokens - used);
 
   return { success: true, used, limit: maxTokens, remaining, isUnlimited: false };
@@ -858,6 +864,9 @@ export async function executeRedeemCode(barbershopId: string, rawCode: string, u
         })
         .returning({ subscription_id: subscription.subscription_id });
 
+      if (!newSub) {
+        throw new Error("Gagal membuat subscription baru.");
+      }
       targetSubscriptionId = newSub.subscription_id;
     }
 
@@ -1005,7 +1014,9 @@ export async function runDailySubscriptionExpiryJob() {
             end_date: null,
           })
           .returning({ subscription_id: subscription.subscription_id });
-        freeSubId = newFree.subscription_id;
+        if (newFree) {
+          freeSubId = newFree.subscription_id;
+        }
       }
 
       // 3. Record history (idempotent: jika belum tercatat dalam 24 jam terakhir)
@@ -1031,7 +1042,7 @@ export async function runDailySubscriptionExpiryJob() {
         await tx.insert(notifikasi).values({
           id_barbershop: item.id_barbershop!,
           id_user: ownerUser.id_user,
-          tipe: "peringatan",
+          tipe: "info",
           judul: "Masa Langganan Berakhir",
           pesan: `Masa aktif paket ${item.plan_name} barbershop Anda telah berakhir. Sistem telah mengembalikan paket ke Gratis (Free). Silakan lakukan perpanjangan paket untuk menikmati fitur premium kembali.`,
         });
@@ -1044,6 +1055,8 @@ export async function runDailySubscriptionExpiryJob() {
   return {
     processedCount: processedTenants.length,
     processedTenants,
+    expiredCount: processedTenants.length,
+    retainedCount: 0,
   };
 }
 
@@ -1291,6 +1304,10 @@ export const superadminGenerateCode = createServerFn({
         status: "unused",
       })
       .returning();
+
+    if (!created) {
+      throw new Error("Gagal membuat voucher langganan.");
+    }
 
     // Catat ke audit log superadmin
     await db

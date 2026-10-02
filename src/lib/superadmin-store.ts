@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from "react";
-import { ownerActions, type OwnerUser } from "@/lib/owner-store";
 
 export type SuperadminUser = {
   id_user: string;
@@ -8,32 +7,12 @@ export type SuperadminUser = {
   role: string;
 };
 
-export type ImpersonateContext = {
-  isImpersonating: boolean;
-  targetTenant: {
-    id_barbershop: string;
-    nama_barbershop: string;
-    ownerName?: string | undefined;
-    ownerEmail?: string | undefined;
-  } | null;
-  originalSuperadmin: SuperadminUser | null;
-};
-
 export type SuperadminState = {
   isLoggedIn: boolean;
   user: SuperadminUser | null;
-  impersonation: ImpersonateContext;
-};
-
-const DEFAULT_SUPERADMIN_USER: SuperadminUser = {
-  id_user: "superadmin-system-id",
-  email: "superadmin@barberin.test",
-  nama_lengkap: "Superadmin Platform",
-  role: "superadmin",
 };
 
 const AUTH_STORAGE_KEY = "barberin_superadmin_auth_v1";
-const IMPERSONATE_STORAGE_KEY = "barberin_superadmin_impersonate_v1";
 const COOKIE_KEY = "barberin_superadmin_logged_in";
 
 export function getSuperadminAuth(): boolean {
@@ -53,41 +32,21 @@ function loadInitialState(): SuperadminState {
     return {
       isLoggedIn: false,
       user: null,
-      impersonation: {
-        isImpersonating: false,
-        targetTenant: null,
-        originalSuperadmin: null,
-      },
     };
   }
 
   try {
     const rawAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    const rawImpersonate = localStorage.getItem(IMPERSONATE_STORAGE_KEY);
-
     const user = rawAuth ? JSON.parse(rawAuth) : null;
-    const impersonation = rawImpersonate
-      ? JSON.parse(rawImpersonate)
-      : {
-          isImpersonating: false,
-          targetTenant: null,
-          originalSuperadmin: null,
-        };
 
     return {
       isLoggedIn: Boolean(user),
       user: user,
-      impersonation: impersonation,
     };
   } catch {
     return {
       isLoggedIn: false,
       user: null,
-      impersonation: {
-        isImpersonating: false,
-        targetTenant: null,
-        originalSuperadmin: null,
-      },
     };
   }
 }
@@ -103,15 +62,6 @@ function emitChange() {
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY);
       }
-
-      if (currentState.impersonation.isImpersonating) {
-        localStorage.setItem(
-          IMPERSONATE_STORAGE_KEY,
-          JSON.stringify(currentState.impersonation),
-        );
-      } else {
-        localStorage.removeItem(IMPERSONATE_STORAGE_KEY);
-      }
     } catch {}
   }
   listeners.forEach((listener) => listener());
@@ -120,7 +70,6 @@ function emitChange() {
 export const superadminActions = {
   login: (user: SuperadminUser) => {
     currentState = {
-      ...currentState,
       isLoggedIn: true,
       user,
     };
@@ -131,82 +80,7 @@ export const superadminActions = {
     currentState = {
       isLoggedIn: false,
       user: null,
-      impersonation: {
-        isImpersonating: false,
-        targetTenant: null,
-        originalSuperadmin: null,
-      },
     };
-    emitChange();
-  },
-
-  startImpersonate: (
-    targetTenant: {
-      id_barbershop: string;
-      nama_barbershop: string;
-      slug?: string | null;
-      alamat?: string | null;
-      no_hp?: string | null;
-    },
-    targetOwner?: {
-      id_user: string;
-      nama_lengkap: string;
-      email: string;
-      no_hp?: string | null;
-    } | null,
-  ) => {
-    const currentAdmin = currentState.user || DEFAULT_SUPERADMIN_USER;
-
-    if (!targetOwner || !targetOwner.id_user) {
-      throw new Error("Owner riil untuk tenant ini tidak ditemukan. Impersonasi dibatalkan.");
-    }
-
-    const impersonationContext: ImpersonateContext = {
-      isImpersonating: true,
-      targetTenant: {
-        id_barbershop: targetTenant.id_barbershop,
-        nama_barbershop: targetTenant.nama_barbershop,
-        ownerName: targetOwner.nama_lengkap,
-        ownerEmail: targetOwner.email,
-      },
-      originalSuperadmin: currentAdmin,
-    };
-
-    currentState = {
-      ...currentState,
-      impersonation: impersonationContext,
-    };
-    emitChange();
-
-    // Alihkan konteks Owner store ke toko target secara aman dengan akun riil
-    ownerActions.login({
-      id_user: targetOwner.id_user,
-      id_barbershop: targetTenant.id_barbershop,
-      barbershopSlug: targetTenant.slug || targetTenant.id_barbershop,
-      email: targetOwner.email,
-      nama_lengkap: targetOwner.nama_lengkap,
-      role: "owner",
-      barbershopName: targetTenant.nama_barbershop,
-      alamat: targetTenant.alamat || "Alamat barbershop",
-      no_hp: targetOwner.no_hp || targetTenant.no_hp || "0812-3456-7890",
-      no_hp_barbershop: targetTenant.no_hp || "0812-3456-7890",
-    });
-  },
-
-  stopImpersonate: () => {
-    const originalAdmin = currentState.impersonation.originalSuperadmin;
-
-    currentState = {
-      ...currentState,
-      isLoggedIn: true,
-      user: originalAdmin || currentState.user,
-      impersonation: {
-        isImpersonating: false,
-        targetTenant: null,
-        originalSuperadmin: null,
-      },
-    };
-    ownerActions.logout();
     emitChange();
   },
 };
@@ -214,11 +88,6 @@ export const superadminActions = {
 const SERVER_SUPERADMIN_STATE: SuperadminState = {
   isLoggedIn: false,
   user: null,
-  impersonation: {
-    isImpersonating: false,
-    targetTenant: null,
-    originalSuperadmin: null,
-  },
 };
 
 export function useSuperadmin(): SuperadminState {
@@ -236,4 +105,3 @@ export function useSuperadmin(): SuperadminState {
     () => SERVER_SUPERADMIN_STATE,
   );
 }
-

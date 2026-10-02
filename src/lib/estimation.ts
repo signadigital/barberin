@@ -273,81 +273,74 @@ export async function getBookingEstimation(
     return null;
   }
 
-  // Jika booking sudah aktif dalam antrean (in_service, waiting, confirmed, pending_confirmation)
-  if (
-    b.status === "in_service" ||
-    b.status === "waiting" ||
-    b.status === "confirmed" ||
-    b.status === "pending_confirmation"
-  ) {
+  // 1. Kasus langsung jika status in_service: hitung langsung dari data booking ini tanpa hitung seluruh antrean
+  if (b.status === "in_service") {
+    const details = await db
+      .select({
+        durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
+        nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
+        qty: detailBooking.qty,
+        master_durasi: layanan.durasi_menit,
+        master_nama: layanan.nama_layanan,
+      })
+      .from(detailBooking)
+      .leftJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
+      .where(eq(detailBooking.id_booking, bookingId));
+
+    let totalDuration = 0;
+    const names: string[] = [];
+    for (const d of details) {
+      const dur =
+        d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0
+          ? d.durasi_menit_snapshot
+          : d.master_durasi && d.master_durasi > 0
+            ? d.master_durasi
+            : 30;
+      totalDuration += dur * (d.qty || 1);
+      const sName = d.nama_layanan_snapshot || d.master_nama;
+      if (sName) names.push(sName);
+    }
+    if (totalDuration === 0) totalDuration = 30;
+
+    const startTime = b.waktu_mulai_layanan ?? b.waktu_konfirmasi ?? referenceTime;
+    const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
+    const remaining = Math.max(1, totalDuration - elapsedMinutes);
+    const estEnd = new Date(referenceTime.getTime() + remaining * 60000);
+
+    return {
+      bookingId: b.id_booking,
+      barbershopId: b.id_barbershop,
+      capsterId: b.id_capster,
+      status: b.status,
+      source: b.source || "scan",
+      waktuPermintaan: b.waktu_permintaan,
+      waktuKonfirmasi: b.waktu_konfirmasi,
+      waktuMulaiLayanan: startTime,
+      totalDurationMinutes: totalDuration,
+      remainingMinutes: remaining,
+      waitTimeMinutes: 0,
+      estimatedStartTime: startTime,
+      estimatedEndTime: estEnd,
+      positionInQueue: 0,
+      serviceNames: names.join(" + ") || "Layanan Barbershop",
+      antreanKe: 0,
+      estimasiTungguMenit: 0,
+      durasiLayanan: totalDuration,
+      sisaDurasi: remaining,
+      estimasiMulai: startTime.toISOString(),
+      estimasiSelesai: estEnd.toISOString(),
+      totalAntreanSebelumnya: 0,
+    };
+  }
+
+  // 2. Jika status waiting atau confirmed: hitung posisi di antrean aktif
+  if (b.status === "waiting" || b.status === "confirmed") {
     const queue = await calculateQueueEstimations(b.id_barbershop, b.id_capster, referenceTime);
     const found = queue.find((q) => q.bookingId === bookingId);
     if (found) return found;
-
-    // Fallback presisi jika booking in_service tidak terambil di queue utama
-    if (b.status === "in_service") {
-      const details = await db
-        .select({
-          durasi_menit_snapshot: detailBooking.durasi_menit_snapshot,
-          nama_layanan_snapshot: detailBooking.nama_layanan_snapshot,
-          qty: detailBooking.qty,
-          master_durasi: layanan.durasi_menit,
-          master_nama: layanan.nama_layanan,
-        })
-        .from(detailBooking)
-        .leftJoin(layanan, eq(detailBooking.id_layanan, layanan.id_layanan))
-        .where(eq(detailBooking.id_booking, bookingId));
-
-      let totalDuration = 0;
-      const names: string[] = [];
-      for (const d of details) {
-        const dur =
-          (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0)
-            ? d.durasi_menit_snapshot
-            : (d.master_durasi && d.master_durasi > 0)
-              ? d.master_durasi
-              : 30;
-        totalDuration += dur * (d.qty || 1);
-        const sName = d.nama_layanan_snapshot || d.master_nama;
-        if (sName) names.push(sName);
-      }
-      if (totalDuration === 0) totalDuration = 30;
-
-      const startTime = b.waktu_mulai_layanan ?? b.waktu_konfirmasi ?? referenceTime;
-      const elapsedMinutes = Math.max(0, Math.floor((referenceTime.getTime() - startTime.getTime()) / 60000));
-      const remaining = Math.max(5, totalDuration - elapsedMinutes);
-      const estEnd = new Date(referenceTime.getTime() + remaining * 60000);
-
-      return {
-        bookingId: b.id_booking,
-        barbershopId: b.id_barbershop,
-        capsterId: b.id_capster,
-        status: b.status,
-        source: b.source || "scan",
-        waktuPermintaan: b.waktu_permintaan,
-        waktuKonfirmasi: b.waktu_konfirmasi,
-        waktuMulaiLayanan: startTime,
-        totalDurationMinutes: totalDuration,
-        remainingMinutes: remaining,
-        waitTimeMinutes: 0,
-        estimatedStartTime: startTime,
-        estimatedEndTime: estEnd,
-        positionInQueue: 0,
-        serviceNames: names.join(" + ") || "Layanan Barbershop",
-        antreanKe: 0,
-        estimasiTungguMenit: 0,
-        durasiLayanan: totalDuration,
-        sisaDurasi: remaining,
-        estimasiMulai: startTime.toISOString(),
-        estimasiSelesai: estEnd.toISOString(),
-        totalAntreanSebelumnya: 0,
-      };
-    }
-
-    return null;
   }
 
-  // Jika status pending_confirmation: hitung preview estimasi tunggu untuk halaman Menunggu Konfirmasi
+  // 3. Jika status pending_confirmation: hitung preview estimasi tunggu
   if (b.status === "pending_confirmation") {
     const details = await db
       .select({
@@ -361,7 +354,7 @@ export async function getBookingEstimation(
     let totalDuration = 0;
     const names: string[] = [];
     for (const d of details) {
-      const dur = (d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0) ? d.durasi_menit_snapshot : 30;
+      const dur = d.durasi_menit_snapshot && d.durasi_menit_snapshot > 0 ? d.durasi_menit_snapshot : 30;
       totalDuration += dur * (d.qty || 1);
       if (d.nama_layanan_snapshot) names.push(d.nama_layanan_snapshot);
     }

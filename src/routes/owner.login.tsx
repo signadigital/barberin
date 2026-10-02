@@ -18,21 +18,6 @@ export const Route = createFileRoute("/owner/login")({
       },
     ],
   }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined" && getOwnerAuth()) {
-      try {
-        const raw = localStorage.getItem("barberin_owner_state_v1");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.user?.barbershopSlug) {
-            throw redirect({ to: `/${parsed.user.barbershopSlug}/owner/dashboard` as any });
-          }
-        }
-      } catch (e) {
-        if (isRedirect(e)) throw e;
-      }
-    }
-  },
   component: OwnerLoginPage,
 });
 

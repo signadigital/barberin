@@ -319,11 +319,11 @@ export const getOwnerDashboardMetrics = createServerFn({
     ) => data,
   )
   .handler(async ({ data }): Promise<OwnerDashboardMetrics> => {
-    // 0. Auto-cancel seluruh transaksi pending yang telah melebihi 2 jam
-    await autoCancelExpiredPendingTransactions();
-
     const tenant = requireOwnerTenant();
     const targetShopId = tenant.barbershopId;
+
+    // 0. Auto-cancel transaksi pending yang telah melebihi 2 jam (ter-throttle dan terisolasi per tenant)
+    await autoCancelExpiredPendingTransactions(targetShopId);
 
     const now = new Date();
     const period = data?.period || "today";

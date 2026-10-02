@@ -19,8 +19,6 @@ import {
   setSuperadminSessionCookie,
   getSuperadminSession,
   clearSuperadminSessionCookie,
-  setOwnerSessionCookie,
-  clearOwnerSessionCookie,
 } from "./auth-session";
 import { hashPassword, verifyPassword } from "./auth-crypto";
 
@@ -502,16 +500,18 @@ export const createTenantWithTransaction = createServerFn({
               })
               .returning();
 
-            await tx.insert(subscriptionHistories).values({
-              id_barbershop: newShop.id_barbershop,
-              id_subscription: newSub.subscription_id,
-              id_plan: freePlanId,
-              status: "active",
-              start_date: new Date(),
-              end_date: null,
-              jenis: "register_free",
-              keterangan: "Inisialisasi paket gratis (Free) bawaan tenant",
-            });
+            if (newSub) {
+              await tx.insert(subscriptionHistories).values({
+                id_barbershop: newShop.id_barbershop,
+                id_subscription: newSub.subscription_id,
+                id_plan: freePlanId,
+                status: "active",
+                start_date: new Date(),
+                end_date: null,
+                jenis: "register_free",
+                keterangan: "Inisialisasi paket gratis (Free) bawaan tenant",
+              });
+            }
           }
         }
 
@@ -715,106 +715,3 @@ export const logSuperadminAction = createServerFn({
       return { success: false };
     }
   });
-
-// ============================================================================
-// 8. SERVER-SIDE IMPERSONATION (SUPERADMIN TO OWNER)
-// ============================================================================
-
-export const startSuperadminImpersonation = createServerFn({
-  method: "POST",
-})
-  .validator((data: { id_barbershop: string }) => data)
-  .handler(async ({ data }) => {
-    const admin = requireSuperadmin();
-    const { id_barbershop } = data;
-
-    // 1. Verifikasi barbershop ada di database
-    const [shop] = await db
-      .select()
-      .from(barbershop)
-      .where(eq(barbershop.id_barbershop, id_barbershop))
-      .limit(1);
-
-    if (!shop) {
-      throw new Error("Barbershop tidak ditemukan.");
-    }
-
-    if (shop.status === "suspended") {
-      throw new Error("Toko ini sedang disuspend. Aktifkan terlebih dahulu sebelum impersonasi.");
-    }
-
-    // 2. Verifikasi owner riil di database — TIDAK BOLEH MEMBUAT FAKE USER ID
-    const [realOwner] = await db
-      .select({
-        id_user: users.id_user,
-        email: users.email,
-        nama_lengkap: users.nama_lengkap,
-        no_hp: users.no_hp,
-        status: users.status,
-      })
-      .from(users)
-      .where(and(eq(users.role, "owner"), eq(users.id_barbershop, id_barbershop)))
-      .limit(1);
-
-    if (!realOwner) {
-      throw new Error(
-        `Owner untuk toko '${shop.nama_barbershop}' tidak ditemukan di database. Impersonasi dibatalkan demi integritas data.`,
-      );
-    }
-
-    // 3. Set secure server-side owner session cookie dengan penanda impersonatedBy
-    setOwnerSessionCookie({
-      userId: realOwner.id_user,
-      email: realOwner.email,
-      role: "owner",
-      barbershopId: shop.id_barbershop,
-      barbershopName: shop.nama_barbershop,
-      namaLengkap: realOwner.nama_lengkap,
-      impersonatedBy: admin.userId,
-    });
-
-    // 4. Catat log audit impersonasi
-    await db
-      .insert(superadminAuditLogs)
-      .values({
-        action: "IMPERSONATE_TENANT",
-        actor_email: admin.email,
-        target_tenant_id: shop.id_barbershop,
-        target_tenant_name: shop.nama_barbershop,
-        details: `Superadmin (${admin.email}) masuk sebagai Owner riil (${realOwner.email} / ${realOwner.nama_lengkap}) untuk toko '${shop.nama_barbershop}'.`,
-      })
-      .catch((e) => console.error("Audit impersonate gagal:", e));
-
-    return {
-      success: true,
-      barbershop: {
-        id_barbershop: shop.id_barbershop,
-        nama_barbershop: shop.nama_barbershop,
-        slug: shop.slug,
-        alamat: shop.alamat,
-        no_hp: shop.no_hp,
-      },
-      owner: realOwner,
-    };
-  });
-
-export const exitSuperadminImpersonation = createServerFn({
-  method: "POST",
-}).handler(async () => {
-  const admin = requireSuperadmin();
-
-  // Hapus cookie sesi owner (impersonation)
-  clearOwnerSessionCookie();
-
-  // Catat log audit penghentian impersonasi
-  await db
-    .insert(superadminAuditLogs)
-    .values({
-      action: "EXIT_IMPERSONATION",
-      actor_email: admin.email,
-      details: `Superadmin (${admin.email}) keluar dari mode impersonate dan kembali ke dashboard platform.`,
-    })
-    .catch((e) => console.error("Audit exit impersonate gagal:", e));
-
-  return { success: true };
-});

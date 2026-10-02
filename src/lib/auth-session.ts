@@ -8,7 +8,6 @@ export type OwnerSessionPayload = {
   barbershopId: string;
   barbershopName: string;
   namaLengkap: string;
-  impersonatedBy?: string; // superadmin user id when in impersonation mode
   sessionId?: string;
   createdAt?: number;
   exp: number; // Unix timestamp in seconds
@@ -165,25 +164,24 @@ export function clearOwnerSessionCookie() {
  * Memvalidasi dan mengekstrak tenant kontekstual dari sesi Owner yang sedang aktif.
  * Wajib digunakan di setiap server action / query Owner untuk mencegah kebocoran data antar-tenant.
  */
-export function requireOwnerTenant(): {
+export function requireOwnerTenant(expectedBarbershopIdOrSlug?: string): {
   userId: string;
   email: string;
   barbershopId: string;
   barbershopName: string;
   namaLengkap: string;
-  impersonatedBy?: string;
 } {
   const session = getOwnerSession();
   if (!session || !session.userId || !session.barbershopId) {
     throw new Error("Sesi Owner tidak valid atau belum login. Akses ditolak.");
   }
+
   return {
     userId: session.userId,
     email: session.email,
     barbershopId: session.barbershopId,
     barbershopName: session.barbershopName,
     namaLengkap: session.namaLengkap,
-    impersonatedBy: session.impersonatedBy,
   };
 }
 
@@ -337,10 +335,10 @@ export type CapsterSessionPayload = {
   role: "capster";
   capsterId: string;
   barbershopId: string;
-  barbershopName?: string;
+  barbershopName?: string | undefined;
   namaLengkap: string;
-  sessionId?: string;
-  createdAt?: number;
+  sessionId?: string | undefined;
+  createdAt?: number | undefined;
   exp: number;
 };
 
@@ -441,7 +439,7 @@ export function requireCapsterTenant(): {
   email: string;
   capsterId: string;
   barbershopId: string;
-  barbershopName?: string;
+  barbershopName?: string | undefined;
   namaLengkap: string;
 } {
   const session = getCapsterSession();
@@ -453,7 +451,7 @@ export function requireCapsterTenant(): {
     email: session.email,
     capsterId: session.capsterId,
     barbershopId: session.barbershopId,
-    barbershopName: session.barbershopName,
+    barbershopName: session.barbershopName ?? undefined,
     namaLengkap: session.namaLengkap,
   };
 }

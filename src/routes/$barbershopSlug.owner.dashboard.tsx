@@ -108,9 +108,12 @@ function OwnerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTx, setSelectedTx] = useState<OwnerRecentTransaction | null>(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const inFlightRef = useState({ current: false })[0];
 
   const fetchMetrics = async (isManualRefresh = false) => {
-    if (!isLoggedIn && !getOwnerAuth()) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
     if (isManualRefresh) {
       setRefreshing(true);
     } else if (!metrics) {
@@ -122,39 +125,47 @@ function OwnerDashboardPage() {
       const res = await getOwnerDashboardMetrics({
         data: {
           period: activePeriod,
+          barbershopId: barbershopSlug,
         },
       });
       setMetrics(res);
     } catch (err: any) {
       console.error("Gagal mengambil data dashboard owner:", err);
-      setError(err?.message || "Gagal memuat data dashboard. Silakan coba lagi.");
+      if (!metrics) {
+        setError(err?.message || "Gagal memuat data dashboard. Silakan coba lagi.");
+      }
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (!isLoggedIn && !getOwnerAuth()) return;
+    let mounted = true;
     fetchMetrics();
+
     // Auto refresh periodically every 30 seconds for live updates (active tab only)
     const timer = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      fetchMetrics(true);
+      if (!inFlightRef.current) {
+        fetchMetrics(true);
+      }
     }, 30000);
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && !inFlightRef.current) {
         fetchMetrics(true);
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
+      mounted = false;
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [activePeriod, isLoggedIn]);
+  }, [activePeriod, barbershopSlug]);
 
   const handlePeriodChange = (p: OwnerPeriodFilter) => {
     ownerActions.setPeriod(p);

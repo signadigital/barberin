@@ -1233,16 +1233,10 @@ export const getTransactionDetail = createServerFn({
     const itemsTotalDuration = items.reduce((sum, it) => sum + (it.durationMinutes * it.quantity), 0);
     const serverTime = new Date();
 
-    // Pastikan waktu_mulai_layanan terisi jika status in_service
+    // Penentuan waktu_mulai_layanan berbasis read-only murni (tanpa mutasi database pada operasi GET)
     let waktuMulaiLayananDate = bookingInfo?.waktu_mulai_layanan ?? null;
     if (bookingInfo?.status === "in_service" && !waktuMulaiLayananDate) {
-      waktuMulaiLayananDate = serverTime;
-      if (tx.id_booking) {
-        await db
-          .update(booking)
-          .set({ waktu_mulai_layanan: serverTime, updated_at: serverTime })
-          .where(eq(booking.id_booking, tx.id_booking));
-      }
+      waktuMulaiLayananDate = bookingInfo?.waktu_konfirmasi ?? serverTime;
     }
 
     return {

@@ -56,7 +56,7 @@ function OwnerForgotPasswordPage() {
       const res = await requestPasswordReset({
         data: {
           email: trimmedEmail,
-          clientOrigin,
+          ...(clientOrigin ? { clientOrigin } : {}),
         },
       });
 

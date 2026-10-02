@@ -3,7 +3,7 @@ import { auditLog, type NewAuditLog } from "@/db/schema";
 
 export type CreateAuditLogParams = {
   barbershopId: string;
-  userId?: string | null;
+  userId?: string | null | undefined;
   aksi:
     | "create request"
     | "confirm request"
@@ -28,8 +28,8 @@ export type CreateAuditLogParams = {
     | "layanan"
     | "keamanan_akun"
     | string;
-  entityId?: string | null;
-  alasan?: string | null;
+  entityId?: string | null | undefined;
+  alasan?: string | null | undefined;
 };
 
 /**

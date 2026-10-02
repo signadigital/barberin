@@ -344,9 +344,12 @@ export function CapsterHeader({
   useEffect(() => {
     if (!allowNotifications || !capsterId) return;
     let mounted = true;
+    let isFetching = false;
 
     const fetchPending = async () => {
+      if (isFetching) return;
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      isFetching = true;
       try {
         const data = await getCapsterTransactions({ data: { capsterId } });
         if (!mounted || !data) return;
@@ -354,6 +357,8 @@ export function CapsterHeader({
         setHeaderPending(pending);
       } catch {
         // silent error on background poll
+      } finally {
+        isFetching = false;
       }
     };
 

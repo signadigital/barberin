@@ -191,7 +191,7 @@ export const resolveTenantByCustomDomain = createServerFn({
   .handler(async ({ data: domain }) => {
     if (!domain) return null;
 
-    const cleanHost = domain.split(":")[0].replace(/\.$/, "");
+    const cleanHost = (domain.split(":")[0] || "").replace(/\.$/, "");
 
     // 1. Cek apakah hostname ini adalah domain kustom aktif di sistem
     const [matchedDomain] = await db

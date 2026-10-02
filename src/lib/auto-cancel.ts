@@ -14,6 +14,9 @@ export const CANCEL_REASON_CATEGORY = "Alasan lainnya";
 export const CANCEL_REASON_DETAIL =
   "Otomatis dibatalkan sistem: Melebihi batas waktu 2 jam menunggu persetujuan capster (Alasan lainnya)";
 
+let lastAutoCancelRun = 0;
+const THROTTLE_CANCEL_MS = 5 * 60 * 1000; // Jalankan maksimal tiap 5 menit untuk mencegah beban di setiap GET
+
 /**
  * Memeriksa apakah suatu transaksi pending sudah melebihi 2 jam dari waktu pembuatannya.
  */
@@ -32,11 +35,28 @@ export function isTransactionExpired(
 /**
  * Membatalkan secara otomatis seluruh transaksi & booking yang masih berstatus pending
  * setelah melebihi batas waktu 2 jam dari waktu pemesanan/pembuatan transaksi.
- * Kategori alasan pembatalan dicatat sebagai "Alasan lainnya".
+ * Ter-throttle agar tidak membebani operasi GET dashboard.
  */
-export async function autoCancelExpiredPendingTransactions(): Promise<number> {
+export async function autoCancelExpiredPendingTransactions(
+  targetBarbershopId?: string,
+  force = false,
+): Promise<number> {
+  const now = Date.now();
+  if (!force && now - lastAutoCancelRun < THROTTLE_CANCEL_MS) {
+    return 0;
+  }
+  lastAutoCancelRun = now;
+
   try {
-    const twoHoursAgo = new Date(Date.now() - TWO_HOURS_MS);
+    const twoHoursAgo = new Date(now - TWO_HOURS_MS);
+
+    const conditions = [
+      eq(transaksi.status_transaksi, "pending"),
+      lte(transaksi.created_at, twoHoursAgo),
+    ];
+    if (targetBarbershopId) {
+      conditions.push(eq(transaksi.id_barbershop, targetBarbershopId));
+    }
 
     // Cari seluruh transaksi pending yang dibuat > 2 jam yang lalu
     const expiredTxs = await db
@@ -46,12 +66,8 @@ export async function autoCancelExpiredPendingTransactions(): Promise<number> {
         created_at: transaksi.created_at,
       })
       .from(transaksi)
-      .where(
-        and(
-          eq(transaksi.status_transaksi, "pending"),
-          lte(transaksi.created_at, twoHoursAgo),
-        ),
-      );
+      .where(and(...conditions))
+      .limit(50); // Batasi per batch agar tidak menahan request
 
     if (!expiredTxs || expiredTxs.length === 0) {
       return 0;
