@@ -25,6 +25,11 @@ export function LandingFooter() {
             </div>
             <ul className="space-y-2">
               <li>
+                <a href="#home" className="hover:text-white transition-colors">
+                  Home
+                </a>
+              </li>
+              <li>
                 <a href="#problem" className="hover:text-white transition-colors">
                   Tentang / Problem
                 </a>

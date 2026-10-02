@@ -1,27 +1,130 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X, ArrowRight, Sparkles } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { BarberinLogo } from "@/components/barberin/ui";
+
+const navLinks = [
+  { id: "home", label: "Home", href: "#home" },
+  { id: "problem", label: "Problem", href: "#problem" },
+  { id: "solusi", label: "Solusi", href: "#solusi" },
+  { id: "cara-kerja", label: "Cara Kerja", href: "#cara-kerja" },
+  { id: "harga", label: "Harga", href: "#harga" },
+  { id: "faq", label: "FAQ", href: "#faq" },
+];
+
+const sectionIds = ["home", "problem", "impact", "solusi", "cara-kerja", "harga", "faq"];
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("home");
+  const isClickScrolling = useRef(false);
 
   useEffect(() => {
+    // Initial scroll check for header glassmorphism
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+      if (window.scrollY < 50 && !isClickScrolling.current) {
+        setActiveSection("home");
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    // Initial hash navigation check on mount
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hash = window.location.hash.replace("#", "");
+      const targetElement = document.getElementById(hash);
+      if (targetElement) {
+        const mappedId = hash === "impact" ? "problem" : hash;
+        setActiveSection(mappedId);
+        setTimeout(() => {
+          targetElement.scrollIntoView({ behavior: "smooth" });
+        }, 150);
+      }
+    }
+
+    // Hash change handler for browser Back/Forward navigation
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        const mappedId = hash === "impact" ? "problem" : hash;
+        setActiveSection(mappedId);
+        const targetElement = document.getElementById(hash);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: "smooth" });
+        }
+      } else {
+        setActiveSection("home");
+      }
+    };
+    window.addEventListener("popstate", handleHashChange);
+
+    // IntersectionObserver to detect active section without per-pixel scroll listeners
+    const intersectingMap = new Map<string, boolean>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isClickScrolling.current) return;
+
+        entries.forEach((entry) => {
+          intersectingMap.set(entry.target.id, entry.isIntersecting);
+        });
+
+        // Determine which observed section is currently visible in document order
+        for (const id of sectionIds) {
+          if (intersectingMap.get(id)) {
+            const mappedId = id === "impact" ? "problem" : id;
+            setActiveSection(mappedId);
+            break;
+          }
+        }
+      },
+      {
+        rootMargin: "-80px 0px -55% 0px",
+        threshold: 0,
+      }
+    );
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("popstate", handleHashChange);
+      observer.disconnect();
+    };
   }, []);
 
-  const navLinks = [
-    { label: "Problem", href: "#problem" },
-    { label: "Solusi", href: "#solusi" },
-    { label: "Cara Kerja", href: "#cara-kerja" },
-    { label: "Harga", href: "#harga" },
-    { label: "FAQ", href: "#faq" },
-  ];
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+    id: string
+  ) => {
+    e.preventDefault();
+    setActiveSection(id);
+    setMobileMenuOpen(false);
+
+    const targetId = href.replace("#", "");
+    const targetElement = document.getElementById(targetId);
+
+    if (targetElement) {
+      isClickScrolling.current = true;
+      targetElement.scrollIntoView({ behavior: "smooth" });
+
+      if (window.history.pushState) {
+        window.history.pushState(null, "", href);
+      } else {
+        window.location.hash = href;
+      }
+
+      // Re-enable observer after smooth scroll finishes
+      setTimeout(() => {
+        isClickScrolling.current = false;
+      }, 800);
+    }
+  };
 
   return (
     <header
@@ -36,6 +139,7 @@ export function LandingNavbar() {
           {/* Brand Logo */}
           <Link
             to="/"
+            onClick={(e) => handleNavClick(e as any, "#home", "home")}
             className="flex items-center gap-2.5 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1"
           >
             <BarberinLogo className="h-8 w-8 sm:h-9 sm:w-9 transition-transform duration-300 group-hover:scale-105" />
@@ -53,16 +157,24 @@ export function LandingNavbar() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-            {navLinks.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="px-3.5 py-2 text-xs lg:text-sm font-semibold text-slate-300 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                {item.label}
-              </a>
-            ))}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
+            {navLinks.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href, item.id)}
+                  className={`px-3 py-1.5 text-xs lg:text-sm font-semibold rounded-lg transition-all duration-200 border ${
+                    isActive
+                      ? "text-blue-400 bg-blue-500/10 border-blue-500/25 shadow-xs font-bold"
+                      : "text-slate-300 hover:text-white hover:bg-slate-800/60 border-transparent"
+                  } focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </nav>
 
           {/* Desktop CTA Buttons */}
@@ -108,16 +220,23 @@ export function LandingNavbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-[#0A1322] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top-4 duration-200 shadow-2xl">
           <nav className="flex flex-col space-y-1">
-            {navLinks.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2.5 text-sm font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                {item.label}
-              </a>
-            ))}
+            {navLinks.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href, item.id)}
+                  className={`px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-colors border ${
+                    isActive
+                      ? "text-blue-400 bg-blue-500/10 border-blue-500/20 font-bold"
+                      : "text-slate-300 hover:text-white hover:bg-slate-800 border-transparent"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </nav>
 
           <div className="pt-3 border-t border-slate-800 flex flex-col gap-2.5">

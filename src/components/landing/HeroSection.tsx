@@ -13,8 +13,8 @@ import {
 export function HeroSection() {
   return (
     <section
-      id="hero"
-      className="relative pt-8 pb-16 sm:pt-14 sm:pb-24 overflow-hidden bg-[#070D18] text-slate-100"
+      id="home"
+      className="relative pt-8 pb-16 sm:pt-14 sm:pb-24 overflow-hidden bg-[#070D18] text-slate-100 scroll-mt-24"
     >
       {/* Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-600/10 blur-[130px] rounded-full pointer-events-none -z-10" />
