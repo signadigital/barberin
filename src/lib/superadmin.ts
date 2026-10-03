@@ -3,6 +3,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
+  barbershopBrandings,
   business,
   capster,
   layanan,
@@ -21,6 +22,7 @@ import {
   clearSuperadminSessionCookie,
 } from "./auth-session";
 import { hashPassword, verifyPassword } from "./auth-crypto";
+import { supabase } from "@/lib/supabase-client";
 
 // ============================================================================
 // TYPES
@@ -683,7 +685,287 @@ export const getTenantDetail = createServerFn({
   });
 
 // ============================================================================
-// 7. LOG AUDIT AKTIVITAS SUPERADMIN
+// 7. HAPUS AKUN OWNER & SELURUH DATA TENANT SECARA PERMANEN
+// ============================================================================
+
+export const deleteTenantPermanent = createServerFn({
+  method: "POST",
+})
+  .validator((data: { id_barbershop: string }) => data)
+  .handler(async ({ data }) => {
+    // 1. SECURITY: Hanya Superadmin yang terotentikasi
+    const admin = requireSuperadmin();
+    const actor_email = admin.email;
+    const { id_barbershop } = data;
+
+    if (!id_barbershop) {
+      throw new Error("ID Toko wajib disertakan.");
+    }
+
+    // 2. Temukan barbershop yang akan dihapus
+    const [existingShop] = await db
+      .select()
+      .from(barbershop)
+      .where(eq(barbershop.id_barbershop, id_barbershop))
+      .limit(1);
+
+    if (!existingShop) {
+      throw new Error("Toko tidak ditemukan atau sudah dihapus.");
+    }
+
+    // 3. Kumpulkan data user, capster, dan owner terkait toko ini
+    const shopUsers = await db
+      .select({
+        id_user: users.id_user,
+        email: users.email,
+        role: users.role,
+        nama_lengkap: users.nama_lengkap,
+      })
+      .from(users)
+      .where(eq(users.id_barbershop, id_barbershop));
+
+    const ownerUser = shopUsers.find((u) => u.role === "owner");
+    const ownerEmail = ownerUser?.email || null;
+    const ownerUserId = ownerUser?.id_user || null;
+
+    let saasOwnerId: number | null = null;
+    if (ownerEmail) {
+      const [saasOwner] = await db
+        .select({ owner_id: owner.owner_id })
+        .from(owner)
+        .where(eq(owner.email, ownerEmail))
+        .limit(1);
+      if (saasOwner) {
+        saasOwnerId = saasOwner.owner_id;
+      }
+    }
+
+    // Daftar User ID dan Email untuk dihapus dari Supabase Auth
+    const userIdsToDelete = shopUsers.map((u) => u.id_user);
+    const emailsToDelete = shopUsers.map((u) => u.email).filter(Boolean);
+    if (ownerEmail && !emailsToDelete.includes(ownerEmail)) {
+      emailsToDelete.push(ownerEmail);
+    }
+
+    // 4. Cleanup Supabase Storage files jika ada
+    try {
+      const [branding] = await db
+        .select({
+          logo_url: barbershopBrandings.logo_url,
+          favicon_url: barbershopBrandings.favicon_url,
+        })
+        .from(barbershopBrandings)
+        .where(eq(barbershopBrandings.id_barbershop, id_barbershop))
+        .limit(1);
+
+      const extractStorageInfo = (url?: string | null) => {
+        if (!url || typeof url !== "string") return null;
+        if (url.includes("/storage/v1/object/public/")) {
+          const parts = url.split("/storage/v1/object/public/")[1]?.split("/");
+          if (parts && parts.length > 1) {
+            const bucket = parts[0];
+            const path = parts.slice(1).join("/");
+            return { bucket, path };
+          }
+        }
+        return null;
+      };
+
+      const filesToDelete = [
+        extractStorageInfo(existingShop.foto),
+        extractStorageInfo(branding?.logo_url),
+        extractStorageInfo(branding?.favicon_url),
+      ].filter(Boolean) as { bucket: string; path: string }[];
+
+      for (const f of filesToDelete) {
+        try {
+          await supabase.storage.from(f.bucket).remove([f.path]);
+        } catch (storageErr) {
+          console.warn("[DELETE_TENANT] Gagal menghapus file storage:", f, storageErr);
+        }
+      }
+    } catch (storageScanErr) {
+      console.warn("[DELETE_TENANT] Catatan storage cleanup:", storageScanErr);
+    }
+
+    // 5. Eksekusi DB Transaction Atomic
+    try {
+      await db.transaction(async (tx) => {
+        // A. Struk
+        await tx.execute(sql`DELETE FROM struk WHERE id_barbershop = ${id_barbershop}`);
+
+        // B. Pembayaran
+        await tx.execute(sql`DELETE FROM pembayaran WHERE id_barbershop = ${id_barbershop}`);
+
+        // C. Komisi Transaksi
+        await tx.execute(sql`DELETE FROM komisi_transaksi WHERE id_barbershop = ${id_barbershop}`);
+
+        // D. Pembatalan
+        await tx.execute(sql`
+          DELETE FROM pembatalan WHERE id_transaksi IN (
+            SELECT id_transaksi FROM transaksi WHERE id_barbershop = ${id_barbershop}
+          )
+        `);
+
+        // E. Transaksi
+        await tx.execute(sql`DELETE FROM transaksi WHERE id_barbershop = ${id_barbershop}`);
+
+        // F. Detail Booking
+        await tx.execute(sql`
+          DELETE FROM detail_booking 
+          WHERE id_barbershop = ${id_barbershop} 
+             OR id_layanan IN (SELECT id_layanan FROM layanan WHERE id_barbershop = ${id_barbershop})
+             OR id_booking IN (SELECT id_booking FROM booking WHERE id_barbershop = ${id_barbershop})
+        `);
+
+        // G. Booking
+        await tx.execute(sql`DELETE FROM booking WHERE id_barbershop = ${id_barbershop}`);
+
+        // H. Komisi (Pembayaran & Pengajuan)
+        await tx.execute(sql`DELETE FROM pembayaran_komisi WHERE id_barbershop = ${id_barbershop}`);
+        await tx.execute(sql`DELETE FROM pengajuan_komisi WHERE id_barbershop = ${id_barbershop}`);
+
+        // I. Shift Capster
+        await tx.execute(sql`DELETE FROM shift_capster WHERE id_barbershop = ${id_barbershop}`);
+
+        // J. Capster
+        await tx.execute(sql`DELETE FROM capster WHERE id_barbershop = ${id_barbershop}`);
+
+        // K. Pelanggan
+        await tx.execute(sql`DELETE FROM pelanggan WHERE id_barbershop = ${id_barbershop}`);
+
+        // L. Layanan
+        await tx.execute(sql`DELETE FROM layanan WHERE id_barbershop = ${id_barbershop}`);
+
+        // M. Auxiliary Tables
+        if (ownerUserId) {
+          await tx.execute(
+            sql`DELETE FROM audit_log WHERE id_barbershop = ${id_barbershop} OR id_user = ${ownerUserId}`,
+          );
+          await tx.execute(
+            sql`DELETE FROM notifikasi WHERE id_barbershop = ${id_barbershop} OR id_user = ${ownerUserId}`,
+          );
+          await tx.execute(
+            sql`DELETE FROM branding_histories WHERE changed_by = ${ownerUserId} OR id_branding IN (SELECT id_branding FROM barbershop_brandings WHERE id_barbershop = ${id_barbershop})`,
+          );
+        } else {
+          await tx.execute(sql`DELETE FROM audit_log WHERE id_barbershop = ${id_barbershop}`);
+          await tx.execute(sql`DELETE FROM notifikasi WHERE id_barbershop = ${id_barbershop}`);
+          await tx.execute(
+            sql`DELETE FROM branding_histories WHERE id_branding IN (SELECT id_branding FROM barbershop_brandings WHERE id_barbershop = ${id_barbershop})`,
+          );
+        }
+        await tx.execute(
+          sql`DELETE FROM barbershop_brandings WHERE id_barbershop = ${id_barbershop}`,
+        );
+        await tx.execute(sql`
+          DELETE FROM domain_verification_logs WHERE id_domain IN (
+            SELECT id_domain FROM custom_domains WHERE id_barbershop = ${id_barbershop}
+          )
+        `);
+        await tx.execute(sql`DELETE FROM custom_domains WHERE id_barbershop = ${id_barbershop}`);
+        await tx.execute(
+          sql`DELETE FROM subscription_histories WHERE id_barbershop = ${id_barbershop}`,
+        );
+        await tx.execute(
+          sql`DELETE FROM subscription_usage WHERE id_barbershop = ${id_barbershop}`,
+        );
+        await tx.execute(
+          sql`DELETE FROM subscription_payment WHERE id_barbershop = ${id_barbershop}`,
+        );
+        await tx.execute(
+          sql`DELETE FROM subscription_redemptions WHERE id_barbershop = ${id_barbershop}`,
+        );
+        await tx.execute(sql`DELETE FROM saldo_bisnis WHERE id_barbershop = ${id_barbershop}`);
+        await tx.execute(
+          sql`DELETE FROM pemeriksaan_keuangan WHERE id_barbershop = ${id_barbershop}`,
+        );
+        if (saasOwnerId) {
+          await tx.execute(sql`DELETE FROM demo_request WHERE owner_id = ${saasOwnerId}`);
+        }
+
+        // N. Subscription & Business
+        if (saasOwnerId) {
+          const bizList = await tx
+            .select({ business_id: business.business_id })
+            .from(business)
+            .where(or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)));
+          for (const b of bizList) {
+            await tx.execute(sql`DELETE FROM subscription WHERE business_id = ${b.business_id}`);
+          }
+          await tx
+            .delete(business)
+            .where(or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)));
+        } else {
+          const bizList = await tx
+            .select({ business_id: business.business_id })
+            .from(business)
+            .where(eq(business.id_barbershop, id_barbershop));
+          for (const b of bizList) {
+            await tx.execute(sql`DELETE FROM subscription WHERE business_id = ${b.business_id}`);
+          }
+          await tx
+            .delete(business)
+            .where(eq(business.id_barbershop, id_barbershop));
+        }
+
+        // O. Owner Verification Tokens
+        if (ownerUserId) {
+          await tx.execute(
+            sql`DELETE FROM owner_verification_tokens WHERE id_user = ${ownerUserId}`,
+          );
+        }
+
+        // P. Users
+        await tx.execute(
+          sql`DELETE FROM users WHERE id_barbershop = ${id_barbershop} ${ownerUserId ? sql`OR id_user = ${ownerUserId}` : sql``}`,
+        );
+
+        // Q. Barbershop
+        await tx.execute(sql`DELETE FROM barbershop WHERE id_barbershop = ${id_barbershop}`);
+
+        // R. Owner
+        if (saasOwnerId) {
+          await tx.execute(sql`DELETE FROM owner WHERE owner_id = ${saasOwnerId}`);
+        } else if (ownerEmail) {
+          await tx.execute(sql`DELETE FROM owner WHERE email = ${ownerEmail}`);
+        }
+
+        // S. auth.users in Supabase Auth
+        if (userIdsToDelete.length > 0) {
+          await tx.execute(sql`
+            DELETE FROM auth.users 
+            WHERE id IN ${sql`(${sql.join(userIdsToDelete.map((id) => sql`${id}::uuid`), sql`, `)})`}
+          `);
+        }
+        if (ownerEmail) {
+          await tx.execute(sql`DELETE FROM auth.users WHERE email = ${ownerEmail}`);
+        }
+
+        // T. Catat Superadmin Audit Log
+        await tx.insert(superadminAuditLogs).values({
+          action: "DELETE_TENANT",
+          actor_email,
+          target_tenant_id: id_barbershop,
+          target_tenant_name: existingShop.nama_barbershop,
+          details: `Toko '${existingShop.nama_barbershop}' (slug: '${existingShop.slug}') dan akun Owner '${ownerEmail || "-"}' beserta seluruh data operasional, transaksi, capster, dan pelanggan berhasil dihapus secara permanen.`,
+        });
+      });
+
+      return {
+        success: true,
+        message: "Akun Owner dan seluruh data barbershop berhasil dihapus secara permanen.",
+      };
+    } catch (err: any) {
+      console.error("❌ DB Transaction rollback pada penghapusan toko:", err);
+      throw new Error(
+        "Gagal menghapus akun Owner. Tidak ada perubahan yang dianggap berhasil sampai proses deletion selesai.",
+      );
+    }
+  });
+
+// ============================================================================
+// 8. LOG AUDIT AKTIVITAS SUPERADMIN
 // ============================================================================
 
 export const logSuperadminAction = createServerFn({

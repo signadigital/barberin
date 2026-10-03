@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   SlidersHorizontal,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,10 +23,18 @@ import {
 import {
   getSuperadminTenants,
   toggleTenantStatus,
+  deleteTenantPermanent,
   type SuperadminTenantItem,
   type SuperadminStats,
 } from "@/lib/superadmin";
 import { useSuperadmin, getSuperadminAuth } from "@/lib/superadmin-store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/superadmin/tenants")({
   head: () => ({
@@ -51,6 +61,54 @@ function SuperadminTenantsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Delete Modal States
+  const [tenantToDelete, setTenantToDelete] = useState<SuperadminTenantItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [confirmationInput, setConfirmationInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleOpenDeleteModal = (tenant: SuperadminTenantItem) => {
+    setTenantToDelete(tenant);
+    setConfirmationInput("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!tenantToDelete) return;
+    if (
+      confirmationInput.trim().toLowerCase() !==
+      tenantToDelete.nama_barbershop.trim().toLowerCase()
+    ) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteTenantPermanent({
+        data: {
+          id_barbershop: tenantToDelete.id_barbershop,
+        },
+      });
+
+      toast.success("Akun Owner dan seluruh data barbershop berhasil dihapus secara permanen.");
+      setIsDeleteModalOpen(false);
+      setTenantToDelete(null);
+      setConfirmationInput("");
+
+      // Revalidate fresh list and stats from database
+      await fetchData();
+    } catch (err: any) {
+      console.error("Gagal menghapus akun owner:", err);
+      toast.error("Gagal Menghapus Akun Owner", {
+        description:
+          err?.message ||
+          "Gagal menghapus akun Owner. Tidak ada perubahan yang dianggap berhasil sampai proses deletion selesai.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Filters & Controls
   const [search, setSearch] = useState("");
@@ -391,23 +449,35 @@ function SuperadminTenantsPage() {
 
                             {/* Actions */}
                             <td className="py-4 px-5 text-right">
-                              <div className="flex items-center justify-end">
+                              <div className="flex items-center justify-end gap-2">
                                 {/* Toggle Status */}
                                 <button
                                   type="button"
                                   onClick={() => handleToggleStatus(t)}
+                                  disabled={isDeleting}
                                   title={
                                     isSuspended
                                       ? "Aktifkan kembali toko"
                                       : "Suspend toko (blokir akses)"
                                   }
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border cursor-pointer ${
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border cursor-pointer disabled:opacity-50 ${
                                     isSuspended
                                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
                                       : "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
                                   }`}
                                 >
                                   {isSuspended ? "Aktifkan" : "Suspend"}
+                                </button>
+
+                                {/* Hapus Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDeleteModal(t)}
+                                  disabled={isDeleting}
+                                  title="Hapus toko dan seluruh data secara permanen"
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border cursor-pointer disabled:opacity-50 bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                                >
+                                  Hapus
                                 </button>
                               </div>
                             </td>
@@ -468,17 +538,27 @@ function SuperadminTenantsPage() {
                         </div>
 
                         {/* Mobile Actions */}
-                        <div className="pt-2 border-t border-slate-800/80">
+                        <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(t)}
-                            className={`w-full py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                            disabled={isDeleting}
+                            className={`w-full py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
                               isSuspended
                                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
                                 : "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
                             }`}
                           >
                             {isSuspended ? "Aktifkan Toko" : "Suspend Toko"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDeleteModal(t)}
+                            disabled={isDeleting}
+                            className="w-full py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                          >
+                            Hapus Toko
                           </button>
                         </div>
                       </div>
@@ -490,6 +570,136 @@ function SuperadminTenantsPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal Konfirmasi Hapus Tenant & Owner Permanen */}
+      <Dialog
+        open={isDeleteModalOpen}
+        onOpenChange={(open) => {
+          if (!isDeleting) {
+            setIsDeleteModalOpen(open);
+            if (!open) {
+              setTenantToDelete(null);
+              setConfirmationInput("");
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-md bg-slate-900 border border-slate-800 text-slate-100 p-6 sm:rounded-2xl shadow-2xl">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-2.5">
+              <div className="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-white">
+                  Hapus Akun Owner?
+                </DialogTitle>
+                <p className="text-xs text-slate-400">
+                  Konfirmasi penghapusan permanen tenant
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <p className="text-slate-300 font-medium">
+              Anda akan menghapus secara permanen:
+            </p>
+
+            {/* Detail info box */}
+            <div className="bg-slate-950/60 rounded-xl p-3.5 border border-slate-800/80 space-y-2.5">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                  Barbershop
+                </span>
+                <span className="font-bold text-white text-sm">
+                  {tenantToDelete?.nama_barbershop}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                  Owner
+                </span>
+                <span className="font-medium text-slate-200">
+                  {tenantToDelete?.owner?.nama_lengkap || "Belum ada Owner"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                  Email
+                </span>
+                <span className="font-mono text-blue-400">
+                  {tenantToDelete?.owner?.email || "-"}
+                </span>
+              </div>
+            </div>
+
+            {/* Warning Box */}
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-rose-400 uppercase tracking-wider text-[11px]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>PERINGATAN</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-200/90">
+                Semua data barbershop, akun Owner, data Capster, layanan, transaksi, komisi, notifikasi, subscription, dan file terkait akan dihapus secara permanen.
+              </p>
+              <p className="text-[11px] font-semibold text-rose-400">
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+
+            {/* Double Confirmation Input */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-semibold text-slate-300 block">
+                Ketik &ldquo;<span className="text-white font-bold select-all">{tenantToDelete?.nama_barbershop}</span>&rdquo; untuk melanjutkan:
+              </label>
+              <input
+                type="text"
+                value={confirmationInput}
+                onChange={(e) => setConfirmationInput(e.target.value)}
+                disabled={isDeleting}
+                placeholder={tenantToDelete?.nama_barbershop}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700/80 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500 text-xs font-medium"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setTenantToDelete(null);
+                setConfirmationInput("");
+              }}
+              disabled={isDeleting}
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Batal
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={
+                isDeleting ||
+                confirmationInput.trim().toLowerCase() !==
+                  (tenantToDelete?.nama_barbershop || "").trim().toLowerCase()
+              }
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-rose-950/40"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Menghapus...</span>
+                </>
+              ) : (
+                <span>Hapus Permanen</span>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </SuperadminAuthGuard>
   );
