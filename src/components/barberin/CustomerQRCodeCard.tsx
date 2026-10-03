@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 import {
   Download,
   Printer,
@@ -7,11 +6,12 @@ import {
   Check,
   ExternalLink,
   QrCode,
-  Sparkles,
   Info,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
-import { TenantLogo } from "@/components/tenant/TenantLogo";
+import { toast } from "sonner";
+import { QRPoster, downloadQRPoster } from "@/components/barberin/QRPoster";
 
 interface CustomerQRCodeCardProps {
   barbershopSlug: string;
@@ -25,12 +25,9 @@ export function CustomerQRCodeCard({
   barbershopSlug,
   barbershopName,
   logoUrl,
-  alamat,
-  noHp,
 }: CustomerQRCodeCardProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
-  const [qrGenerated, setQrGenerated] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Dynamic Destination URL (Origin + Tenant Customer Services Path)
   const [customerUrl, setCustomerUrl] = useState<string>(() => {
@@ -44,29 +41,6 @@ export function CustomerQRCodeCard({
     if (typeof window !== "undefined") {
       const fullUrl = `${window.location.origin}/${barbershopSlug}/customer/services`;
       setCustomerUrl(fullUrl);
-
-      if (canvasRef.current) {
-        QRCode.toCanvas(
-          canvasRef.current,
-          fullUrl,
-          {
-            width: 320,
-            margin: 2,
-            color: {
-              dark: "#0F172A",
-              light: "#FFFFFF",
-            },
-            errorCorrectionLevel: "H",
-          },
-          (err) => {
-            if (err) {
-              console.error("[QR CODE] Failed to generate QR canvas:", err);
-            } else {
-              setQrGenerated(true);
-            }
-          }
-        );
-      }
     }
   }, [barbershopSlug]);
 
@@ -75,34 +49,30 @@ export function CustomerQRCodeCard({
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(customerUrl);
         setCopied(true);
+        toast.success("Tautan berhasil disalin ke clipboard!");
         setTimeout(() => setCopied(false), 2000);
       }
     } catch (err) {
       console.error("Failed to copy URL:", err);
+      toast.error("Gagal menyalin tautan.");
     }
   };
 
   const handleDownload = async () => {
     try {
-      // High-resolution 1024x1024 PNG for crisp printing
-      const highResDataUrl = await QRCode.toDataURL(customerUrl, {
-        width: 1024,
-        margin: 3,
-        color: {
-          dark: "#0F172A",
-          light: "#FFFFFF",
-        },
-        errorCorrectionLevel: "H",
+      setIsDownloading(true);
+      await downloadQRPoster({
+        barbershopSlug,
+        barbershopName,
+        logoUrl,
+        customerUrl,
       });
-
-      const downloadLink = document.createElement("a");
-      downloadLink.download = `QR-Pelanggan-${barbershopSlug}.png`;
-      downloadLink.href = highResDataUrl;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      toast.success("Poster QR berhasil diunduh!");
     } catch (err) {
-      console.error("[QR CODE] Failed to download QR:", err);
+      console.error("[QR CODE] Failed to download poster QR:", err);
+      toast.error("Gagal mengunduh poster QR. Silakan coba lagi.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -114,29 +84,29 @@ export function CustomerQRCodeCard({
 
   return (
     <div className="space-y-6">
-      {/* Print Styles: isolates #printable-qr-card when window.print() is called */}
+      {/* Print Styles: isolates #qr-poster-preview when window.print() is called */}
       <style>{`
         @media print {
           body * {
             visibility: hidden !important;
           }
-          #printable-qr-card,
-          #printable-qr-card * {
+          #qr-poster-preview,
+          #qr-poster-preview * {
             visibility: visible !important;
           }
-          #printable-qr-card {
+          #qr-poster-preview {
             position: fixed !important;
             left: 50% !important;
             top: 50% !important;
             transform: translate(-50%, -50%) !important;
             margin: 0 !important;
             box-shadow: none !important;
-            border: 2px solid #000000 !important;
+            border: 1.5px solid #cbd5e1 !important;
             background: #ffffff !important;
             color: #000000 !important;
-            width: 90mm !important;
-            max-width: 90mm !important;
-            padding: 8mm !important;
+            width: 125mm !important;
+            max-width: 90% !important;
+            padding: 10mm !important;
             border-radius: 6mm !important;
           }
           .no-print {
@@ -145,56 +115,17 @@ export function CustomerQRCodeCard({
         }
       `}</style>
 
-      {/* Main Grid: Card QR on Left, Actions & Guides on Right */}
+      {/* Main Grid: Card QR Poster Preview on Left, Actions & Guides on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Printable QR Code Display Card */}
+        {/* Printable & Downloadable QR Poster Preview */}
         <div className="lg:col-span-6 flex justify-center">
-          <div
-            id="printable-qr-card"
-            className="w-full max-w-sm rounded-3xl bg-white border border-slate-200/90 shadow-2xl p-6 sm:p-8 text-center text-slate-900 transition-all"
-          >
-            {/* Brand Header inside QR Card */}
-            <div className="flex flex-col items-center gap-2 mb-4">
-              <TenantLogo
-                logoUrl={logoUrl}
-                brandName={barbershopName}
-                className="h-14 w-14 object-contain rounded-2xl shadow-sm"
-              />
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">
-                  {barbershopName}
-                </h3>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full mt-1">
-                  <Sparkles className="h-3 w-3" />
-                  <span>Menu & Pemesanan Mandiri</span>
-                </span>
-              </div>
-            </div>
-
-            {/* QR Canvas Container with Clean Quiet Zone */}
-            <div className="my-5 p-3 rounded-2xl bg-white border-2 border-slate-100 inline-block shadow-inner">
-              <canvas
-                ref={canvasRef}
-                className="w-[240px] h-[240px] sm:w-[260px] sm:h-[260px] max-w-full block mx-auto rounded-lg"
-              />
-            </div>
-
-            {/* Instructions */}
-            <div className="space-y-1.5 pt-1">
-              <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Arahkan Kamera HP ke QR Code
-              </p>
-              <p className="text-[11px] text-slate-500 max-w-[260px] mx-auto leading-relaxed">
-                Scan langsung menggunakan kamera smartphone untuk melihat layanan dan antrean. Tanpa perlu download aplikasi.
-              </p>
-            </div>
-
-            {alamat && (
-              <p className="text-[10px] text-slate-400 mt-4 pt-3 border-t border-slate-100 truncate">
-                {alamat}
-              </p>
-            )}
-          </div>
+          <QRPoster
+            id="qr-poster-preview"
+            barbershopSlug={barbershopSlug}
+            barbershopName={barbershopName}
+            logoUrl={logoUrl}
+            customerUrl={customerUrl}
+          />
         </div>
 
         {/* Action Controls & Implementation Tips (Hidden during print) */}
@@ -211,10 +142,20 @@ export function CustomerQRCodeCard({
               <button
                 type="button"
                 onClick={handleDownload}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all active:scale-[0.98] cursor-pointer"
+                disabled={isDownloading}
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-70 text-primary-foreground font-bold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all active:scale-[0.98] cursor-pointer"
               >
-                <Download className="h-4 w-4" />
-                <span>Download PNG</span>
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Download QR</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -223,7 +164,7 @@ export function CustomerQRCodeCard({
                 className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-card hover:bg-muted border border-border text-foreground font-bold text-xs sm:text-sm transition-all active:scale-[0.98] cursor-pointer"
               >
                 <Printer className="h-4 w-4 text-muted-foreground" />
-                <span>Cetak QR Code</span>
+                <span>Cetak QR</span>
               </button>
             </div>
 
@@ -278,16 +219,19 @@ export function CustomerQRCodeCard({
             </div>
             <ul className="space-y-2 pl-5 list-disc leading-relaxed">
               <li>
+                <strong className="text-foreground">Poster Siap Pakai:</strong> Hasil unduhan sudah berupa poster lengkap beresolusi tinggi (1080 × 1440 px), siap dicetak atau dibagikan via WhatsApp.
+              </li>
+              <li>
                 <strong className="text-foreground">Meja Capster:</strong> Cetak dan tempatkan pada cermin di setiap kursi pangkas agar pelanggan dapat memindai langsung saat duduk.
               </li>
               <li>
-                <strong className="text-foreground">Meja Kasir & Ruang Tunggu:</strong> Tempatkan standee akrilik berisi QR code di area tunggu untuk antrean mandiri.
+                <strong className="text-foreground">Meja Kasir & Ruang Tunggu:</strong> Tempatkan standee akrilik berisi QR poster ini di area tunggu untuk antrean mandiri.
               </li>
               <li>
-                <strong className="text-foreground">Tanpa Login:</strong> Pelanggan cukup memindai dengan kamera smartphone bawaan (iPhone / Android) tanpa instalasi aplikasi.
+                <strong className="text-foreground">Tanpa Aplikasi:</strong> Pelanggan cukup memindai dengan kamera smartphone bawaan tanpa perlu mengunduh aplikasi tambahan.
               </li>
               <li>
-                <strong className="text-foreground">Otomatis Terisolasi:</strong> QR Code ini hanya memuat layanan, Capster, dan pesanan barbershop <span className="font-semibold text-foreground">{barbershopName}</span>.
+                <strong className="text-foreground">Otomatis Terisolasi:</strong> QR Code ini hanya memuat layanan dan antrean barbershop <span className="font-semibold text-foreground">{barbershopName}</span>.
               </li>
             </ul>
           </div>
