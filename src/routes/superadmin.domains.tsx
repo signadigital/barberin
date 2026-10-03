@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Globe,
   Search,
@@ -52,7 +52,8 @@ export const Route = createFileRoute("/superadmin/domains")({
       { title: "Custom Domain Management — BARBERIN Superadmin" },
       {
         name: "description",
-        content: "Kelola, konfigurasi DNS, dan verifikasi domain kustom untuk seluruh tenant barbershop.",
+        content:
+          "Kelola, konfigurasi DNS, dan verifikasi domain kustom untuk seluruh tenant barbershop.",
       },
     ],
   }),
@@ -87,7 +88,10 @@ function SuperadminDomainsPage() {
   // Real-time domain format check
   const domainFormatCheck = formDomain ? validateDomainFormat(formDomain) : { isValid: true };
 
+  const requestIdRef = useRef(0);
+
   const fetchData = async () => {
+    const currentRequestId = ++requestIdRef.current;
     try {
       setLoading(true);
       const res = await getSuperadminDomains({
@@ -96,7 +100,7 @@ function SuperadminDomainsPage() {
           search: searchQuery,
         },
       });
-      if (res) {
+      if (currentRequestId === requestIdRef.current && res) {
         setDomains(res.domains || []);
         setBarbershops(res.barbershops || []);
         if (!formShopId && res.barbershops?.[0]) {
@@ -104,10 +108,16 @@ function SuperadminDomainsPage() {
         }
       }
     } catch (err: any) {
-      console.error("Gagal memuat domain:", err);
-      toast.error(err.message || "Gagal memuat daftar custom domain.");
+      if (currentRequestId === requestIdRef.current) {
+        console.error("Gagal memuat domain:", err);
+        toast.error("Gagal Memuat Data", {
+          description: err?.message || "Gagal memuat daftar custom domain. Silakan coba lagi.",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -127,7 +137,9 @@ function SuperadminDomainsPage() {
     setFormDomainType("primary");
     setFormIsPrimary(false);
     if (barbershops.length > 0) {
-      setFormShopId(selectedShopFilter !== "all" ? selectedShopFilter : barbershops[0].id_barbershop);
+      setFormShopId(
+        selectedShopFilter !== "all" ? selectedShopFilter : barbershops[0].id_barbershop,
+      );
     }
     setShowAddModal(true);
   };
@@ -278,7 +290,9 @@ function SuperadminDomainsPage() {
   // Counts
   const totalDomains = domains.length;
   const activeDomains = domains.filter((d) => d.status === "active").length;
-  const pendingDomains = domains.filter((d) => d.status === "pending" || d.status === "verifying").length;
+  const pendingDomains = domains.filter(
+    (d) => d.status === "pending" || d.status === "verifying",
+  ).length;
   const failedDomains = domains.filter((d) => d.status === "failed").length;
 
   return (
@@ -290,7 +304,11 @@ function SuperadminDomainsPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           <SuperadminHeader onRefresh={fetchData} isRefreshing={loading} />
-          <SuperadminMobileHeader activePath="/superadmin/domains" onRefresh={fetchData} isRefreshing={loading} />
+          <SuperadminMobileHeader
+            activePath="/superadmin/domains"
+            onRefresh={fetchData}
+            isRefreshing={loading}
+          />
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
             {/* Header Banner (BPMN Title & Actions) */}
@@ -309,7 +327,8 @@ function SuperadminDomainsPage() {
                   </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  Admin Platform menambah, mengedit, memvalidasi format, dan memverifikasi domain kustom untuk setiap barbershop.
+                  Admin Platform menambah, mengedit, memvalidasi format, dan memverifikasi domain
+                  kustom untuk setiap barbershop.
                 </p>
               </div>
 
@@ -337,26 +356,44 @@ function SuperadminDomainsPage() {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-[#0B1424] border border-slate-800 p-4 rounded-2xl shadow-sm">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Domain</div>
-                <div className="text-2xl font-extrabold text-white mt-1 font-mono">{totalDomains}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Total Domain
+                </div>
+                <div className="text-2xl font-extrabold text-white mt-1 font-mono">
+                  {totalDomains}
+                </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">Seluruh tenant terdaftar</div>
               </div>
 
               <div className="bg-[#0B1424] border border-emerald-500/30 p-4 rounded-2xl shadow-sm">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">🟢 Active</div>
-                <div className="text-2xl font-extrabold text-emerald-400 mt-1 font-mono">{activeDomains}</div>
-                <div className="text-[10px] text-emerald-500/80 mt-0.5">DNS &amp; SSL terverifikasi</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                  🟢 Active
+                </div>
+                <div className="text-2xl font-extrabold text-emerald-400 mt-1 font-mono">
+                  {activeDomains}
+                </div>
+                <div className="text-[10px] text-emerald-500/80 mt-0.5">
+                  DNS &amp; SSL terverifikasi
+                </div>
               </div>
 
               <div className="bg-[#0B1424] border border-amber-500/30 p-4 rounded-2xl shadow-sm">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400">🟡 Pending / Verifying</div>
-                <div className="text-2xl font-extrabold text-amber-400 mt-1 font-mono">{pendingDomains}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+                  🟡 Pending / Verifying
+                </div>
+                <div className="text-2xl font-extrabold text-amber-400 mt-1 font-mono">
+                  {pendingDomains}
+                </div>
                 <div className="text-[10px] text-amber-500/80 mt-0.5">Menunggu propagasi CNAME</div>
               </div>
 
               <div className="bg-[#0B1424] border border-rose-500/30 p-4 rounded-2xl shadow-sm">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-rose-400">🔴 Failed</div>
-                <div className="text-2xl font-extrabold text-rose-400 mt-1 font-mono">{failedDomains}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-rose-400">
+                  🔴 Failed
+                </div>
+                <div className="text-2xl font-extrabold text-rose-400 mt-1 font-mono">
+                  {failedDomains}
+                </div>
                 <div className="text-[10px] text-rose-500/80 mt-0.5">Lookup DNS belum sesuai</div>
               </div>
             </div>
@@ -422,7 +459,8 @@ function SuperadminDomainsPage() {
                           <Globe className="h-8 w-8 text-slate-600 mx-auto" />
                           <div className="font-semibold text-white">Belum Ada Custom Domain</div>
                           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                            Klik tombol "Tambah Custom Domain" di atas untuk mendaftarkan domain bagi tenant barbershop.
+                            Klik tombol "Tambah Custom Domain" di atas untuk mendaftarkan domain
+                            bagi tenant barbershop.
                           </p>
                         </td>
                       </tr>
@@ -430,7 +468,10 @@ function SuperadminDomainsPage() {
                       domains.map((dom) => {
                         const isVerifyingThis = verifyingId === dom.id_domain;
                         return (
-                          <tr key={dom.id_domain} className="hover:bg-slate-800/30 transition-colors">
+                          <tr
+                            key={dom.id_domain}
+                            className="hover:bg-slate-800/30 transition-colors"
+                          >
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-sm text-white font-mono flex items-center gap-1.5">
@@ -446,7 +487,9 @@ function SuperadminDomainsPage() {
                               <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
                                 <span className="capitalize">{dom.domain_type || "primary"}</span>
                                 <span>•</span>
-                                <span className="text-slate-500 font-mono">Token: {dom.verification_token}</span>
+                                <span className="text-slate-500 font-mono">
+                                  Token: {dom.verification_token}
+                                </span>
                               </div>
                             </td>
 
@@ -461,8 +504,8 @@ function SuperadminDomainsPage() {
 
                             <td className="px-4 py-4">
                               <div className="font-mono text-slate-300 text-[11px] bg-slate-900/80 px-2 py-1 rounded-md border border-slate-800 inline-block">
-                                <span className="text-blue-400 font-bold">{dom.dns_name}</span> CNAME{" "}
-                                <span className="text-emerald-400">{dom.dns_value}</span>
+                                <span className="text-blue-400 font-bold">{dom.dns_name}</span>{" "}
+                                CNAME <span className="text-emerald-400">{dom.dns_value}</span>
                               </div>
                             </td>
 
@@ -700,7 +743,8 @@ function SuperadminDomainsPage() {
                   )}
 
                   <div className="text-[10px] text-slate-500">
-                    Boleh huruf (a-z), angka (0-9), hyphen (-), dan ekstensi valid (.com, .id, dll). Jangan gunakan http://, spasi, atau path.
+                    Boleh huruf (a-z), angka (0-9), hyphen (-), dan ekstensi valid (.com, .id, dll).
+                    Jangan gunakan http://, spasi, atau path.
                   </div>
                 </div>
 
@@ -737,7 +781,8 @@ function SuperadminDomainsPage() {
                     <span>Informasi Verifikasi Otomatis</span>
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    Domain yang didaftarkan akan berstatus <strong>Pending</strong> sampai pemilik domain menambahkan CNAME record ke server BARBERIN.
+                    Domain yang didaftarkan akan berstatus <strong>Pending</strong> sampai pemilik
+                    domain menambahkan CNAME record ke server BARBERIN.
                   </p>
                 </div>
 
@@ -784,13 +829,16 @@ function SuperadminDomainsPage() {
 
               <div className="p-6 space-y-4">
                 <p className="text-xs text-slate-300">
-                  Tambahkan DNS Record berikut pada dashboard registrar domain (Cloudflare, Niagahoster, Domainesia, dsb):
+                  Tambahkan DNS Record berikut pada dashboard registrar domain (Cloudflare,
+                  Niagahoster, Domainesia, dsb):
                 </p>
 
                 <div className="bg-[#070D18] border border-slate-800 rounded-xl divide-y divide-slate-800 font-mono text-xs">
                   <div className="p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-slate-500 block text-[10px] uppercase">Record Type</span>
+                      <span className="text-slate-500 block text-[10px] uppercase">
+                        Record Type
+                      </span>
                       <span className="text-blue-400 font-bold">CNAME</span>
                     </div>
                     <button
@@ -798,13 +846,19 @@ function SuperadminDomainsPage() {
                       onClick={() => copyToClipboard("CNAME", "type")}
                       className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
                     >
-                      {copiedKey === "type" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedKey === "type" ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
 
                   <div className="p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-slate-500 block text-[10px] uppercase">Name / Host</span>
+                      <span className="text-slate-500 block text-[10px] uppercase">
+                        Name / Host
+                      </span>
                       <span className="text-white font-bold">{showDnsModal.dns_name || "@"}</span>
                     </div>
                     <button
@@ -812,27 +866,42 @@ function SuperadminDomainsPage() {
                       onClick={() => copyToClipboard(showDnsModal.dns_name || "@", "name")}
                       className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
                     >
-                      {copiedKey === "name" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedKey === "name" ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
 
                   <div className="p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-slate-500 block text-[10px] uppercase">Target / Value</span>
-                      <span className="text-emerald-400 font-bold">{showDnsModal.dns_value || "cname.barberin.id"}</span>
+                      <span className="text-slate-500 block text-[10px] uppercase">
+                        Target / Value
+                      </span>
+                      <span className="text-emerald-400 font-bold">
+                        {showDnsModal.dns_value || "cname.barberin.id"}
+                      </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard(showDnsModal.dns_value || "cname.barberin.id", "val")}
+                      onClick={() =>
+                        copyToClipboard(showDnsModal.dns_value || "cname.barberin.id", "val")
+                      }
                       className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
                     >
-                      {copiedKey === "val" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedKey === "val" ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
-                  <strong>⚠️ Catatan Propagasi:</strong> Perubahan DNS memerlukan waktu propagasi antara beberapa menit hingga 24 jam tergantung penyedia domain Anda.
+                  <strong>⚠️ Catatan Propagasi:</strong> Perubahan DNS memerlukan waktu propagasi
+                  antara beberapa menit hingga 24 jam tergantung penyedia domain Anda.
                 </div>
 
                 <div className="pt-2 flex justify-end">
@@ -890,8 +959,8 @@ function SuperadminDomainsPage() {
                             log.status === "active"
                               ? "bg-emerald-500/20 text-emerald-400"
                               : log.status === "failed"
-                              ? "bg-rose-500/20 text-rose-400"
-                              : "bg-amber-500/20 text-amber-400"
+                                ? "bg-rose-500/20 text-rose-400"
+                                : "bg-amber-500/20 text-amber-400"
                           }`}
                         >
                           {log.status}

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
@@ -60,6 +60,7 @@ export type SuperadminTenantsResult = {
   page?: number;
   pageSize?: number;
   totalPages?: number;
+  total?: number;
 };
 
 // ============================================================================
@@ -210,148 +211,136 @@ export const getSuperadminTenants = createServerFn({
     // SECURITY: Hanya Superadmin terotentikasi server-side
     requireSuperadmin();
 
-    const search = (data?.search || "").trim().toLowerCase();
+    const startedAt = performance.now();
+    const search = (data?.search || "").trim();
     const statusFilter = data?.status || "all";
     const sort = data?.sort || "terbaru";
     const page = Math.max(1, data?.page || 1);
     const pageSize = Math.min(100, Math.max(10, data?.pageSize || 25));
+    const offset = (page - 1) * pageSize;
 
-    // 1. Ambil seluruh barbershop dengan query yang terindeks
-    const allShops = await db
-      .select({
-        id_barbershop: barbershop.id_barbershop,
-        slug: barbershop.slug,
-        nama_barbershop: barbershop.nama_barbershop,
-        alamat: barbershop.alamat,
-        no_hp: barbershop.no_hp,
-        status: barbershop.status,
-        created_at: barbershop.created_at,
-      })
-      .from(barbershop)
-      .orderBy(
-        sort === "terlama"
-          ? barbershop.created_at
-          : sort === "name_asc"
-            ? barbershop.nama_barbershop
-            : sort === "name_desc"
-              ? desc(barbershop.nama_barbershop)
-              : desc(barbershop.created_at),
-      );
-
-    // 2. Ambil seluruh owner dan petakan ke Map (O(1) lookup untuk mencegah N+1)
-    const allOwners = await db
-      .select({
-        id_user: users.id_user,
-        nama_lengkap: users.nama_lengkap,
-        email: users.email,
-        no_hp: users.no_hp,
-        status: users.status,
-        id_barbershop: users.id_barbershop,
-      })
-      .from(users)
-      .where(eq(users.role, "owner"));
-
-    const ownerMap = new Map<string, typeof allOwners[0]>();
-    for (const o of allOwners) {
-      if (o.id_barbershop) {
-        ownerMap.set(o.id_barbershop, o);
-      }
+    // 1. Filter condition di level SQL
+    const conditions: SQL[] = [];
+    if (statusFilter !== "all") {
+      conditions.push(eq(barbershop.status, statusFilter));
     }
+    if (search) {
+      const searchPattern = `%${search}%`;
+      conditions.push(
+        or(
+          ilike(barbershop.nama_barbershop, searchPattern),
+          sql`${barbershop.id_barbershop}::text ilike ${searchPattern}`,
+          ilike(users.nama_lengkap, searchPattern),
+          ilike(users.email, searchPattern),
+        )!,
+      );
+    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // 3. Aggregation SQL untuk hitung jumlah capster & layanan tanpa memuat seluruh baris
-    const [capsterCounts, serviceCounts] = await Promise.all([
+    // 2. Sorting di level SQL
+    const orderByClause =
+      sort === "terlama"
+        ? barbershop.created_at
+        : sort === "name_asc"
+          ? barbershop.nama_barbershop
+          : sort === "name_desc"
+            ? desc(barbershop.nama_barbershop)
+            : desc(barbershop.created_at);
+
+    // 3. Eksekusi query terpaginasi dengan SQL JOIN owner, correlated subquery count,
+    //    total count terfilter, dan statistik global dalam satu putaran paralel
+    const [totalResult, pageShops, statsResult, ownerCountResult] = await Promise.all([
+      db
+        .select({ total: sql<number>`count(distinct ${barbershop.id_barbershop})::int` })
+        .from(barbershop)
+        .leftJoin(
+          users,
+          and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
+        )
+        .where(whereClause),
       db
         .select({
-          id_barbershop: capster.id_barbershop,
-          total: sql<number>`count(${capster.id_capster})::int`,
+          id_barbershop: barbershop.id_barbershop,
+          slug: barbershop.slug,
+          nama_barbershop: barbershop.nama_barbershop,
+          alamat: barbershop.alamat,
+          no_hp: barbershop.no_hp,
+          status: barbershop.status,
+          created_at: barbershop.created_at,
+          owner_id_user: users.id_user,
+          owner_nama: users.nama_lengkap,
+          owner_email: users.email,
+          owner_no_hp: users.no_hp,
+          owner_status: users.status,
+          capsterCount: sql<number>`(SELECT count(*)::int FROM ${capster} WHERE ${capster.id_barbershop} = ${barbershop.id_barbershop})`,
+          serviceCount: sql<number>`(SELECT count(*)::int FROM ${layanan} WHERE ${layanan.id_barbershop} = ${barbershop.id_barbershop})`,
         })
-        .from(capster)
-        .groupBy(capster.id_barbershop),
+        .from(barbershop)
+        .leftJoin(
+          users,
+          and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
+        )
+        .where(whereClause)
+        .orderBy(orderByClause)
+        .limit(pageSize)
+        .offset(offset),
       db
         .select({
-          id_barbershop: layanan.id_barbershop,
-          total: sql<number>`count(${layanan.id_layanan})::int`,
+          totalTenants: sql<number>`count(*)::int`,
+          activeTenants: sql<number>`count(*) filter (where ${barbershop.status} = 'active')::int`,
+          suspendedTenants: sql<number>`count(*) filter (where ${barbershop.status} = 'suspended')::int`,
         })
-        .from(layanan)
-        .groupBy(layanan.id_barbershop),
+        .from(barbershop),
+      db
+        .select({
+          totalOwners: sql<number>`count(*)::int`,
+        })
+        .from(users)
+        .where(eq(users.role, "owner")),
     ]);
 
-    const capsterCountMap = new Map<string, number>();
-    for (const c of capsterCounts) {
-      if (c.id_barbershop) {
-        capsterCountMap.set(c.id_barbershop, Number(c.total) || 0);
-      }
-    }
+    const total = totalResult[0]?.total || 0;
+    const totalPages = Math.ceil(total / pageSize) || 1;
 
-    const serviceCountMap = new Map<string, number>();
-    for (const s of serviceCounts) {
-      if (s.id_barbershop) {
-        serviceCountMap.set(s.id_barbershop, Number(s.total) || 0);
-      }
-    }
+    // 4. Petakan data row halaman aktif (maksimal pageSize baris)
+    const mappedTenants: SuperadminTenantItem[] = pageShops.map((shop) => ({
+      id_barbershop: shop.id_barbershop,
+      slug: shop.slug,
+      nama_barbershop: shop.nama_barbershop,
+      alamat: shop.alamat,
+      no_hp: shop.no_hp,
+      status: (shop.status as any) || "active",
+      created_at: shop.created_at ? shop.created_at.toISOString() : new Date().toISOString(),
+      owner: shop.owner_id_user
+        ? {
+            id_user: shop.owner_id_user,
+            nama_lengkap: shop.owner_nama || "",
+            email: shop.owner_email || "",
+            no_hp: shop.owner_no_hp || null,
+            status: shop.owner_status || "active",
+          }
+        : null,
+      capsterCount: Number(shop.capsterCount) || 0,
+      serviceCount: Number(shop.serviceCount) || 0,
+    }));
 
-    // 4. Petakan setiap barbershop dengan Owner (menggunakan Map O(1))
-    let mappedTenants: SuperadminTenantItem[] = allShops.map((shop) => {
-      const ownerUser = ownerMap.get(shop.id_barbershop);
-
-      return {
-        id_barbershop: shop.id_barbershop,
-        slug: shop.slug,
-        nama_barbershop: shop.nama_barbershop,
-        alamat: shop.alamat,
-        no_hp: shop.no_hp,
-        status: (shop.status as any) || "active",
-        created_at: shop.created_at ? shop.created_at.toISOString() : new Date().toISOString(),
-        owner: ownerUser
-          ? {
-              id_user: ownerUser.id_user,
-              nama_lengkap: ownerUser.nama_lengkap,
-              email: ownerUser.email,
-              no_hp: ownerUser.no_hp,
-              status: ownerUser.status,
-            }
-          : null,
-        capsterCount: capsterCountMap.get(shop.id_barbershop) || 0,
-        serviceCount: serviceCountMap.get(shop.id_barbershop) || 0,
-      };
-    });
-
-    // 5. Hitung Statistik Riil dari Database
-    const totalTenants = mappedTenants.length;
-    const activeTenants = mappedTenants.filter((t) => t.status === "active").length;
-    const suspendedTenants = mappedTenants.filter((t) => t.status === "suspended").length;
-    const totalOwners = allOwners.length;
-
-    // 6. Terapkan Filter Status
-    if (statusFilter !== "all") {
-      mappedTenants = mappedTenants.filter((t) => t.status === statusFilter);
-    }
-
-    // 7. Terapkan Pencarian Server-Side
-    if (search) {
-      mappedTenants = mappedTenants.filter((t) => {
-        const matchShop = t.nama_barbershop.toLowerCase().includes(search);
-        const matchId = t.id_barbershop.toLowerCase().includes(search);
-        const matchOwnerName = t.owner?.nama_lengkap.toLowerCase().includes(search) || false;
-        const matchOwnerEmail = t.owner?.email.toLowerCase().includes(search) || false;
-        return matchShop || matchId || matchOwnerName || matchOwnerEmail;
-      });
-    }
-
-    const filteredTotal = mappedTenants.length;
-    const totalPages = Math.ceil(filteredTotal / pageSize) || 1;
+    const duration = Math.round(performance.now() - startedAt);
+    console.info(
+      `[Superadmin] getSuperadminTenants: ${duration}ms (returned ${mappedTenants.length}/${total} tenants, page ${page}/${totalPages})`,
+    );
 
     return {
       tenants: mappedTenants,
       stats: {
-        totalTenants,
-        activeTenants,
-        suspendedTenants,
-        totalOwners,
+        totalTenants: statsResult[0]?.totalTenants || 0,
+        activeTenants: statsResult[0]?.activeTenants || 0,
+        suspendedTenants: statsResult[0]?.suspendedTenants || 0,
+        totalOwners: ownerCountResult[0]?.totalOwners || 0,
       },
       page,
       pageSize,
       totalPages,
+      total,
     };
   });
 
@@ -539,9 +528,7 @@ export const createTenantWithTransaction = createServerFn({
       };
     } catch (err: any) {
       console.error("❌ DB Transaction rollback pada tambah toko:", err);
-      throw new Error(
-        err?.message || "Toko gagal dibuat. Tidak ada data yang disimpan.",
-      );
+      throw new Error(err?.message || "Toko gagal dibuat. Tidak ada data yang disimpan.");
     }
   });
 
@@ -552,12 +539,7 @@ export const createTenantWithTransaction = createServerFn({
 export const toggleTenantStatus = createServerFn({
   method: "POST",
 })
-  .validator(
-    (data: {
-      id_barbershop: string;
-      targetStatus: "active" | "suspended";
-    }) => data,
-  )
+  .validator((data: { id_barbershop: string; targetStatus: "active" | "suspended" }) => data)
   .handler(async ({ data }) => {
     // SECURITY: Hanya Superadmin
     const admin = requireSuperadmin();
@@ -889,13 +871,17 @@ export const deleteTenantPermanent = createServerFn({
           const bizList = await tx
             .select({ business_id: business.business_id })
             .from(business)
-            .where(or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)));
+            .where(
+              or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)),
+            );
           for (const b of bizList) {
             await tx.execute(sql`DELETE FROM subscription WHERE business_id = ${b.business_id}`);
           }
           await tx
             .delete(business)
-            .where(or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)));
+            .where(
+              or(eq(business.owner_id, saasOwnerId), eq(business.id_barbershop, id_barbershop)),
+            );
         } else {
           const bizList = await tx
             .select({ business_id: business.business_id })
@@ -904,9 +890,7 @@ export const deleteTenantPermanent = createServerFn({
           for (const b of bizList) {
             await tx.execute(sql`DELETE FROM subscription WHERE business_id = ${b.business_id}`);
           }
-          await tx
-            .delete(business)
-            .where(eq(business.id_barbershop, id_barbershop));
+          await tx.delete(business).where(eq(business.id_barbershop, id_barbershop));
         }
 
         // O. Owner Verification Tokens
@@ -935,7 +919,10 @@ export const deleteTenantPermanent = createServerFn({
         if (userIdsToDelete.length > 0) {
           await tx.execute(sql`
             DELETE FROM auth.users 
-            WHERE id IN ${sql`(${sql.join(userIdsToDelete.map((id) => sql`${id}::uuid`), sql`, `)})`}
+            WHERE id IN ${sql`(${sql.join(
+              userIdsToDelete.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )})`}
           `);
         }
         if (ownerEmail) {

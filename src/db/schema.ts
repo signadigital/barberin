@@ -128,6 +128,7 @@ export const users = pgTable(
     index("users_role_idx").on(table.role),
     index("users_email_idx").on(table.email),
     index("users_barbershop_idx").on(table.id_barbershop),
+    index("users_barbershop_role_idx").on(table.id_barbershop, table.role),
   ],
 );
 
@@ -180,7 +181,10 @@ export const barbershop = pgTable(
     created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (table) => [index("barbershop_slug_idx").on(table.slug)],
+  (table) => [
+    index("barbershop_slug_idx").on(table.slug),
+    index("barbershop_status_created_idx").on(table.status, table.created_at),
+  ],
 );
 
 // ==============================
@@ -1099,6 +1103,7 @@ export const subscription = pgTable(
     index("subscription_business_idx").on(table.business_id),
     index("subscription_plan_idx").on(table.plan_id),
     index("subscription_status_idx").on(table.status),
+    index("subscription_biz_status_idx").on(table.business_id, table.status),
   ],
 );
 

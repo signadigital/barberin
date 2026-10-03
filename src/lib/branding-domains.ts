@@ -1,6 +1,6 @@
 import dns from "node:dns/promises";
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   barbershop,
@@ -10,11 +10,7 @@ import {
   domainVerificationLogs,
   users,
 } from "@/db/schema";
-import {
-  requireOwnerTenant,
-  getOwnerSession,
-  requireSuperadmin,
-} from "@/lib/auth-session";
+import { requireOwnerTenant, getOwnerSession, requireSuperadmin } from "@/lib/auth-session";
 import { invalidateTenantCache } from "@/lib/tenant-resolver";
 import { getCurrentPlan } from "./subscriptions";
 
@@ -27,12 +23,7 @@ export type DisplayMode = "light" | "dark";
 export type BrandingStatus = "active" | "inactive" | "draft";
 
 export type CustomDomainStatus =
-  | "pending"
-  | "verifying"
-  | "verified"
-  | "active"
-  | "inactive"
-  | "failed";
+  "pending" | "verifying" | "verified" | "active" | "inactive" | "failed";
 
 export interface ColorPreset {
   name: string;
@@ -145,7 +136,10 @@ export function validateDomainFormat(rawDomain: string): { isValid: boolean; err
 
   // Tidak boleh diawali atau diakhiri tanda minus
   if (d.startsWith("-") || d.endsWith("-")) {
-    return { isValid: false, error: "Domain tidak boleh diawali atau diakhiri dengan tanda hubung (-)." };
+    return {
+      isValid: false,
+      error: "Domain tidak boleh diawali atau diakhiri dengan tanda hubung (-).",
+    };
   }
 
   // Tidak boleh double dot '..'
@@ -156,7 +150,10 @@ export function validateDomainFormat(rawDomain: string): { isValid: boolean; err
   // Harus memiliki pemisah titik dan ekstensi valid
   const parts = d.split(".");
   if (parts.length < 2) {
-    return { isValid: false, error: "Domain harus menyertakan ekstensi valid (misal: .com, .id, .co.id)." };
+    return {
+      isValid: false,
+      error: "Domain harus menyertakan ekstensi valid (misal: .com, .id, .co.id).",
+    };
   }
 
   // Cek setiap bagian tidak kosong dan valid
@@ -165,10 +162,16 @@ export function validateDomainFormat(rawDomain: string): { isValid: boolean; err
       return { isValid: false, error: "Format bagian domain tidak valid." };
     }
     if (part.startsWith("-") || part.endsWith("-")) {
-      return { isValid: false, error: "Bagian domain tidak boleh diawali atau diakhiri tanda minus." };
+      return {
+        isValid: false,
+        error: "Bagian domain tidak boleh diawali atau diakhiri tanda minus.",
+      };
     }
     if (!/^[a-z0-9-]+$/.test(part)) {
-      return { isValid: false, error: "Domain hanya boleh terdiri dari huruf (a-z), angka (0-9), dan tanda hubung (-)." };
+      return {
+        isValid: false,
+        error: "Domain hanya boleh terdiri dari huruf (a-z), angka (0-9), dan tanda hubung (-).",
+      };
     }
   }
 
@@ -281,7 +284,7 @@ export const saveOwnerBranding = createServerFn({
     const foundPreset = COLOR_PRESETS.find((p) => p.key === presetKey);
     if (!foundPreset) {
       throw new Error(
-        `Preset warna "${data.color_preset}" tidak valid. Pilihan yang tersedia: ${COLOR_PRESETS.map((p) => p.name).join(", ")}.`
+        `Preset warna "${data.color_preset}" tidak valid. Pilihan yang tersedia: ${COLOR_PRESETS.map((p) => p.name).join(", ")}.`,
       );
     }
 
@@ -296,12 +299,16 @@ export const saveOwnerBranding = createServerFn({
     // Validasi URL / Base64 gambar
     if (data.logo_url && data.logo_url.startsWith("data:")) {
       if (!data.logo_url.startsWith("data:image/")) {
-        throw new Error("Format file logo tidak valid. Hanya format gambar (JPG/PNG/SVG) yang diperbolehkan.");
+        throw new Error(
+          "Format file logo tidak valid. Hanya format gambar (JPG/PNG/SVG) yang diperbolehkan.",
+        );
       }
     }
     if (data.favicon_url && data.favicon_url.startsWith("data:")) {
       if (!data.favicon_url.startsWith("data:image/")) {
-        throw new Error("Format file favicon tidak valid. Hanya format gambar (ICO/PNG) yang diperbolehkan.");
+        throw new Error(
+          "Format file favicon tidak valid. Hanya format gambar (ICO/PNG) yang diperbolehkan.",
+        );
       }
     }
 
@@ -404,8 +411,10 @@ export const getOwnerBrandingHistories = createServerFn({
 
   return histories.map((h) => ({
     ...h,
-    data_before: typeof h.data_before === "string" ? h.data_before : JSON.stringify(h.data_before ?? null),
-    data_after: typeof h.data_after === "string" ? h.data_after : JSON.stringify(h.data_after ?? null),
+    data_before:
+      typeof h.data_before === "string" ? h.data_before : JSON.stringify(h.data_before ?? null),
+    data_after:
+      typeof h.data_after === "string" ? h.data_after : JSON.stringify(h.data_after ?? null),
   }));
 });
 
@@ -421,70 +430,75 @@ export const getSuperadminDomains = createServerFn({
     // SECURITY: Hanya Superadmin yang boleh mengakses daftar custom domain
     requireSuperadmin();
 
-    // 1. Ambil daftar barbershop untuk dropdown filter
-    const allShops = await db
-      .select({
-        id_barbershop: barbershop.id_barbershop,
-        nama_barbershop: barbershop.nama_barbershop,
-        slug: barbershop.slug,
-      })
-      .from(barbershop)
-      .orderBy(barbershop.nama_barbershop);
+    const startedAt = performance.now();
 
-    // 2. Ambil domain dengan join ke barbershop
-    const domains = await db
-      .select({
-        id_domain: customDomains.id_domain,
-        id_barbershop: customDomains.id_barbershop,
-        nama_barbershop: barbershop.nama_barbershop,
-        slug_barbershop: barbershop.slug,
-        domain: customDomains.domain,
-        domain_type: customDomains.domain_type,
-        dns_name: customDomains.dns_name,
-        dns_value: customDomains.dns_value,
-        verification_token: customDomains.verification_token,
-        status: customDomains.status,
-        ssl_status: customDomains.ssl_status,
-        is_primary: customDomains.is_primary,
-        verified_at: customDomains.verified_at,
-        activated_at: customDomains.activated_at,
-        created_at: customDomains.created_at,
-        updated_at: customDomains.updated_at,
-      })
-      .from(customDomains)
-      .leftJoin(barbershop, eq(customDomains.id_barbershop, barbershop.id_barbershop))
-      .orderBy(desc(customDomains.created_at));
-
-    // Filter di memori
-    let filtered = domains;
+    // 1. Filter condition di level SQL
+    const conditions: SQL[] = [];
     if (data?.barbershopId && data.barbershopId !== "all") {
-      filtered = filtered.filter((d) => d.id_barbershop === data.barbershopId);
+      conditions.push(eq(customDomains.id_barbershop, data.barbershopId));
     }
     if (data?.search && data.search.trim()) {
-      const q = data.search.trim().toLowerCase();
-      filtered = filtered.filter(
-        (d) =>
-          d.domain.toLowerCase().includes(q) ||
-          d.nama_barbershop?.toLowerCase().includes(q)
-      );
+      const q = `%${data.search.trim()}%`;
+      conditions.push(or(ilike(customDomains.domain, q), ilike(barbershop.nama_barbershop, q))!);
     }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // 2. Eksekusi daftar barbershop dan custom domain secara paralel langsung dari SQL
+    const [allShops, domains] = await Promise.all([
+      db
+        .select({
+          id_barbershop: barbershop.id_barbershop,
+          nama_barbershop: barbershop.nama_barbershop,
+          slug: barbershop.slug,
+        })
+        .from(barbershop)
+        .orderBy(barbershop.nama_barbershop),
+      db
+        .select({
+          id_domain: customDomains.id_domain,
+          id_barbershop: customDomains.id_barbershop,
+          nama_barbershop: barbershop.nama_barbershop,
+          slug_barbershop: barbershop.slug,
+          domain: customDomains.domain,
+          domain_type: customDomains.domain_type,
+          dns_name: customDomains.dns_name,
+          dns_value: customDomains.dns_value,
+          verification_token: customDomains.verification_token,
+          status: customDomains.status,
+          ssl_status: customDomains.ssl_status,
+          is_primary: customDomains.is_primary,
+          verified_at: customDomains.verified_at,
+          activated_at: customDomains.activated_at,
+          created_at: customDomains.created_at,
+          updated_at: customDomains.updated_at,
+        })
+        .from(customDomains)
+        .leftJoin(barbershop, eq(customDomains.id_barbershop, barbershop.id_barbershop))
+        .where(whereClause)
+        .orderBy(desc(customDomains.created_at)),
+    ]);
+
+    const duration = Math.round(performance.now() - startedAt);
+    console.info(`[Superadmin] getSuperadminDomains: ${duration}ms (${domains.length} domains)`);
 
     return {
       barbershops: allShops,
-      domains: filtered,
+      domains,
     };
   });
 
 export const addOrEditCustomDomain = createServerFn({
   method: "POST",
 })
-  .validator((data: {
-    id_domain?: string;
-    id_barbershop: string;
-    domain: string;
-    domain_type?: string;
-    is_primary?: boolean;
-  }) => data)
+  .validator(
+    (data: {
+      id_domain?: string;
+      id_barbershop: string;
+      domain: string;
+      domain_type?: string;
+      is_primary?: boolean;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     // SECURITY: Hanya Superadmin
     requireSuperadmin();
@@ -668,7 +682,9 @@ export const verifyCustomDomain = createServerFn({
         response_message: `DNS Belum Sesuai: ${detailMessage}`,
       });
 
-      throw new Error(`Verifikasi DNS gagal: ${detailMessage} Periksa pengaturan DNS di registrar Anda.`);
+      throw new Error(
+        `Verifikasi DNS gagal: ${detailMessage} Periksa pengaturan DNS di registrar Anda.`,
+      );
     }
   });
 
@@ -693,7 +709,7 @@ export const activateCustomDomain = createServerFn({
 
     if (domainRecord.status !== "verified" && domainRecord.status !== "active") {
       throw new Error(
-        `Domain belum lolos verifikasi DNS (status saat ini: ${domainRecord.status}). Lakukan verifikasi DNS terlebih dahulu.`
+        `Domain belum lolos verifikasi DNS (status saat ini: ${domainRecord.status}). Lakukan verifikasi DNS terlebih dahulu.`,
       );
     }
 
@@ -781,7 +797,7 @@ export const setPrimaryCustomDomain = createServerFn({
     // Aturan Requirement 18: Hanya domain active yang dapat menjadi primary
     if (targetDomain.status !== "active") {
       throw new Error(
-        `Domain ${targetDomain.domain} berstatus "${targetDomain.status}". Hanya domain berstatus "active" yang dapat dijadikan domain utama.`
+        `Domain ${targetDomain.domain} berstatus "${targetDomain.status}". Hanya domain berstatus "active" yang dapat dijadikan domain utama.`,
       );
     }
 
@@ -798,7 +814,10 @@ export const setPrimaryCustomDomain = createServerFn({
         .where(eq(customDomains.id_domain, data.id_domain));
     });
 
-    return { success: true, message: `Domain ${targetDomain.domain} ditetapkan sebagai domain utama tenant.` };
+    return {
+      success: true,
+      message: `Domain ${targetDomain.domain} ditetapkan sebagai domain utama tenant.`,
+    };
   });
 
 export const deleteCustomDomain = createServerFn({

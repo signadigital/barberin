@@ -1196,46 +1196,64 @@ export const superadminGetSubscriptions = createServerFn({
   // Verifikasi Superadmin
   requireSuperadmin();
 
-  const tenants = await db
-    .select({
-      id_barbershop: barbershop.id_barbershop,
-      nama_barbershop: barbershop.nama_barbershop,
-      slug: barbershop.slug,
-      status_toko: barbershop.status,
-      created_at: barbershop.created_at,
-      id_user: users.id_user,
-      nama_owner: users.nama_lengkap,
-      email_owner: users.email,
-      phone_owner: users.no_hp,
-    })
-    .from(barbershop)
-    .leftJoin(
-      users,
-      and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
-    )
-    .orderBy(desc(barbershop.created_at));
+  const startedAt = performance.now();
 
-  const list = await Promise.all(
-    tenants.map(async (t) => {
-      const sub = await getCurrentSubscription(t.id_barbershop);
-      let remainingDays: number | null = null;
-      if (sub.end_date) {
-        const diffMs = new Date(sub.end_date).getTime() - new Date().getTime();
-        remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-      }
-      return {
-        ...t,
-        subscription: {
-          id: sub.subscription_id,
-          planName: sub.plan_name,
-          startDate: sub.start_date,
-          endDate: sub.end_date,
-          remainingDays,
-          status: sub.status,
-          isFree: sub.is_free,
-        },
-      };
-    }),
+  // Optimasi: Ambil tenant, owner, dan subscription aktif/terbaru dalam SATU single query SQL
+  // Menghilangkan loop N+1 Promise.all(tenants.map(getCurrentSubscription))
+  const rows: any[] = await db.execute(sql`
+    SELECT b.id_barbershop, b.nama_barbershop, b.slug, b.status as status_toko, b.created_at,
+           u.id_user, u.nama_lengkap as nama_owner, u.email as email_owner, u.no_hp as phone_owner,
+           sub.subscription_id, sub.plan_name, sub.start_date, sub.end_date, sub.status as sub_status, sub.is_free
+    FROM barbershop b
+    LEFT JOIN users u ON u.id_barbershop = b.id_barbershop AND u.role = 'owner'
+    LEFT JOIN business biz ON biz.id_barbershop = b.id_barbershop
+    LEFT JOIN LATERAL (
+      SELECT s.subscription_id, s.start_date, s.end_date, s.status, p.plan_name, p.is_free
+      FROM subscription s
+      INNER JOIN plan p ON p.plan_id = s.plan_id
+      WHERE s.business_id = biz.business_id
+      ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.subscription_id DESC
+      LIMIT 1
+    ) sub ON true
+    ORDER BY b.created_at DESC;
+  `);
+
+  const list = rows.map((r) => {
+    let remainingDays: number | null = null;
+    if (r.end_date) {
+      const diffMs = new Date(r.end_date).getTime() - Date.now();
+      remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
+    return {
+      id_barbershop: r.id_barbershop,
+      nama_barbershop: r.nama_barbershop,
+      slug: r.slug,
+      status_toko: r.status_toko,
+      created_at: r.created_at ? new Date(r.created_at) : null,
+      id_user: r.id_user,
+      nama_owner: r.nama_owner,
+      email_owner: r.email_owner,
+      phone_owner: r.phone_owner,
+      subscription: {
+        id: r.subscription_id ? Number(r.subscription_id) : 0,
+        planName: (r.plan_name as "FREE" | "PRO" | "ENTERPRISE") || "FREE",
+        startDate: r.start_date
+          ? new Date(r.start_date)
+          : r.created_at
+            ? new Date(r.created_at)
+            : new Date(),
+        endDate: r.end_date ? new Date(r.end_date) : null,
+        remainingDays,
+        status: (r.sub_status as any) || "active",
+        isFree: r.is_free ?? true,
+      },
+    };
+  });
+
+  const duration = Math.round(performance.now() - startedAt);
+  console.info(
+    `[Superadmin] superadminGetSubscriptions: ${duration}ms (${list.length} tenants, 0 N+1 queries)`,
   );
 
   return list;

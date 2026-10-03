@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CreditCard,
   Search,
@@ -78,20 +78,32 @@ function SuperadminSubscriptionsPage() {
   // Trigger Expiry Job
   const [isRunningExpiry, setIsRunningExpiry] = useState(false);
 
+  const requestIdRef = useRef(0);
+
   const fetchData = async () => {
+    const currentRequestId = ++requestIdRef.current;
     try {
       setIsRefreshing(true);
       const [tList, cList] = await Promise.all([
         superadminGetSubscriptions(),
         superadminGetCodes(),
       ]);
-      setTenants(tList);
-      setCodes(cList);
+      if (currentRequestId === requestIdRef.current) {
+        setTenants(tList);
+        setCodes(cList);
+      }
     } catch (e: any) {
-      toast.error(e?.message || "Gagal memuat data subscription");
+      if (currentRequestId === requestIdRef.current) {
+        console.error("Gagal memuat data subscription:", e);
+        toast.error("Gagal Memuat Data", {
+          description: e?.message || "Gagal memuat data subscription. Silakan coba lagi.",
+        });
+      }
     } finally {
-      setIsRefreshing(false);
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setIsRefreshing(false);
+        setLoading(false);
+      }
     }
   };
 
