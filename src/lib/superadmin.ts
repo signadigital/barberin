@@ -208,10 +208,11 @@ export const getSuperadminTenants = createServerFn({
     ) => data,
   )
   .handler(async ({ data }): Promise<SuperadminTenantsResult> => {
+    const t0 = performance.now();
     // SECURITY: Hanya Superadmin terotentikasi server-side
     requireSuperadmin();
+    const tAuth = Math.round(performance.now() - t0);
 
-    const startedAt = performance.now();
     const search = (data?.search || "").trim();
     const statusFilter = data?.status || "all";
     const sort = data?.sort || "terbaru";
@@ -247,43 +248,45 @@ export const getSuperadminTenants = createServerFn({
             ? desc(barbershop.nama_barbershop)
             : desc(barbershop.created_at);
 
-    // 3. Eksekusi query terpaginasi dengan SQL JOIN owner, correlated subquery count,
-    //    total count terfilter, dan statistik global dalam satu putaran paralel
-    const [totalResult, pageShops, statsResult, ownerCountResult] = await Promise.all([
-      db
-        .select({ total: sql<number>`count(distinct ${barbershop.id_barbershop})::int` })
-        .from(barbershop)
-        .leftJoin(
-          users,
-          and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
-        )
-        .where(whereClause),
-      db
-        .select({
-          id_barbershop: barbershop.id_barbershop,
-          slug: barbershop.slug,
-          nama_barbershop: barbershop.nama_barbershop,
-          alamat: barbershop.alamat,
-          no_hp: barbershop.no_hp,
-          status: barbershop.status,
-          created_at: barbershop.created_at,
-          owner_id_user: users.id_user,
-          owner_nama: users.nama_lengkap,
-          owner_email: users.email,
-          owner_no_hp: users.no_hp,
-          owner_status: users.status,
-          capsterCount: sql<number>`(SELECT count(*)::int FROM ${capster} WHERE ${capster.id_barbershop} = ${barbershop.id_barbershop})`,
-          serviceCount: sql<number>`(SELECT count(*)::int FROM ${layanan} WHERE ${layanan.id_barbershop} = ${barbershop.id_barbershop})`,
-        })
-        .from(barbershop)
-        .leftJoin(
-          users,
-          and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
-        )
-        .where(whereClause)
-        .orderBy(orderByClause)
-        .limit(pageSize)
-        .offset(offset),
+    // 3. STEP 1: Query total count terfilter, halaman data tenant aktif (LIMIT + OFFSET), dan platform stats
+    const tCountStart = performance.now();
+    const countPromise = db
+      .select({ total: sql<number>`count(distinct ${barbershop.id_barbershop})::int` })
+      .from(barbershop)
+      .leftJoin(
+        users,
+        and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
+      )
+      .where(whereClause);
+
+    const tQueryStart = performance.now();
+    const pageShopsPromise = db
+      .select({
+        id_barbershop: barbershop.id_barbershop,
+        slug: barbershop.slug,
+        nama_barbershop: barbershop.nama_barbershop,
+        alamat: barbershop.alamat,
+        no_hp: barbershop.no_hp,
+        status: barbershop.status,
+        created_at: barbershop.created_at,
+        owner_id_user: users.id_user,
+        owner_nama: users.nama_lengkap,
+        owner_email: users.email,
+        owner_no_hp: users.no_hp,
+        owner_status: users.status,
+      })
+      .from(barbershop)
+      .leftJoin(
+        users,
+        and(eq(users.id_barbershop, barbershop.id_barbershop), eq(users.role, "owner")),
+      )
+      .where(whereClause)
+      .orderBy(orderByClause)
+      .limit(pageSize)
+      .offset(offset);
+
+    const tStatsStart = performance.now();
+    const statsPromise = Promise.all([
       db
         .select({
           totalTenants: sql<number>`count(*)::int`,
@@ -299,10 +302,65 @@ export const getSuperadminTenants = createServerFn({
         .where(eq(users.role, "owner")),
     ]);
 
+    const [totalResult, pageShops, [statsResult, ownerCountResult]] = await Promise.all([
+      countPromise,
+      pageShopsPromise,
+      statsPromise,
+    ]);
+
+    const tCount = Math.round(performance.now() - tCountStart);
+    const tQuery = Math.round(performance.now() - tQueryStart);
+    const tStats = Math.round(performance.now() - tStatsStart);
+
     const total = totalResult[0]?.total || 0;
     const totalPages = Math.ceil(total / pageSize) || 1;
 
-    // 4. Petakan data row halaman aktif (maksimal pageSize baris)
+    // 4. STEP 2: Pre-aggregate capster & service count HANYA untuk barbershop yang muncul di halaman aktif (maks 25 ID)
+    const tAggStart = performance.now();
+    const pageShopIds = pageShops.map((s) => s.id_barbershop).filter(Boolean);
+    const capsterMap = new Map<string, number>();
+    const serviceMap = new Map<string, number>();
+
+    if (pageShopIds.length > 0) {
+      const [capsterRows, serviceRows] = await Promise.all([
+        db
+          .select({
+            id_barbershop: capster.id_barbershop,
+            total: sql<number>`count(*)::int`,
+          })
+          .from(capster)
+          .where(
+            sql`${capster.id_barbershop} IN ${sql`(${sql.join(
+              pageShopIds.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )})`}`,
+          )
+          .groupBy(capster.id_barbershop),
+        db
+          .select({
+            id_barbershop: layanan.id_barbershop,
+            total: sql<number>`count(*)::int`,
+          })
+          .from(layanan)
+          .where(
+            sql`${layanan.id_barbershop} IN ${sql`(${sql.join(
+              pageShopIds.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )})`}`,
+          )
+          .groupBy(layanan.id_barbershop),
+      ]);
+
+      for (const c of capsterRows) {
+        if (c.id_barbershop) capsterMap.set(c.id_barbershop, Number(c.total) || 0);
+      }
+      for (const s of serviceRows) {
+        if (s.id_barbershop) serviceMap.set(s.id_barbershop, Number(s.total) || 0);
+      }
+    }
+    const tAgg = Math.round(performance.now() - tAggStart);
+
+    // 5. Petakan data row halaman aktif (maksimal pageSize baris)
     const mappedTenants: SuperadminTenantItem[] = pageShops.map((shop) => ({
       id_barbershop: shop.id_barbershop,
       slug: shop.slug,
@@ -320,13 +378,13 @@ export const getSuperadminTenants = createServerFn({
             status: shop.owner_status || "active",
           }
         : null,
-      capsterCount: Number(shop.capsterCount) || 0,
-      serviceCount: Number(shop.serviceCount) || 0,
+      capsterCount: capsterMap.get(shop.id_barbershop) || 0,
+      serviceCount: serviceMap.get(shop.id_barbershop) || 0,
     }));
 
-    const duration = Math.round(performance.now() - startedAt);
+    const totalDuration = Math.round(performance.now() - t0);
     console.info(
-      `[Superadmin] getSuperadminTenants: ${duration}ms (returned ${mappedTenants.length}/${total} tenants, page ${page}/${totalPages})`,
+      `[SUPERADMIN_PERF] getSuperadminTenants total=${totalDuration}ms (auth=${tAuth}ms, countQuery=${tCount}ms, tenantQuery=${tQuery}ms, aggQuery=${tAgg}ms, statsQuery=${tStats}ms, rows=${mappedTenants.length}/${total})`,
     );
 
     return {

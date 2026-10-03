@@ -425,12 +425,19 @@ export const getOwnerBrandingHistories = createServerFn({
 export const getSuperadminDomains = createServerFn({
   method: "GET",
 })
-  .validator((filter?: { barbershopId?: string; search?: string }) => filter)
+  .validator(
+    (filter?: { barbershopId?: string; search?: string; page?: number; pageSize?: number }) =>
+      filter,
+  )
   .handler(async ({ data }) => {
+    const t0 = performance.now();
     // SECURITY: Hanya Superadmin yang boleh mengakses daftar custom domain
     requireSuperadmin();
+    const tAuth = Math.round(performance.now() - t0);
 
-    const startedAt = performance.now();
+    const page = Math.max(1, data?.page || 1);
+    const pageSize = Math.min(100, Math.max(10, data?.pageSize || 50));
+    const offset = (page - 1) * pageSize;
 
     // 1. Filter condition di level SQL
     const conditions: SQL[] = [];
@@ -443,8 +450,9 @@ export const getSuperadminDomains = createServerFn({
     }
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // 2. Eksekusi daftar barbershop dan custom domain secara paralel langsung dari SQL
-    const [allShops, domains] = await Promise.all([
+    const tQueryStart = performance.now();
+    // 2. Eksekusi daftar barbershop, count terfilter, dan custom domain terpaginasi langsung dari SQL
+    const [allShops, [totalResult], domains] = await Promise.all([
       db
         .select({
           id_barbershop: barbershop.id_barbershop,
@@ -453,6 +461,11 @@ export const getSuperadminDomains = createServerFn({
         })
         .from(barbershop)
         .orderBy(barbershop.nama_barbershop),
+      db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(customDomains)
+        .leftJoin(barbershop, eq(customDomains.id_barbershop, barbershop.id_barbershop))
+        .where(whereClause),
       db
         .select({
           id_domain: customDomains.id_domain,
@@ -475,15 +488,27 @@ export const getSuperadminDomains = createServerFn({
         .from(customDomains)
         .leftJoin(barbershop, eq(customDomains.id_barbershop, barbershop.id_barbershop))
         .where(whereClause)
-        .orderBy(desc(customDomains.created_at)),
+        .orderBy(desc(customDomains.created_at))
+        .limit(pageSize)
+        .offset(offset),
     ]);
+    const tQuery = Math.round(performance.now() - tQueryStart);
 
-    const duration = Math.round(performance.now() - startedAt);
-    console.info(`[Superadmin] getSuperadminDomains: ${duration}ms (${domains.length} domains)`);
+    const total = totalResult?.total || 0;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+
+    const totalDuration = Math.round(performance.now() - t0);
+    console.info(
+      `[SUPERADMIN_PERF] getSuperadminDomains total=${totalDuration}ms (auth=${tAuth}ms, domainQuery=${tQuery}ms, rows=${domains.length}/${total})`,
+    );
 
     return {
       barbershops: allShops,
       domains,
+      total,
+      page,
+      pageSize,
+      totalPages,
     };
   });
 

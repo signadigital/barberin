@@ -158,6 +158,11 @@ export const recordPublicAnalyticsEvent = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
+    // Exclude internal platform administration routes from public website analytics ingestion
+    if (data.path.startsWith("/superadmin") || data.path.startsWith("/owner")) {
+      return { success: true, ignored: true };
+    }
+
     try {
       const now = new Date();
 
@@ -717,6 +722,11 @@ export function trackPageView(options?: { path?: string; pageTitle?: string }) {
   if (typeof window === "undefined") return;
 
   const currentPath = options?.path || window.location.pathname || "/";
+  // Exclude internal platform administration routes from public analytics tracking
+  if (currentPath.startsWith("/superadmin") || currentPath.startsWith("/owner")) {
+    return;
+  }
+
   const now = Date.now();
 
   // Guard against duplicate fires within 1 second for the exact same path

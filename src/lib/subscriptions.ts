@@ -1193,11 +1193,12 @@ export const recordExportTokenConsumption = createServerFn({
 export const superadminGetSubscriptions = createServerFn({
   method: "GET",
 }).handler(async () => {
+  const t0 = performance.now();
   // Verifikasi Superadmin
   requireSuperadmin();
+  const tAuth = Math.round(performance.now() - t0);
 
-  const startedAt = performance.now();
-
+  const tQueryStart = performance.now();
   // Optimasi: Ambil tenant, owner, dan subscription aktif/terbaru dalam SATU single query SQL
   // Menghilangkan loop N+1 Promise.all(tenants.map(getCurrentSubscription))
   const rows: any[] = await db.execute(sql`
@@ -1217,6 +1218,7 @@ export const superadminGetSubscriptions = createServerFn({
     ) sub ON true
     ORDER BY b.created_at DESC;
   `);
+  const tQuery = Math.round(performance.now() - tQueryStart);
 
   const list = rows.map((r) => {
     let remainingDays: number | null = null;
@@ -1251,9 +1253,9 @@ export const superadminGetSubscriptions = createServerFn({
     };
   });
 
-  const duration = Math.round(performance.now() - startedAt);
+  const total = Math.round(performance.now() - t0);
   console.info(
-    `[Superadmin] superadminGetSubscriptions: ${duration}ms (${list.length} tenants, 0 N+1 queries)`,
+    `[SUPERADMIN_PERF] superadminGetSubscriptions total=${total}ms (auth=${tAuth}ms, subscriptionQuery=${tQuery}ms, rows=${list.length})`,
   );
 
   return list;
@@ -1262,9 +1264,12 @@ export const superadminGetSubscriptions = createServerFn({
 export const superadminGetCodes = createServerFn({
   method: "GET",
 }).handler(async () => {
+  const t0 = performance.now();
   requireSuperadmin();
+  const tAuth = Math.round(performance.now() - t0);
 
-  return await db
+  const tQueryStart = performance.now();
+  const codes = await db
     .select({
       id_code: subscriptionCodes.id_code,
       code: subscriptionCodes.code,
@@ -1283,6 +1288,14 @@ export const superadminGetCodes = createServerFn({
     .leftJoin(barbershop, eq(subscriptionCodes.id_used_by, barbershop.id_barbershop))
     .orderBy(desc(subscriptionCodes.created_at))
     .limit(100);
+
+  const tQuery = Math.round(performance.now() - tQueryStart);
+  const total = Math.round(performance.now() - t0);
+  console.info(
+    `[SUPERADMIN_PERF] superadminGetCodes total=${total}ms (auth=${tAuth}ms, query=${tQuery}ms, rows=${codes.length})`,
+  );
+
+  return codes;
 });
 
 export const superadminGenerateCode = createServerFn({
