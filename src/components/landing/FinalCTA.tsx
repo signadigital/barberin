@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export function FinalCTA() {
   return (
@@ -19,14 +20,18 @@ export function FinalCTA() {
           </h2>
 
           <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto mt-4 leading-relaxed">
-            Mulai catat transaksi, kelola layanan, pantau pendapatan, dan berikan pengalaman
-            yang lebih teratur kepada pelanggan.
+            Mulai catat transaksi, kelola layanan, pantau pendapatan, dan berikan pengalaman yang
+            lebih teratur kepada pelanggan.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mt-8">
             <Link
               to="/owner/register"
               search={{ plan: "basic" }}
+              onClick={() => {
+                trackEvent("cta_click", { label: "Mulai Gratis", location: "final_cta" });
+                trackEvent("register_click", { location: "final_cta", plan: "basic" });
+              }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-sm sm:text-base font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-500/40 transition-all cursor-pointer"
             >
               <span>Mulai Gratis</span>
@@ -35,6 +40,10 @@ export function FinalCTA() {
 
             <Link
               to="/owner/login"
+              onClick={() => {
+                trackEvent("cta_click", { label: "Masuk ke BARBERIN", location: "final_cta" });
+                trackEvent("login_click", { location: "final_cta" });
+              }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-sm sm:text-base font-bold text-[#0A1424] hover:bg-slate-50 bg-white border border-slate-300 hover:border-slate-400 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <span>Masuk ke BARBERIN</span>

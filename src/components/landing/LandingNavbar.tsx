@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { BarberinLogo } from "@/components/barberin/ui";
+import { trackEvent } from "@/lib/analytics";
 
 // Single Source of Truth for Navigation
 export const NAV_LINKS = [
@@ -47,10 +48,7 @@ export function LandingNavbar() {
       currentNavId = "home";
     }
     // 2. If at the bottom of the page (FAQ / CTA), FAQ is active
-    else if (
-      window.innerHeight + scrollY >=
-      document.documentElement.scrollHeight - 60
-    ) {
+    else if (window.innerHeight + scrollY >= document.documentElement.scrollHeight - 60) {
       currentNavId = "faq";
     }
     // 3. Otherwise find which section currently intersects the activation point
@@ -147,10 +145,7 @@ export function LandingNavbar() {
   }, [calculateActiveSection]);
 
   // Click handler: initiates smooth scroll without artificially forcing activeSection state
-  const handleNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
-  ) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setMobileMenuOpen(false);
 
@@ -182,7 +177,9 @@ export function LandingNavbar() {
           {/* Brand Logo */}
           <Link
             to="/"
-            onClick={(e) => handleNavClick(e as any, "#home")}
+            onClick={(e) =>
+              handleNavClick(e as unknown as React.MouseEvent<HTMLAnchorElement>, "#home")
+            }
             className="flex items-center gap-2.5 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1"
           >
             <BarberinLogo className="h-8 w-8 sm:h-9 sm:w-9 transition-transform duration-300 group-hover:scale-105" />
@@ -224,6 +221,10 @@ export function LandingNavbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/owner/login"
+              onClick={() => {
+                trackEvent("login_click", { location: "navbar" });
+                trackEvent("cta_click", { label: "Masuk", location: "navbar" });
+              }}
               className="px-4 py-2 text-xs lg:text-sm font-bold text-slate-200 hover:text-white hover:bg-slate-800/70 border border-slate-700/80 rounded-xl transition-all focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               Masuk
@@ -231,6 +232,10 @@ export function LandingNavbar() {
             <Link
               to="/owner/register"
               search={{ plan: "basic" }}
+              onClick={() => {
+                trackEvent("cta_click", { label: "Mulai Gratis", location: "navbar" });
+                trackEvent("register_click", { location: "navbar", plan: "basic" });
+              }}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs lg:text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:shadow-blue-500/40 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
             >
               <span>Mulai Gratis</span>
@@ -242,6 +247,10 @@ export function LandingNavbar() {
           <div className="flex md:hidden items-center gap-2">
             <Link
               to="/owner/login"
+              onClick={() => {
+                trackEvent("login_click", { location: "navbar_mobile_header" });
+                trackEvent("cta_click", { label: "Masuk", location: "navbar_mobile_header" });
+              }}
               className="px-2.5 py-1.5 text-xs font-semibold text-slate-300 border border-slate-800 rounded-lg hover:bg-slate-800/60"
             >
               Masuk
@@ -285,7 +294,11 @@ export function LandingNavbar() {
           <div className="pt-3 border-t border-slate-800 flex flex-col gap-2.5">
             <Link
               to="/owner/login"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                trackEvent("login_click", { location: "navbar_drawer" });
+                trackEvent("cta_click", { label: "Masuk ke Akun", location: "navbar_drawer" });
+              }}
               className="w-full text-center py-2.5 text-sm font-bold text-slate-200 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors"
             >
               Masuk ke Akun
@@ -293,7 +306,11 @@ export function LandingNavbar() {
             <Link
               to="/owner/register"
               search={{ plan: "basic" }}
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                trackEvent("cta_click", { label: "Mulai Gratis", location: "navbar_drawer" });
+                trackEvent("register_click", { location: "navbar_drawer", plan: "basic" });
+              }}
               className="w-full text-center py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2"
             >
               <span>Mulai Gratis</span>

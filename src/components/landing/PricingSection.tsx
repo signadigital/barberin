@@ -1,7 +1,52 @@
+import { useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { Check, ArrowRight, Zap, Shield, Sparkles } from "lucide-react";
+import { trackEvent, getOrCreateSessionId } from "@/lib/analytics";
 
 export function PricingSection() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.IntersectionObserver) return;
+
+    // Check if already viewed in this session
+    const currentSessionId = getOrCreateSessionId();
+    const sessionKey = `barberin_pricing_viewed_${currentSessionId}`;
+
+    try {
+      if (sessionStorage.getItem(sessionKey)) {
+        return;
+      }
+    } catch {
+      /* ignore storage error */
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
+          try {
+            sessionStorage.setItem(sessionKey, "true");
+          } catch {
+            /* ignore storage error */
+          }
+
+          trackEvent("pricing_view", { location: "pricing" });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const plans = [
     {
       id: "basic",
@@ -71,7 +116,11 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="harga" className="py-16 sm:py-24 scroll-mt-24 sm:scroll-mt-28 bg-[#F8FAFC] text-slate-800 transition-colors">
+    <section
+      ref={sectionRef}
+      id="harga"
+      className="py-16 sm:py-24 scroll-mt-24 sm:scroll-mt-28 bg-[#F8FAFC] text-slate-800 transition-colors"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-18">
@@ -153,6 +202,10 @@ export function PricingSection() {
                 <Link
                   to="/owner/register"
                   search={{ plan: plan.ctaPlan }}
+                  onClick={() => {
+                    trackEvent("cta_click", { label: plan.ctaLabel, location: "pricing" });
+                    trackEvent("register_click", { location: "pricing", plan: plan.ctaPlan });
+                  }}
                   className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     plan.isPopular
                       ? "bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white shadow-lg shadow-blue-600/25"

@@ -22,6 +22,7 @@ import { Route as OwnerResetPasswordRouteImport } from './routes/owner.reset-pas
 import { Route as OwnerVerifyEmailRouteImport } from './routes/owner.verify-email'
 import { Route as OwnerVerifyEmailChangeRouteImport } from './routes/owner.verify-email-change'
 import { Route as OwnerVerifyPasswordChangeRouteImport } from './routes/owner.verify-password-change'
+import { Route as SuperadminAnalyticsRouteImport } from './routes/superadmin.analytics'
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SuperadminDomainsRouteImport } from './routes/superadmin.domains'
 import { Route as SuperadminLoginRouteImport } from './routes/superadmin.login'
@@ -144,6 +145,11 @@ const OwnerVerifyPasswordChangeRoute =
     path: '/owner/verify-password-change',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SuperadminAnalyticsRoute = SuperadminAnalyticsRouteImport.update({
+  id: '/superadmin/analytics',
+  path: '/superadmin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuperadminDashboardRoute = SuperadminDashboardRouteImport.update({
   id: '/superadmin/dashboard',
   path: '/superadmin/dashboard',
@@ -482,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
   '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
+  '/superadmin/analytics': typeof SuperadminAnalyticsRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/domains': typeof SuperadminDomainsRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -552,6 +559,7 @@ export interface FileRoutesByTo {
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
   '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
+  '/superadmin/analytics': typeof SuperadminAnalyticsRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/domains': typeof SuperadminDomainsRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/owner/verify-email': typeof OwnerVerifyEmailRoute
   '/owner/verify-email-change': typeof OwnerVerifyEmailChangeRoute
   '/owner/verify-password-change': typeof OwnerVerifyPasswordChangeRoute
+  '/superadmin/analytics': typeof SuperadminAnalyticsRoute
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/superadmin/domains': typeof SuperadminDomainsRoute
   '/superadmin/login': typeof SuperadminLoginRoute
@@ -695,6 +704,7 @@ export interface FileRouteTypes {
     | '/owner/verify-email'
     | '/owner/verify-email-change'
     | '/owner/verify-password-change'
+    | '/superadmin/analytics'
     | '/superadmin/dashboard'
     | '/superadmin/domains'
     | '/superadmin/login'
@@ -765,6 +775,7 @@ export interface FileRouteTypes {
     | '/owner/verify-email'
     | '/owner/verify-email-change'
     | '/owner/verify-password-change'
+    | '/superadmin/analytics'
     | '/superadmin/dashboard'
     | '/superadmin/domains'
     | '/superadmin/login'
@@ -835,6 +846,7 @@ export interface FileRouteTypes {
     | '/owner/verify-email'
     | '/owner/verify-email-change'
     | '/owner/verify-password-change'
+    | '/superadmin/analytics'
     | '/superadmin/dashboard'
     | '/superadmin/domains'
     | '/superadmin/login'
@@ -906,6 +918,7 @@ export interface RootRouteChildren {
   OwnerVerifyEmailRoute: typeof OwnerVerifyEmailRoute
   OwnerVerifyEmailChangeRoute: typeof OwnerVerifyEmailChangeRoute
   OwnerVerifyPasswordChangeRoute: typeof OwnerVerifyPasswordChangeRoute
+  SuperadminAnalyticsRoute: typeof SuperadminAnalyticsRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   SuperadminDomainsRoute: typeof SuperadminDomainsRoute
   SuperadminLoginRoute: typeof SuperadminLoginRoute
@@ -1004,6 +1017,13 @@ declare module '@tanstack/react-router' {
       path: '/owner/verify-password-change'
       fullPath: '/owner/verify-password-change'
       preLoaderRoute: typeof OwnerVerifyPasswordChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/superadmin/analytics': {
+      id: '/superadmin/analytics'
+      path: '/superadmin/analytics'
+      fullPath: '/superadmin/analytics'
+      preLoaderRoute: typeof SuperadminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin/dashboard': {
@@ -1599,6 +1619,7 @@ const rootRouteChildren: RootRouteChildren = {
   OwnerVerifyEmailRoute: OwnerVerifyEmailRoute,
   OwnerVerifyEmailChangeRoute: OwnerVerifyEmailChangeRoute,
   OwnerVerifyPasswordChangeRoute: OwnerVerifyPasswordChangeRoute,
+  SuperadminAnalyticsRoute: SuperadminAnalyticsRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   SuperadminDomainsRoute: SuperadminDomainsRoute,
   SuperadminLoginRoute: SuperadminLoginRoute,

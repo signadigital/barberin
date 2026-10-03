@@ -13,6 +13,9 @@ import {
   LandingFooter,
 } from "@/components/landing";
 
+import { useEffect } from "react";
+import { trackPageView } from "@/lib/analytics";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -63,6 +66,10 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  useEffect(() => {
+    trackPageView({ path: "/", pageTitle: "BARBERIN — Sistem Manajemen Barbershop" });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#070D18] text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
       {/* Top Sticky Navigation */}

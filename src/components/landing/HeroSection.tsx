@@ -9,6 +9,7 @@ import {
   Receipt,
   Scissors,
 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export function HeroSection() {
   return (
@@ -38,9 +39,8 @@ export function HeroSection() {
 
             {/* Supporting Text */}
             <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Transaksi tidak tercatat, komisi sulit diperiksa, dan antrean tidak teratur?
-              Kelola seluruh operasional barbershop dalam satu sistem yang transparan dan
-              mudah dipantau.
+              Transaksi tidak tercatat, komisi sulit diperiksa, dan antrean tidak teratur? Kelola
+              seluruh operasional barbershop dalam satu sistem yang transparan dan mudah dipantau.
             </p>
 
             {/* CTAs */}
@@ -48,6 +48,10 @@ export function HeroSection() {
               <Link
                 to="/owner/register"
                 search={{ plan: "basic" }}
+                onClick={() => {
+                  trackEvent("cta_click", { label: "Mulai Gratis", location: "hero" });
+                  trackEvent("register_click", { location: "hero", plan: "basic" });
+                }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 transition-all duration-200 cursor-pointer"
               >
                 <span>Mulai Gratis</span>
@@ -55,6 +59,9 @@ export function HeroSection() {
               </Link>
               <a
                 href="#solusi"
+                onClick={() => {
+                  trackEvent("cta_click", { label: "Lihat Fitur", location: "hero" });
+                }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200 cursor-pointer"
               >
                 <span>Lihat Fitur</span>

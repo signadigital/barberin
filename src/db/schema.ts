@@ -1606,3 +1606,126 @@ export type NewCustomDomain = typeof customDomains.$inferInsert;
 
 export type DomainVerificationLog = typeof domainVerificationLogs.$inferSelect;
 export type NewDomainVerificationLog = typeof domainVerificationLogs.$inferInsert;
+
+// ============================================================================
+// FIRST-PARTY WEBSITE TRAFFIC ANALYTICS (SUPERADMIN / MARKETING)
+// ============================================================================
+
+export const analyticsVisitors = pgTable(
+  "analytics_visitors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    anonymous_id: varchar("anonymous_id", { length: 255 }).notNull().unique(),
+    first_seen_at: timestamp("first_seen_at", { mode: "date" }).notNull().defaultNow(),
+    last_seen_at: timestamp("last_seen_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("analytics_visitors_anonymous_id_idx").on(table.anonymous_id)],
+);
+
+export const analyticsSessions = pgTable(
+  "analytics_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    visitor_id: uuid("visitor_id")
+      .notNull()
+      .references(() => analyticsVisitors.id, { onDelete: "cascade" }),
+    started_at: timestamp("started_at", { mode: "date" }).notNull().defaultNow(),
+    ended_at: timestamp("ended_at", { mode: "date" }),
+    last_activity_at: timestamp("last_activity_at", { mode: "date" }).notNull().defaultNow(),
+    landing_page: text("landing_page"),
+    referrer: text("referrer"),
+    utm_source: varchar("utm_source", { length: 255 }),
+    utm_medium: varchar("utm_medium", { length: 255 }),
+    utm_campaign: varchar("utm_campaign", { length: 255 }),
+    utm_content: varchar("utm_content", { length: 255 }),
+    utm_term: varchar("utm_term", { length: 255 }),
+    device_type: varchar("device_type", { length: 50 }),
+    browser: varchar("browser", { length: 50 }),
+    operating_system: varchar("operating_system", { length: 50 }),
+  },
+  (table) => [
+    index("analytics_sessions_visitor_idx").on(table.visitor_id),
+    index("analytics_sessions_started_at_idx").on(table.started_at),
+    index("analytics_sessions_utm_source_idx").on(table.utm_source),
+    index("analytics_sessions_utm_medium_idx").on(table.utm_medium),
+    index("analytics_sessions_utm_campaign_idx").on(table.utm_campaign),
+  ],
+);
+
+export const analyticsPageViews = pgTable(
+  "analytics_page_views",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    session_id: uuid("session_id")
+      .notNull()
+      .references(() => analyticsSessions.id, { onDelete: "cascade" }),
+    path: text("path").notNull(),
+    page_title: text("page_title"),
+    viewed_at: timestamp("viewed_at", { mode: "date" }).notNull().defaultNow(),
+    duration_seconds: integer("duration_seconds"),
+  },
+  (table) => [
+    index("analytics_page_views_session_idx").on(table.session_id),
+    index("analytics_page_views_path_idx").on(table.path),
+    index("analytics_page_views_viewed_at_idx").on(table.viewed_at),
+  ],
+);
+
+export const analyticsEvents = pgTable(
+  "analytics_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    session_id: uuid("session_id")
+      .notNull()
+      .references(() => analyticsSessions.id, { onDelete: "cascade" }),
+    event_name: varchar("event_name", { length: 100 }).notNull(),
+    path: text("path"),
+    properties: jsonb("properties"),
+    created_at: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("analytics_events_session_idx").on(table.session_id),
+    index("analytics_events_name_idx").on(table.event_name),
+    index("analytics_events_created_at_idx").on(table.created_at),
+  ],
+);
+
+// Analytics Relations
+export const analyticsVisitorsRelations = relations(analyticsVisitors, ({ many }) => ({
+  sessions: many(analyticsSessions),
+}));
+
+export const analyticsSessionsRelations = relations(analyticsSessions, ({ one, many }) => ({
+  visitor: one(analyticsVisitors, {
+    fields: [analyticsSessions.visitor_id],
+    references: [analyticsVisitors.id],
+  }),
+  pageViews: many(analyticsPageViews),
+  events: many(analyticsEvents),
+}));
+
+export const analyticsPageViewsRelations = relations(analyticsPageViews, ({ one }) => ({
+  session: one(analyticsSessions, {
+    fields: [analyticsPageViews.session_id],
+    references: [analyticsSessions.id],
+  }),
+}));
+
+export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
+  session: one(analyticsSessions, {
+    fields: [analyticsEvents.session_id],
+    references: [analyticsSessions.id],
+  }),
+}));
+
+export type AnalyticsVisitor = typeof analyticsVisitors.$inferSelect;
+export type NewAnalyticsVisitor = typeof analyticsVisitors.$inferInsert;
+
+export type AnalyticsSession = typeof analyticsSessions.$inferSelect;
+export type NewAnalyticsSession = typeof analyticsSessions.$inferInsert;
+
+export type AnalyticsPageView = typeof analyticsPageViews.$inferSelect;
+export type NewAnalyticsPageView = typeof analyticsPageViews.$inferInsert;
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;

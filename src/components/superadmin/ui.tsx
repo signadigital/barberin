@@ -28,6 +28,7 @@ import {
   Sparkles,
   Globe,
   CreditCard,
+  BarChart3,
 } from "lucide-react";
 
 import { BarberinLogo } from "@/components/barberin/ui";
@@ -113,6 +114,11 @@ export function SuperadminSidebar({ activePath }: { activePath: string }) {
       label: "Custom Domain (BPMN)",
       href: "/superadmin/domains",
       icon: Globe,
+    },
+    {
+      label: "Website Analytics",
+      href: "/superadmin/analytics",
+      icon: BarChart3,
     },
   ];
 
@@ -401,6 +407,18 @@ export function SuperadminMobileHeader({
               >
                 <Globe className="h-4 w-4" />
                 <span>Custom Domain (BPMN)</span>
+              </Link>
+              <Link
+                to="/superadmin/analytics"
+                onClick={() => setDrawerOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activePath === "/superadmin/analytics"
+                    ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>Website Analytics</span>
               </Link>
             </nav>
 
